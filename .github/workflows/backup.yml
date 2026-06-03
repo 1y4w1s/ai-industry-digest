@@ -1,8 +1,8 @@
-name: 每周数据库备份
+name: Weekly Backup
 
 on:
   schedule:
-    - cron: '0 0 * * 0'  # 每周日 0:00 UTC
+    - cron: '0 0 * * 0'
   workflow_dispatch:
 
 env:
@@ -14,18 +14,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 检出代码
-        uses: actions/checkout@v4
-
-      - name: 配置 Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
-      - name: 安装依赖
+      - name: Install deps
         run: pip install supabase python-dotenv
 
-      - name: 导出数据
+      - name: Export data
         run: |
           python -c "
 import os, json
@@ -34,16 +31,15 @@ url = os.environ['SUPABASE_URL']
 key = os.environ['SUPABASE_KEY']
 client = create_client(url, key)
 
-# 导出文章
 arts = client.table('articles').select('*').execute()
 with open('backup_articles.json', 'w', encoding='utf-8') as f:
     json.dump(arts.data, f, ensure_ascii=False, default=str)
-print(f'✅ 导出 {len(arts.data)} 篇文章')
+print(f'Exported {len(arts.data)} articles')
 "
 
-      - name: 上传备份
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: supabase-backup-${{ github.run_id }}
           path: backup_*.json
-          retention-days: 30  # 保留 30 天
+          retention-days: 30
