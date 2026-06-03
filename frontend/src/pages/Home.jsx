@@ -92,7 +92,7 @@ export default function Home({ onReadArticle, readerArticle }) {
     groups[src].push(a);
   }
 
-  const topArticles = articles.filter((a) => a._imp === 'high').slice(0, 3);
+  const topArticles = articles.filter((a) => a._imp === 'high').slice(0, 5);
   const displayReporting = !searching && report;
 
   return (
@@ -266,12 +266,14 @@ export default function Home({ onReadArticle, readerArticle }) {
           className={`flex-shrink-0 overflow-y-auto transition-all duration-300 ${
             sidePanelOpen ? 'w-[340px] xl:w-[380px] opacity-100' : 'w-0 opacity-0 overflow-hidden'
           } ${searching ? 'hidden' : ''}`}
-          style={{ borderLeft: '1px solid #2E2F4F', padding: '20px 16px 20px 16px', background: '#0F1020' }}
+          style={{ borderLeft: '1px solid #2E2F4F', padding: '20px 16px', background: '#13152A' }}
         >
           <SidePanel
             keywords={report?.trending_keywords || []}
             insight={report?.summary_insight || ''}
             topArticles={topArticles}
+            allArticles={articles}
+            sources={Object.keys(groups)}
             onArticleClick={(id) => onReadArticle(id)}
             onAskAI={handleAskAI}
           />
