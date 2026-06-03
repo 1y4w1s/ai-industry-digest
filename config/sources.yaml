@@ -1,0 +1,87 @@
+# AI Industry Digest - 信息源配置
+# 每个源可以配置主方式和备用方式
+
+sources:
+  # ============================================
+  # 学术论文（最稳定）
+  # ============================================
+
+  - name: "arXiv cs.AI"
+    id: "arxiv_ai"
+    priority: 1
+    enabled: true
+    collectors:
+      - type: api
+        api_type: arxiv
+        params:
+          category: "cs.AI"
+          max_results: 30
+        timeout: 60
+
+  - name: "arXiv cs.LG"
+    id: "arxiv_lg"
+    priority: 1
+    enabled: true
+    collectors:
+      - type: api
+        api_type: arxiv
+        params:
+          category: "cs.LG"
+          max_results: 20
+        timeout: 60
+
+  - name: "arXiv cs.CL"
+    id: "arxiv_cl"
+    priority: 2
+    enabled: true
+    collectors:
+      - type: api
+        api_type: arxiv
+        params:
+          category: "cs.CL"
+          max_results: 20
+        timeout: 60
+
+  # ============================================
+  # 科技媒体（使用稳定 RSS）
+  # ============================================
+
+  - name: "量子位"
+    id: "liangziwei"
+    priority: 1
+    enabled: true
+    collectors:
+      - type: rss
+        url: "https://www.qbitai.com/feed"
+        timeout: 30
+
+  - name: "机器之心"
+    id: "jiqizhixin"
+    priority: 1
+    enabled: true
+    collectors:
+      - type: web
+        url: "https://www.jiqizhixin.com/"
+        timeout: 30
+
+  - name: "36氪 - AI"
+    id: "36kr_ai"
+    priority: 2
+    enabled: true
+    collectors:
+      - type: rss
+        url: "https://36kr.com/feed/industry/AI"
+        timeout: 30
+
+  # ============================================
+  # 开源项目（可选）
+  # ============================================
+
+  - name: "GitHub Trending AI"
+    id: "github_trending"
+    priority: 3
+    enabled: false
+    collectors:
+      - type: web
+        url: "https://github.com/trending?since=daily"
+        timeout: 30
