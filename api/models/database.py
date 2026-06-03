@@ -91,7 +91,10 @@ class DatabaseManager:
 
         # 过滤条件
         if keyword:
-            query = query.ilike("title", f"%{keyword}%")
+            # 优先全文搜索，fallback 到 ilike
+            query = query.or_(
+                f"search_vector.phfts.{keyword},title.ilike.%{keyword}%"
+            )
         if tag:
             query = query.contains("tags", [tag])
         if source:
