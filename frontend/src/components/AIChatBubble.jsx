@@ -121,7 +121,8 @@ export default function AIChatBubble({ visible = true }) {
       >
         <button
           onClick={toggle}
-          className="w-11 h-11 bg-accent hover:bg-accent-subtle text-white rounded-full shadow-lg shadow-accent/25 flex items-center justify-center transition-all duration-200 hover:scale-110 select-none"
+          className="w-11 h-11 text-white rounded-full shadow-lg flex items-center justify-center transition-all duration-200 hover:scale-110 select-none"
+          style={{ background: '#282848', backdropFilter: 'blur(12px)' }}
         >
           {open ? (
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -154,7 +155,7 @@ export default function AIChatBubble({ visible = true }) {
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border-primary">
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-md bg-accent flex items-center justify-center text-white text-[10px] font-bold">AI</div>
+            <div className="w-6 h-6 rounded-md flex items-center justify-center text-white text-[10px] font-bold" style={{ background: '#5886FF' }}>AI</div>
             <span className="font-heading font-semibold text-sm text-text-primary">AI 助手</span>
           </div>
           <button onClick={() => { setMessages([]); setSessionId(null); }} className="text-xs text-text-tertiary hover:text-text-primary transition-colors">清空</button>
