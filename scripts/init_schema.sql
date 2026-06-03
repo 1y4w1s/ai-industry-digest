@@ -68,12 +68,12 @@ CREATE INDEX IF NOT EXISTS idx_bookmarks_user ON bookmarks(user_id, created_at D
 CREATE INDEX IF NOT EXISTS idx_bookmarks_article ON bookmarks(article_id);
 
 -- 表 5: reading_history（浏览历史）
+-- 同一天同一篇文章只记录一次（由应用层 DatabaseManager 保证）
 CREATE TABLE IF NOT EXISTS reading_history (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     article_id UUID NOT NULL REFERENCES articles(id) ON DELETE CASCADE,
-    read_at TIMESTAMPTZ DEFAULT NOW(),
-    UNIQUE(user_id, article_id, DATE(read_at))
+    read_at TIMESTAMPTZ DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_history_user ON reading_history(user_id, read_at DESC);
 
