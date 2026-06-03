@@ -3,248 +3,444 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI Industry Digest - 测试前端</title>
+<title>AI Industry Digest</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f5f5; color: #333; }
-  .header { background: #1a1a2e; color: white; padding: 20px; text-align: center; }
-  .header h1 { font-size: 22px; }
-  .header p { font-size: 13px; opacity: 0.8; margin-top: 5px; }
-  .container { max-width: 900px; margin: 0 auto; padding: 15px; }
-  .card { background: white; border-radius: 10px; padding: 15px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-  .card h3 { font-size: 16px; margin-bottom: 8px; }
-  .card .meta { font-size: 12px; color: #888; }
-  .tag { display: inline-block; background: #e0e7ff; color: #4338ca; padding: 2px 8px; border-radius: 10px; font-size: 11px; margin: 2px; }
-  .importance-high { border-left: 3px solid #ef4444; }
-  .importance-medium { border-left: 3px solid #f59e0b; }
-  .importance-low { border-left: 3px solid #9ca3af; }
-  .pagination { display: flex; justify-content: center; gap: 8px; margin: 15px 0; }
-  .pagination button { padding: 6px 14px; border: 1px solid #ddd; border-radius: 6px; background: white; cursor: pointer; }
-  .pagination button:hover { background: #f0f0f0; }
-  .pagination button:disabled { opacity: 0.5; cursor: default; }
-  .pagination .active { background: #1a1a2e; color: white; border-color: #1a1a2e; }
-  .filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 15px; }
-  .filters input, .filters select { padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; }
-  .filters input { flex: 1; min-width: 150px; }
-  .loading { text-align: center; padding: 30px; color: #888; }
-  .error { text-align: center; padding: 20px; color: #ef4444; }
-  .nav { display: flex; gap: 10px; justify-content: center; padding: 10px; background: #16213e; }
-  .nav a { color: white; text-decoration: none; font-size: 13px; padding: 4px 10px; border-radius: 4px; }
-  .nav a:hover { background: rgba(255,255,255,0.1); }
-  .stats { text-align: center; font-size: 13px; color: #666; margin-bottom: 10px; }
-  .insight { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px; margin-bottom: 15px; font-size: 13px; line-height: 1.6; }
-  .report-card { cursor: pointer; transition: transform 0.1s; }
-  .report-card:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
-  @media (max-width: 600px) { .filters { flex-direction: column; } .filters input { min-width: auto; } }
+/* ── Reset & Base ───────────── */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+  background: #f7f8fa;
+  color: #1a1a2e;
+  line-height: 1.6;
+}
+
+/* ── Header ───────────── */
+.header {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  color: white;
+  padding: 32px 20px 24px;
+  text-align: center;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.header h1 { font-size: 24px; font-weight: 700; letter-spacing: 2px; }
+.header .subtitle { font-size: 13px; opacity: 0.6; margin-top: 4px; }
+.header .date-nav { display: flex; justify-content: center; gap: 16px; margin-top: 12px; font-size: 14px; }
+.header .date-nav a { color: rgba(255,255,255,0.7); text-decoration: none; padding: 4px 12px; border-radius: 16px; transition: all 0.2s; }
+.header .date-nav a:hover, .header .date-nav a.active { background: rgba(255,255,255,0.15); color: white; }
+
+/* ── Container ───────────── */
+.container { max-width: 960px; margin: 0 auto; padding: 20px 16px; }
+
+/* ── Overview Section ───────────── */
+.overview {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+.overview .meta { font-size: 13px; color: #888; margin-bottom: 12px; }
+.overview .meta span { margin-right: 16px; }
+.overview .insight {
+  font-size: 15px;
+  line-height: 1.8;
+  color: #333;
+  padding: 16px 20px;
+  background: #f0f7ff;
+  border-radius: 12px;
+  border-left: 4px solid #3b82f6;
+  margin-bottom: 16px;
+}
+.overview .keywords { display: flex; gap: 8px; flex-wrap: wrap; }
+.keyword {
+  background: #eef2ff;
+  color: #4338ca;
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* ── Source Group ───────────── */
+.source-group { margin-bottom: 28px; }
+.source-group-header {
+  display: flex; align-items: center; gap: 10px;
+  padding-bottom: 12px; margin-bottom: 12px;
+  border-bottom: 2px solid #e5e7eb;
+  font-size: 15px; font-weight: 600; color: #374151;
+}
+.source-group-header .icon { font-size: 18px; }
+.source-group-header .count { font-size: 12px; color: #9ca3af; font-weight: 400; margin-left: auto; }
+
+/* ── Article Card ───────────── */
+.article-card {
+  background: white;
+  border-radius: 14px;
+  margin-bottom: 14px;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.05);
+  overflow: hidden;
+  border: 1px solid #f0f0f0;
+}
+.article-card.high { border-left: 4px solid #ef4444; }
+.article-card.medium { border-left: 4px solid #f59e0b; }
+.article-card.low { border-left: 4px solid #d1d5db; }
+.article-card.collapsed .article-body { display: none; }
+.article-card.collapsed .collapse-btn { display: block; }
+
+.article-header {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 16px 20px 12px;
+  cursor: pointer;
+}
+.article-header:hover { background: #fafbfc; }
+.article-header h3 { flex: 1; font-size: 15px; font-weight: 600; line-height: 1.5; color: #1a1a2e; }
+.importance-badge {
+  flex-shrink: 0;
+  font-size: 11px; font-weight: 600;
+  padding: 2px 10px; border-radius: 12px;
+  text-transform: uppercase;
+}
+.importance-badge.high { background: #fef2f2; color: #dc2626; }
+.importance-badge.medium { background: #fffbeb; color: #d97706; }
+.importance-badge.low { background: #f9fafb; color: #9ca3af; }
+
+.article-meta {
+  padding: 0 20px 8px;
+  display: flex; gap: 12px; align-items: center;
+  font-size: 12px; color: #9ca3af;
+}
+.article-meta .source { font-weight: 500; color: #6366f1; }
+
+/* ── Left-right layout for body ───────────── */
+.article-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  border-top: 1px solid #f3f4f6;
+}
+
+.article-body .left-panel {
+  padding: 16px 20px;
+  background: #fafbfc;
+  border-right: 1px solid #f3f4f6;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #4b5563;
+  max-height: 300px;
+  overflow-y: auto;
+}
+.article-body .left-panel .label {
+  font-size: 11px; font-weight: 600; color: #9ca3af;
+  text-transform: uppercase; letter-spacing: 1px;
+  margin-bottom: 6px;
+}
+.article-body .left-panel .excerpt {
+  display: -webkit-box;
+  -webkit-line-clamp: 6;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.article-body .left-panel .original-link {
+  display: inline-block; margin-top: 8px;
+  font-size: 12px; color: #6366f1; text-decoration: none;
+  font-weight: 500;
+}
+.article-body .left-panel .original-link:hover { text-decoration: underline; }
+
+.article-body .right-panel {
+  padding: 16px 20px;
+  font-size: 13px;
+}
+.article-body .right-panel .label {
+  font-size: 11px; font-weight: 600; color: #9ca3af;
+  text-transform: uppercase; letter-spacing: 1px;
+  margin-bottom: 6px;
+}
+.article-body .right-panel .ai-summary {
+  color: #1f2937;
+  line-height: 1.7;
+  margin-bottom: 10px;
+}
+.article-body .right-panel .tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+.article-body .right-panel .tag {
+  background: #eef2ff; color: #4338ca;
+  padding: 2px 10px; border-radius: 12px; font-size: 11px;
+}
+.article-body .right-panel .reason {
+  font-size: 12px; color: #6b7280;
+  font-style: italic;
+}
+
+/* ── Collapse toggle ───────────── */
+.collapse-btn {
+  display: none;
+  text-align: center;
+  padding: 8px;
+  font-size: 12px;
+  color: #9ca3af;
+  cursor: pointer;
+  border-top: 1px solid #f3f4f6;
+  background: #fafbfc;
+}
+.collapse-btn:hover { background: #f0f0f0; }
+.article-card:not(.collapsed) .collapse-btn { display: block; }
+
+/* ── Loading / Error / Empty ───────────── */
+.loading, .error, .empty {
+  text-align: center; padding: 60px 20px;
+  background: white; border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+.loading { color: #9ca3af; }
+.error { color: #ef4444; }
+.empty { color: #9ca3af; }
+.loading .spinner {
+  width: 32px; height: 32px;
+  border: 3px solid #e5e7eb; border-top-color: #6366f1;
+  border-radius: 50%; animation: spin 0.8s linear infinite;
+  margin: 0 auto 12px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Responsive ───────────── */
+@media (max-width: 640px) {
+  .header { padding: 20px 16px 16px; }
+  .header h1 { font-size: 20px; }
+  .container { padding: 12px 10px; }
+  .overview { padding: 16px; }
+  .overview .insight { font-size: 14px; padding: 12px 16px; }
+  .article-header { padding: 12px 14px 8px; }
+  .article-header h3 { font-size: 14px; }
+  .article-meta { padding: 0 14px 6px; flex-wrap: wrap; }
+  .article-body { grid-template-columns: 1fr; }
+  .article-body .left-panel { border-right: none; border-bottom: 1px solid #f3f4f6; max-height: 200px; }
+  .article-body .left-panel, .article-body .right-panel { padding: 12px 14px; }
+}
 </style>
 </head>
 <body>
 
 <div class="header">
-  <h1>🤖 AI Industry Digest</h1>
-  <p>测试前端 · 接口验证</p>
-</div>
-
-<div class="nav">
-  <a href="#" onclick="loadPage('reports')">📰 日报</a>
-  <a href="#" onclick="loadPage('articles')">📄 文章</a>
-  <a href="#" onclick="loadPage('stats')">📊 统计</a>
+  <h1>AI Industry Digest</h1>
+  <div class="subtitle">人工智能行业每日精选</div>
+  <div class="date-nav" id="dateNav"></div>
 </div>
 
 <div class="container" id="app">
-  <div class="loading">加载中...</div>
+  <div class="loading">
+    <div class="spinner"></div>
+    <div>加载中...</div>
+  </div>
 </div>
 
 <script>
 const API_BASE = 'http://localhost:8000';
+let allReports = [];
+let currentDate = '';
 
-// 路由分发
-function loadPage(page, params = {}) {
-  const app = document.getElementById('app');
-  app.innerHTML = '<div class="loading">加载中...</div>';
-  
-  switch(page) {
-    case 'reports': loadReports(); break;
-    case 'report': loadReportDetail(params.date); break;
-    case 'articles': loadArticles(); break;
-    case 'stats': loadStats(); break;
-    default: loadReports();
-  }
-}
-
-// ── 日报列表 ─────────────────────────
-async function loadReports(page = 1) {
+// ── 启动 ───────────────────────────
+(async function init() {
   try {
-    const res = await fetch(`${API_BASE}/api/reports?page=${page}&page_size=7`);
+    // 加载日报列表
+    const res = await fetch(`${API_BASE}/api/reports?page=1&page_size=14`);
     const data = await res.json();
-    renderReports(data);
+    allReports = data.items || [];
+
+    if (allReports.length === 0) {
+      document.getElementById('app').innerHTML = '<div class="empty">📭 暂无日报数据</div>';
+      document.getElementById('dateNav').innerHTML = '';
+      return;
+    }
+
+    // 渲染日期导航
+    renderDateNav();
+
+    // 默认加载最新一期
+    currentDate = allReports[0].report_date;
+    loadReport(currentDate);
   } catch(e) {
-    document.getElementById('app').innerHTML = `<div class="error">❌ 网络错误: ${e.message}。请确保 FastAPI 已启动。</div>`;
+    document.getElementById('app').innerHTML =
+      `<div class="error">❌ 网络错误: ${e.message}<br><small>请确保 FastAPI 已启动 (python -m uvicorn api.main:app --reload)</small></div>`;
   }
+})();
+
+// ── 日期导航 ───────────────────────
+function renderDateNav() {
+  const nav = document.getElementById('dateNav');
+  nav.innerHTML = allReports.map(r =>
+    `<a href="#" data-date="${r.report_date}" class="${r.report_date === currentDate ? 'active' : ''}"
+        onclick="loadReport('${r.report_date}')">${formatDateShort(r.report_date)}</a>`
+  ).join('');
 }
 
-function renderReports(data) {
-  let html = '<div class="stats">共 ' + data.total + ' 期日报</div>';
-  
-  for (const report of data.items) {
-    const high = (report.articles && report.articles.high ? report.articles.high.length : 0);
-    const total = report.article_ids ? report.article_ids.length : 0;
-    html += `
-      <div class="card report-card" onclick="loadPage('report', {date: '${report.report_date}'})">
-        <h3>📅 ${report.report_date}</h3>
-        <div class="meta">${total} 篇文章 · 高重要性 ${high} 篇</div>
-        ${report.trending_keywords ? '<div>' + report.trending_keywords.slice(0,5).map(k => '<span class="tag">' + k + '</span>').join('') + '</div>' : ''}
-      </div>
-    `;
-  }
-  
-  html += renderPagination(data, (p) => `loadReports(${p})`);
-  document.getElementById('app').innerHTML = html;
-}
+// ── 加载日报 ───────────────────────
+async function loadReport(date) {
+  currentDate = date;
+  document.getElementById('app').innerHTML =
+    '<div class="loading"><div class="spinner"></div><div>加载中...</div></div>';
 
-// ── 日报详情 ─────────────────────────
-async function loadReportDetail(date) {
+  // 更新导航高亮
+  document.querySelectorAll('#dateNav a').forEach(a => {
+    a.classList.toggle('active', a.dataset.date === date);
+  });
+
   try {
     const res = await fetch(`${API_BASE}/api/reports/${date}`);
     if (res.status === 404) {
-      document.getElementById('app').innerHTML = '<div class="error">❌ 日报不存在</div>';
+      document.getElementById('app').innerHTML = '<div class="empty">📭 暂无该日报</div>';
       return;
     }
     const report = await res.json();
-    renderReportDetail(report);
+    renderReport(report);
   } catch(e) {
-    document.getElementById('app').innerHTML = `<div class="error">❌ 网络错误: ${e.message}</div>`;
+    document.getElementById('app').innerHTML = `<div class="error">❌ 加载失败: ${e.message}</div>`;
   }
 }
 
-function renderReportDetail(report) {
-  let html = `
-    <div style="margin-bottom:10px"><a href="#" onclick="loadPage('reports')" style="color:#4338ca">← 返回日报列表</a></div>
-    <h2 style="margin-bottom:10px">📅 ${report.report_date}</h2>
-  `;
-  
-  if (report.summary_insight) {
-    html += `<div class="insight">💡 ${report.summary_insight}</div>`;
-  }
-  
-  if (report.trending_keywords) {
-    html += '<div style="margin-bottom:12px">' + report.trending_keywords.map(k => '<span class="tag">' + k + '</span>').join('') + '</div>';
-  }
-  
-  // 按重要性分组
-  const levels = { 'high': '🔴 高重要性', 'medium': '🟡 中重要性', 'low': '⚪ 低重要性' };
+// ── 渲染日报 ───────────────────────
+function renderReport(report) {
+  // 展平所有文章
+  const allArticles = [];
   for (const level of ['high', 'medium', 'low']) {
-    const articles = report.articles && report.articles[level] ? report.articles[level] : [];
-    if (articles.length === 0) continue;
-    html += `<h3 style="margin:15px 0 8px">${levels[level]} (${articles.length})</h3>`;
-    for (const a of articles) {
-      html += `
-        <div class="card importance-${a.importance}">
-          <h3>${a.title}</h3>
-          <div class="meta">${a.source_name} · ${a.published_at ? a.published_at.slice(0,10) : ''}</div>
-          ${a.tags ? '<div>' + a.tags.map(t => '<span class="tag">' + t + '</span>').join('') + '</div>' : ''}
-          ${a.summary ? '<p style="font-size:13px;margin-top:6px;color:#555">' + a.summary.slice(0,150) + '...</p>' : ''}
-        </div>
-      `;
+    for (const a of (report.articles?.[level] || [])) {
+      allArticles.push({ ...a, _importance: level });
     }
   }
-  
-  document.getElementById('app').innerHTML = html;
-}
 
-// ── 文章列表（分页 + 搜索） ──────────
-let articleSearchParams = {};
-
-async function loadArticles(page = 1) {
-  articleSearchParams.page = page;
-  const params = new URLSearchParams({ page, page_size: 20 });
-  if (articleSearchParams.keyword) params.set('keyword', articleSearchParams.keyword);
-  if (articleSearchParams.importance) params.set('importance', articleSearchParams.importance);
-  
-  try {
-    const res = await fetch(`${API_BASE}/api/articles?${params}`);
-    const data = await res.json();
-    renderArticles(data);
-  } catch(e) {
-    document.getElementById('app').innerHTML = `<div class="error">❌ 网络错误: ${e.message}</div>`;
+  // 按来源分组
+  const groups = {};
+  for (const a of allArticles) {
+    const src = a.source_name || '其他';
+    if (!groups[src]) groups[src] = [];
+    groups[src].push(a);
   }
-}
 
-function renderArticles(data) {
-  const keyword = articleSearchParams.keyword || '';
-  const importance = articleSearchParams.importance || '';
-  
-  let html = `
-    <div class="filters">
-      <input type="text" placeholder="搜索标题..." value="${keyword}" onchange="articleSearchParams.keyword=this.value" onkeyup="if(event.key==='Enter')loadArticles(1)">
-      <select onchange="articleSearchParams.importance=this.value;loadArticles(1)">
-        <option value="">全部重要性</option>
-        <option value="high" ${importance==='high'?'selected':''}>高</option>
-        <option value="medium" ${importance==='medium'?'selected':''}>中</option>
-        <option value="low" ${importance==='low'?'selected':''}>低</option>
-      </select>
-      <button onclick="loadArticles(1)" style="padding:6px 14px;background:#1a1a2e;color:white;border:none;border-radius:6px;cursor:pointer">搜索</button>
+  // 来源图标映射
+  const sourceIcons = {
+    'arXiv': '📄', 'arXiv (AI+LG+CL)': '📄',
+    'arXiv cs.LG': '📄', 'arXiv cs.CL': '📄', 'arXiv cs.AI': '📄',
+    '量子位': '🔬', '36氪': '💡', '36氪 - AI': '💡',
+    '机器之心': '🤖', 'GitHub Trending AI': '⭐',
+  };
+
+  let html = '';
+
+  // ── 概览区 ──
+  html += `
+    <div class="overview">
+      <div class="meta">
+        <span>📅 ${report.report_date}</span>
+        <span>📰 ${allArticles.length} 篇文章</span>
+        <span>📡 ${Object.keys(groups).length} 个来源</span>
+      </div>
+      ${report.summary_insight ? `<div class="insight">💡 ${report.summary_insight}</div>` : ''}
+      ${report.trending_keywords?.length ? `
+        <div class="keywords">
+          ${report.trending_keywords.map(k => `<span class="keyword">${k}</span>`).join('')}
+        </div>` : ''}
     </div>
-    <div class="stats">共 ${data.total} 篇文章</div>
   `;
-  
-  for (const a of data.items) {
-    html += `
-      <div class="card importance-${a.importance || 'low'}">
-        <h3>${a.title}</h3>
-        <div class="meta">${a.source_name || ''} ${a.published_at ? '· ' + a.published_at.slice(0,10) : ''}</div>
-        ${a.tags ? '<div>' + (a.tags||[]).map(t => '<span class="tag">' + t + '</span>').join('') + '</div>' : ''}
-        ${a.summary ? '<p style="font-size:13px;margin-top:6px;color:#555">' + a.summary.slice(0,200) + '</p>' : ''}
-      </div>
-    `;
+
+  // ── 按来源分组 ──
+  const groupOrder = Object.keys(groups).sort((a, b) => {
+    const aHigh = groups[a].filter(x => x._importance === 'high').length;
+    const bHigh = groups[b].filter(x => x._importance === 'high').length;
+    return bHigh - aHigh;
+  });
+
+  for (const src of groupOrder) {
+    const articles = groups[src];
+    const icon = Object.entries(sourceIcons).find(([key]) => src.includes(key))?.[1] || '📰';
+    const highCount = articles.filter(a => a._importance === 'high').length;
+    const isExpandedByDefault = highCount > 0;
+
+    html += `<div class="source-group">`;
+    html += `<div class="source-group-header">
+      <span class="icon">${icon}</span> ${src}
+      <span class="count">${articles.length} 篇</span>
+    </div>`;
+
+    for (const a of articles) {
+      const isHigh = a._importance === 'high';
+      const isCollapsed = !isHigh; // high展开，其余折叠
+      const excerpt = extractExcerpt(a.raw_content || '');
+      const tags = (a.tags || []).filter(Boolean);
+
+      html += `
+        <div class="article-card ${a._importance} ${isCollapsed ? 'collapsed' : ''}"
+             data-url="${escapeHtml(a.url || '')}">
+          <div class="article-header" onclick="toggleCard(this)">
+            <h3>${escapeHtml(a.title || '(无标题)')}</h3>
+            <span class="importance-badge ${a._importance}">
+              ${a._importance === 'high' ? '重要' : a._importance === 'medium' ? '一般' : '参考'}
+            </span>
+          </div>
+          <div class="article-meta">
+            <span class="source">${escapeHtml(a.source_name || '')}</span>
+            ${a.published_at ? `<span>${a.published_at.slice(0,10)}</span>` : ''}
+            ${a.url ? `<a href="${escapeHtml(a.url)}" target="_blank" style="color:#6366f1;text-decoration:none" onclick="event.stopPropagation()">原文 →</a>` : ''}
+          </div>
+          <div class="article-body">
+            <div class="left-panel">
+              <div class="label">原文概要</div>
+              <div class="excerpt">${escapeHtml(excerpt)}</div>
+              ${a.url ? `<a href="${escapeHtml(a.url)}" target="_blank" class="original-link">阅读原文 →</a>` : ''}
+            </div>
+            <div class="right-panel">
+              <div class="label">AI 分析</div>
+              <div class="ai-summary">${escapeHtml(a.summary || '暂无摘要')}</div>
+              ${tags.length ? `<div class="tags">${tags.map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('')}</div>` : ''}
+              ${a.importance_reason ? `<div class="reason">💬 ${escapeHtml(a.importance_reason)}</div>` : ''}
+            </div>
+          </div>
+          <div class="collapse-btn" onclick="toggleCard(this.parentElement.querySelector('.article-header'))">
+            ${isCollapsed ? '展开全文 ▼' : '收起 ▲'}
+          </div>
+        </div>`;
+    }
+
+    html += `</div>`;
   }
-  
-  if (data.items.length === 0) {
-    html += '<div class="card" style="text-align:center;color:#888">暂无文章</div>';
+
+  if (allArticles.length === 0) {
+    html += '<div class="empty">📭 暂无文章</div>';
   }
-  
-  html += renderPagination(data, (p) => `loadArticles(${p})`);
+
   document.getElementById('app').innerHTML = html;
 }
 
-// ── 统计 ─────────────────────────────
-async function loadStats() {
-  try {
-    const res = await fetch(`${API_BASE}/api/stats`);
-    const data = await res.json();
-    let html = `
-      <h2 style="margin-bottom:15px">📊 系统统计</h2>
-      <div class="card"><h3>📦 文章总数</h3><div style="font-size:28px;font-weight:bold;color:#4338ca">${data.total_articles}</div></div>
-      <div class="card">
-        <h3>📰 信息源</h3>
-        ${data.sources.map(s => '<span class="tag" style="font-size:13px">' + s + '</span>').join('')}
-      </div>
-      <div class="card">
-        <h3>🏷️ 标签</h3>
-        ${data.tags.map(t => '<span class="tag" style="font-size:13px">' + t + '</span>').join('')}
-      </div>
-    `;
-    document.getElementById('app').innerHTML = html;
-  } catch(e) {
-    document.getElementById('app').innerHTML = `<div class="error">❌ 网络错误: ${e.message}</div>`;
-  }
+// ── 折叠/展开 ─────────────────────
+function toggleCard(headerEl) {
+  const card = headerEl.closest('.article-card');
+  card.classList.toggle('collapsed');
+  const btn = card.querySelector('.collapse-btn');
+  if (btn) btn.textContent = card.classList.contains('collapsed') ? '展开全文 ▼' : '收起 ▲';
 }
 
-// ── 分页组件 ─────────────────────────
-function renderPagination(data, onClick) {
-  if (data.pages <= 1) return '';
-  let html = '<div class="pagination">';
-  html += `<button ${data.page <= 1 ? 'disabled' : ''} onclick="${onClick(data.page - 1)}">←</button>`;
-  for (let i = Math.max(1, data.page - 2); i <= Math.min(data.pages, data.page + 2); i++) {
-    html += `<button class="${i === data.page ? 'active' : ''}" onclick="${onClick(i)}">${i}</button>`;
-  }
-  html += `<button ${data.page >= data.pages ? 'disabled' : ''} onclick="${onClick(data.page + 1)}">→</button>`;
-  html += '</div>';
-  return html;
+// ── 工具函数 ─────────────────────
+function formatDateShort(dateStr) {
+  const d = new Date(dateStr);
+  const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+  return `${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getDate().toString().padStart(2,'0')} 周${weekdays[d.getDay()]}`;
 }
 
-// 启动：加载日报
-loadPage('reports');
+function extractExcerpt(text) {
+  if (!text) return '暂无原文内容';
+  // 清理 HTML 标签
+  let clean = text.replace(/<[^>]+>/g, '');
+  // 截取 200 字
+  if (clean.length > 200) clean = clean.slice(0, 200) + '...';
+  return clean;
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
 </script>
 </body>
 </html>
