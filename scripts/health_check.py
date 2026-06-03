@@ -90,6 +90,8 @@ class SourceHealthRegistry:
             record["status"] = "DOWN"
         elif failures >= self.MAX_WARN_COUNT:
             record["status"] = "WARN"
+        else:
+            record["status"] = "OK"
 
         self.registry[source_id] = record
         self._save()
@@ -236,6 +238,7 @@ def main():
         print(f"\n  {status_icon} [{name}] (当前: {current_status})", end="")
 
         ok = check_source(source)
+        results.append(ok)
         if ok:
             registry.record_success(sid)
             failures = registry.registry.get(sid, {}).get("consecutive_failures", 0)
