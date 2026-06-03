@@ -4,6 +4,7 @@ Supabase 写入、查询、分页、搜索
 """
 
 import os
+import time
 from typing import List, Optional, Dict, Any
 from datetime import datetime, date
 
@@ -18,6 +19,9 @@ load_dotenv()
 class DatabaseManager:
     """Supabase 数据库管理器"""
 
+    MAX_RETRIES = 3
+    RETRY_DELAY = 2  # seconds
+
     def __init__(self):
         url = os.getenv("SUPABASE_URL")
         key = os.getenv("SUPABASE_KEY")
@@ -28,7 +32,32 @@ class DatabaseManager:
                 "  SUPABASE_URL=https://xxx.supabase.co\n"
                 "  SUPABASE_KEY=your-service-role-key"
             )
-        self.client: Client = create_client(url, key)
+        self._url = url
+        self._key = key
+        self.client: Client = self._create_client()
+
+    def _create_client(self) -> Client:
+        """创建 Supabase 客户端"""
+        return create_client(self._url, self._key)
+
+    def _execute_with_retry(self, operation, *args, **kwargs):
+        """带重试机制的数据库操作"""
+        last_error = None
+        for attempt in range(self.MAX_RETRIES + 1):
+            try:
+                return operation(*args, **kwargs)
+            except Exception as e:
+                last_error = e
+                if attempt < self.MAX_RETRIES:
+                    wait = self.RETRY_DELAY * (2 ** attempt)
+                    print(f"  [DB RETRY] 操作失败，{wait}秒后重试 ({attempt + 1}/{self.MAX_RETRIES}): {e}")
+                    time.sleep(wait)
+                    # 重新创建客户端（处理连接断开）
+                    self.client = self._create_client()
+                else:
+                    print(f"  [DB ERROR] 操作最终失败: {e}")
+                    raise
+        raise last_error
 
     # ── 写入 ─────────────────────────────────────
 

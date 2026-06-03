@@ -436,7 +436,10 @@ function renderReport(report) {
   }
 
   if (allArticles.length === 0) {
-    html += '<div class="empty">📭 暂无文章</div>';
+    html += `<div class="empty">
+      📭 今日暂无收录内容<br>
+      <small style="color:#9ca3af">可能有新文章在采集路上，请稍后再来看看</small>
+    </div>`;
   }
 
   document.getElementById('app').innerHTML = html;

@@ -29,3 +29,6 @@ jobs:
 
       - name: Health check
         run: python scripts/health_check.py
+
+      - name: Data integrity check
+        run: python scripts/daily_verify.py
