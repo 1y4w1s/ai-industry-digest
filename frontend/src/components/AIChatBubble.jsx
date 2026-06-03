@@ -122,7 +122,7 @@ export default function AIChatBubble({ visible = true }) {
         <button
           onClick={toggle}
           className="w-11 h-11 text-white rounded-full shadow-lg flex items-center justify-center transition-all duration-200 hover:scale-110 select-none"
-          style={{ background: '#282848', backdropFilter: 'blur(12px)' }}
+          style={{ background: '#1A1B33', backdropFilter: 'blur(12px)' }}
         >
           {open ? (
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -137,9 +137,9 @@ export default function AIChatBubble({ visible = true }) {
 
         {/* Hint */}
         {!open && showHint && (
-          <div className="absolute right-14 top-1/2 -translate-y-1/2 bg-bg-raised border border-border-primary rounded-xl px-3.5 py-2 text-xs text-text-secondary whitespace-nowrap shadow-lg animate-fade-in">
+          <div className="absolute right-14 top-1/2 -translate-y-1/2 rounded-xl px-3.5 py-2 text-xs whitespace-nowrap shadow-lg animate-fade-in" style={{ background: '#1A1B33', border: '1px solid #2E2F4F', color: '#9197C2' }}>
             🤖 问我任何 AI 相关问题
-            <div className="absolute right-[-6px] top-1/2 -translate-y-1/2 w-3 h-3 bg-bg-raised border-r border-t border-border-primary rotate-45" />
+            <div className="absolute right-[-6px] top-1/2 -translate-y-1/2 w-3 h-3 rotate-45" style={{ background: '#1A1B33', borderRight: '1px solid #2E2F4F', borderTop: '1px solid #2E2F4F' }} />
           </div>
         )}
       </div>
@@ -149,13 +149,15 @@ export default function AIChatBubble({ visible = true }) {
         style={{
           left: Math.max(16, position.x - 300 + 56),
           top: Math.min(position.y - 420, position.y - 420),
+          background: '#1A1B33',
+          border: '1px solid #2E2F4F',
         }}
-        className={`fixed z-50 w-[340px] max-w-[calc(100vw-32px)] bg-bg-surface border border-border-primary rounded-2xl shadow-2xl flex flex-col transition-all duration-300 origin-bottom-left ${open ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}
+        className={`fixed z-50 w-[340px] max-w-[calc(100vw-32px)] rounded-2xl shadow-2xl flex flex-col transition-all duration-300 origin-bottom-left ${open ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border-primary">
+        <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid #2E2F4F' }}>
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-md flex items-center justify-center text-white text-[10px] font-bold" style={{ background: '#5886FF' }}>AI</div>
+            <div className="w-6 h-6 rounded-md flex items-center justify-center text-white text-[10px] font-bold" style={{ background: '#6395FF' }}>AI</div>
             <span className="font-heading font-semibold text-sm text-text-primary">AI 助手</span>
           </div>
           <button onClick={() => { setMessages([]); setSessionId(null); }} className="text-xs text-text-tertiary hover:text-text-primary transition-colors">清空</button>
@@ -170,7 +172,7 @@ export default function AIChatBubble({ visible = true }) {
               <div className="flex flex-wrap gap-2 justify-center">
                 {['今天有什么大新闻？', '最近AI融资情况？', '推荐几篇文章'].map((q) => (
                   <button key={q} onClick={() => { setInput(q); setTimeout(() => inputRef.current?.focus(), 100); }}
-                    className="px-3 py-1.5 bg-bg-raised border border-border-primary rounded-lg text-xs text-text-secondary hover:text-text-primary hover:border-accent/30 transition-all">{q}</button>
+                    className="px-3 py-1.5 rounded-lg text-xs transition-all" style={{ background: '#23243E', color: '#9197C2', border: '1px solid #2E2F4F' }}>{q}</button>
                 ))}
               </div>
             </div>
@@ -198,9 +200,9 @@ export default function AIChatBubble({ visible = true }) {
         <form onSubmit={handleSubmit} className="flex items-center gap-2 p-3 border-t border-border-primary">
           <input ref={inputRef} type="text" value={input} onChange={(e) => setInput(e.target.value)}
             placeholder="输入消息..."
-            className="flex-1 px-3 py-2 bg-bg-base border border-border-primary rounded-xl text-sm text-text-primary placeholder-text-tertiary focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 transition-all" />
+            className="flex-1 px-3 py-2 rounded-xl text-sm transition-all" style={{ background: '#16172D', border: '1px solid #2E2F4F', color: '#E2E6F9' }} />
           <button type="submit" disabled={loading || !input.trim()}
-            className="p-2 bg-accent text-white rounded-xl hover:bg-accent-subtle disabled:opacity-40 transition-all">
+            className="p-2 rounded-xl disabled:opacity-40 transition-all" style={{ background: '#6395FF', color: '#fff' }}>
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
             </svg>
