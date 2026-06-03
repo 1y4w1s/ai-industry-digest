@@ -69,23 +69,6 @@ export default function Home({ onReadArticle, readerArticle }) {
     else { setSearching(false); setSearchResults(null); }
   };
 
-  // Debounced keyword search
-  const handleFilterKeyword = (e) => {
-    const val = e.target.value;
-    setKeyword(val);
-    // Auto-search after typing (debounce handled by onChange + search trigger)
-  };
-
-  const handleKeywordKeyDown = (e) => {
-    if (e.key === 'Enter') {
-      if (keyword.trim() || importance || source || tag) {
-        doSearch(keyword, importance, source, tag, 1);
-      } else {
-        setSearching(false); setSearchResults(null);
-      }
-    }
-  };
-
   const activeFilterCount = [importance, source, tag].filter(Boolean).length;
   const isFilterActive = searching || activeFilterCount > 0;
 
@@ -121,27 +104,9 @@ export default function Home({ onReadArticle, readerArticle }) {
       <div className="flex-shrink-0" style={{ 
         background: 'linear-gradient(180deg, #1A1B33 0%, #13152A 100%)',
         borderBottom: '1px solid #2E2F4F',
-        padding: '10px 16px'
+        padding: '8px 16px'
       }}>
         <div className="flex items-center gap-2.5 flex-wrap">
-          {/* Search input */}
-          <div className="relative flex-1 min-w-[160px] max-w-[320px]">
-            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none" style={{ color: '#6E739C' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <input
-              type="text"
-              value={keyword}
-              onChange={handleFilterKeyword}
-              onKeyDown={handleKeywordKeyDown}
-              placeholder={`在 ${!searching && report ? articles.length : '...'} 篇文章中搜索...`}
-              className="w-full pl-9 pr-3 py-[7px] rounded-[7px] text-xs transition-all focus:outline-none"
-              style={{ background: '#16172D', border: '1px solid #2E2F4F', color: '#E2E6F9' }}
-              onFocus={(e) => e.target.style.borderColor = '#6395FF'}
-              onBlur={(e) => e.target.style.borderColor = '#2E2F4F'}
-            />
-          </div>
-
           {/* Importance pills */}
           <div className="flex items-center gap-1.5">
             {[
