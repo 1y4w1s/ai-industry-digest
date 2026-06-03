@@ -2,6 +2,7 @@
 
 @theme {
   --color-bg-base: #0F1020;
+  --color-bg-content: #13152A;
   --color-bg-surface: #1A1B33;
   --color-bg-raised: #22233D;
   --color-bg-hover: #242542;
@@ -24,7 +25,6 @@
   --color-stat-card: #16172D;
   --font-heading: 'Plus Jakarta Sans', system-ui, sans-serif;
   --font-body: 'IBM Plex Sans', system-ui, sans-serif;
-
   --sidebar-width: 64px;
   --sidebar-expanded: 220px;
 }
@@ -57,6 +57,10 @@ body {
   70% { transform: scale(0.98); }
   100% { transform: scale(1); opacity: 1; }
 }
+@keyframes floatUp {
+  0% { transform: translateY(0); box-shadow: none; }
+  100% { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+}
 .animate-fade-in { animation: fadeIn 0.35s ease-out; }
 .animate-slide-right { animation: slideInRight 0.3s ease-out; }
 .animate-bounce-in { animation: bounceIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1); }
@@ -85,17 +89,16 @@ body {
 .sidebar-link::before {
   content: '';
   position: absolute;
-  left: 0;
-  top: 50%;
+  left: 0; top: 50%;
   transform: translateY(-50%);
-  width: 3px;
-  height: 0;
+  width: 3px; height: 0;
   background: var(--color-accent);
   border-radius: 0 3px 3px 0;
   transition: height 0.2s ease;
 }
 .sidebar-link.active::before { height: 60%; }
 
+/* ── Article Cards ───────────── */
 .article-card {
   background: #1A1B33;
   border-radius: 7px;
@@ -117,6 +120,33 @@ body {
   text-overflow: ellipsis;
 }
 
+/* ── Stat Card Hover ───────────── */
+.stat-card {
+  transition: all 0.2s ease;
+  cursor: default;
+}
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+/* ── Side Panel ───────────── */
+.side-panel {
+  background: #1A1B33;
+  border: 1px solid #2E2F4F;
+  border-radius: 10px;
+  padding: 16px;
+  width: 100%;
+}
+
+.side-panel-section {
+  margin-bottom: 20px;
+}
+.side-panel-section:last-child {
+  margin-bottom: 0;
+}
+
+/* ── Mobile overlay ───────────── */
 .sidebar-overlay {
   position: fixed;
   inset: 0;
@@ -132,6 +162,5 @@ body {
 .search-input:focus {
   box-shadow: 0 0 0 1px rgba(99, 149, 255, 0.25);
 }
-
 .drag-handle { cursor: grab; }
 .drag-handle:active { cursor: grabbing; }
