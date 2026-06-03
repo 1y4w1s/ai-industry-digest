@@ -3,11 +3,13 @@ AI Industry Digest - arXiv API 采集器
 通过 arXiv API 获取最新论文
 """
 
+import time
 from datetime import datetime, timedelta
 from typing import List, Optional
 import xml.etree.ElementTree as ET
 import urllib.request
 import urllib.parse
+import urllib.error
 
 from collector.base import BaseCollector, Article
 
@@ -15,6 +17,18 @@ from collector.base import BaseCollector, Article
 class ArxivCollector(BaseCollector):
     """arXiv API 采集器"""
     BASE_URL = "http://export.arxiv.org/api/query"
+    # arXiv API 限流：每 3 秒最多 1 次请求
+    REQUEST_INTERVAL = 3.0
+    _last_request_time = 0.0
+
+    @classmethod
+    def _rate_limit(cls):
+        """类级别限流：所有实例共享"""
+        elapsed = time.time() - cls._last_request_time
+        if elapsed < cls.REQUEST_INTERVAL:
+            wait = cls.REQUEST_INTERVAL - elapsed
+            time.sleep(wait)
+        cls._last_request_time = time.time()
 
     def collect(self) -> List[Article]:
         """查询 arXiv API 并返回论文列表"""
@@ -40,12 +54,26 @@ class ArxivCollector(BaseCollector):
         url = f"{self.BASE_URL}?{query}"
 
         print(f"  [FETCH] {self.name} ({category}): 正在查询 arXiv API")
-        print(f"  [URL] {url}")
 
         try:
+            self._rate_limit()  # 限流等待
             req = urllib.request.Request(url, headers={"User-Agent": "AI-Industry-Digest/1.0"})
             with urllib.request.urlopen(req, timeout=60) as resp:
                 xml_data = resp.read().decode("utf-8")
+        except urllib.error.HTTPError as e:
+            if e.code == 429:
+                print(f"  [WARN] {self.name}: 触发限流 (429)，额外等待 10 秒后重试")
+                time.sleep(10)
+                try:
+                    req = urllib.request.Request(url, headers={"User-Agent": "AI-Industry-Digest/1.0"})
+                    with urllib.request.urlopen(req, timeout=60) as resp:
+                        xml_data = resp.read().decode("utf-8")
+                except Exception as e2:
+                    print(f"  [ERROR] {self.name}: API 重试请求失败 - {e2}")
+                    return []
+            else:
+                print(f"  [ERROR] {self.name}: API 请求失败 - {e}")
+                return []
         except Exception as e:
             print(f"  [ERROR] {self.name}: API 请求失败 - {e}")
             return []

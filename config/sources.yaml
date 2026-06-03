@@ -60,8 +60,8 @@ sources:
     priority: 1
     enabled: true
     collectors:
-      - type: web
-        url: "https://www.jiqizhixin.com/"
+      - type: rss
+        url: "https://www.jiqizhixin.com/rss"
         timeout: 30
 
   - name: "36氪 - AI"
@@ -70,7 +70,10 @@ sources:
     enabled: true
     collectors:
       - type: rss
-        url: "https://36kr.com/feed/industry/AI"
+        url: "https://36kr.com/feed"
+        timeout: 30
+      - type: rss
+        url: "https://rsshub.app/36kr/motif/ai"
         timeout: 30
 
   # ============================================

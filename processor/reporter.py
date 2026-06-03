@@ -104,18 +104,33 @@ class DailyReportGenerator:
 
         # 从标题中提取关键词（取高频词）
         import jieba
+        import re
         # 停用词表（精简版）
         stop_words = {"的", "了", "在", "是", "我", "有", "和", "就", "不",
                       "人", "都", "一", "一个", "上", "也", "很", "到",
                       "说", "要", "去", "你", "会", "着", "没有", "看",
                       "好", "自己", "这", "他", "她", "它", "们", "与",
-                      "及", "或", "等", "从", "被", "把", "对", "为"}
+                      "及", "或", "等", "从", "被", "把", "对", "为",
+                      "the", "a", "an", "and", "or", "for", "of", "in",
+                      "to", "is", "it", "on", "with", "by", "as", "at",
+                      "that", "this", "from", "are", "was", "be", "has",
+                      "have", "not", "but", "we", "its", "their"}
+
+        def is_meaningful_word(w: str) -> bool:
+            """判断是否为有意义的词：中文词（长度>=2）或英文词（长度>=4）"""
+            if not w:
+                return False
+            if re.match(r'^[\u4e00-\u9fff]+$', w):  # 中文
+                return len(w) >= 2
+            if re.match(r'^[a-zA-Z]+$', w):  # 英文
+                return len(w) >= 4
+            return False
 
         for a in articles:
             words = jieba.lcut(a.title)
             for w in words:
-                w = w.strip()
-                if len(w) >= 2 and w not in stop_words:
+                w = w.strip().lower()
+                if is_meaningful_word(w) and w not in stop_words:
                     word_counter[w] += 1
 
         # 合并标签和标题关键词

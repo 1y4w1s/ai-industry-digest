@@ -14,44 +14,52 @@ class RSSCollector(BaseCollector):
     """RSS/Atom Feed 采集器"""
 
     def collect(self) -> List[Article]:
-        """解析 RSS Feed 并返回文章列表"""
-        # 从配置中获取 RSS URL
+        """解析 RSS Feed 并返回文章列表
+        支持多个 RSS URL 回退：第一个失败则尝试第二个
+        """
         collectors = self.config.get("collectors", [])
-        rss_config = next((c for c in collectors if c.get("type") == "rss"), None)
-        if not rss_config:
+        rss_configs = [c for c in collectors if c.get("type") == "rss"]
+        if not rss_configs:
             print(f"  [WARN] {self.name}: 未配置 RSS 源")
             return []
 
-        feed_url = rss_config.get("url")
-        timeout = rss_config.get("timeout", 30)
+        for idx, rss_config in enumerate(rss_configs):
+            feed_url = rss_config.get("url")
+            timeout = rss_config.get("timeout", 30)
 
-        print(f"  [FETCH] {self.name}: 正在抓取 {feed_url}")
-        try:
-            feed = feedparser.parse(feed_url)
-        except Exception as e:
-            print(f"  [ERROR] {self.name}: 抓取失败 - {e}")
-            return []
+            if idx > 0:
+                print(f"  [FALLBACK] 尝试备用 RSS: {feed_url}")
 
-        if feed.bozo:
-            # 有些 RSS 虽然格式有问题但仍有内容
-            if not feed.entries:
-                print(f"  [WARN] {self.name}: RSS 格式异常且无内容 - {feed.bozo_exception}")
-                return []
-            else:
-                print(f"  [WARN] {self.name}: RSS 格式有小问题，尝试继续解析 - {feed.bozo_exception}")
-
-        articles = []
-        for entry in feed.entries:
+            print(f"  [FETCH] {self.name}: 正在抓取 {feed_url}")
             try:
-                article = self._parse_entry(entry)
-                if article:
-                    articles.append(article)
+                feed = feedparser.parse(feed_url)
             except Exception as e:
-                print(f"  [WARN] {self.name}: 解析条目失败 - {e}")
+                print(f"  [ERROR] {self.name}: 抓取失败 - {e}")
                 continue
 
-        print(f"  [OK] {self.name}: 采集到 {len(articles)} 篇文章")
-        return articles
+            if feed.bozo and not feed.entries:
+                print(f"  [WARN] {self.name}: RSS 格式异常 - {feed.bozo_exception}")
+                continue
+
+            if feed.bozo and feed.entries:
+                print(f"  [WARN] {self.name}: RSS 格式有小问题，尝试继续解析")
+
+            articles = []
+            for entry in feed.entries:
+                try:
+                    article = self._parse_entry(entry)
+                    if article:
+                        articles.append(article)
+                except Exception as e:
+                    print(f"  [WARN] {self.name}: 解析条目失败 - {e}")
+                    continue
+
+            if articles:
+                print(f"  [OK] {self.name}: 采集到 {len(articles)} 篇文章")
+                return articles
+
+        print(f"  [EMPTY] {self.name}: 所有 RSS 源均失败")
+        return []
 
     def _parse_entry(self, entry) -> Optional[Article]:
         """解析单条 RSS 条目"""
