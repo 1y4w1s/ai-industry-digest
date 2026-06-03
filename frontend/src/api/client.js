@@ -44,20 +44,20 @@ export const api = {
   getTags: () => request('/tags'),
 
   // 收藏
-  getBookmarks: (page = 1) => request(`/bookmarks?page=${page}&page_size=20`),
+  getBookmarks: (page = 1) => request(`/auth/bookmarks?page=${page}&page_size=20`),
   addBookmark: (articleId, note = '') =>
-    request('/bookmarks', { method: 'POST', body: JSON.stringify({ article_id: articleId, note }) }),
+    request('/auth/bookmarks', { method: 'POST', body: JSON.stringify({ article_id: articleId, note }) }),
   removeBookmark: (id) =>
-    request(`/bookmarks/${id}`, { method: 'DELETE' }),
+    request(`/auth/bookmarks/${id}`, { method: 'DELETE' }),
 
   // 历史
-  getHistory: (page = 1) => request(`/history?page=${page}&page_size=20`),
+  getHistory: (page = 1) => request(`/auth/history?page=${page}&page_size=20`),
   addHistory: (articleId) =>
-    request('/history', { method: 'POST', body: JSON.stringify({ article_id: articleId }) }),
+    request('/auth/history', { method: 'POST', body: JSON.stringify({ article_id: articleId }) }),
 
   // 反馈
   submitFeedback: (articleId, feedback) =>
-    request('/feedback', { method: 'POST', body: JSON.stringify({ article_id: articleId, feedback }) }),
+    request('/auth/feedback', { method: 'POST', body: JSON.stringify({ article_id: articleId, feedback }) }),
 
   // AI 对话
   chat: (message, articleId = null, sessionId = null) =>
@@ -65,7 +65,4 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ message, article_id: articleId, session_id: sessionId }),
     }),
-
-  // 文章代理（绕过 CORS）
-  getProxyUrl: (url) => `${API_BASE}/proxy?url=${encodeURIComponent(url)}`,
 };
