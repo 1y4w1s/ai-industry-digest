@@ -11,7 +11,7 @@ const NAV_ITEMS = [
   },
 ];
 
-export default function Layout() {
+export default function Layout({ isReading }) {
   const { isLoggedIn, user, login, logout } = useAuth();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -117,7 +117,7 @@ export default function Layout() {
       </div>
 
       {/* AI Chat Bubble */}
-      <AIChatBubble />
+      <AIChatBubble visible={!isReading} />
     </div>
   );
 }

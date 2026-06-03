@@ -98,6 +98,16 @@ export default function Home({ onReadArticle, readerArticle }) {
     setSearchResults(null);
   };
 
+  // Quick filter: auto-search when dropdown changes
+  const handleQuickFilter = (imp, src, tg) => {
+    if (imp || src || tg) {
+      doSearch(keyword || '', imp, src, tg, 1);
+    } else {
+      setSearching(false);
+      setSearchResults(null);
+    }
+  };
+
   // If reading an article
   if (readerArticle) {
     return <ArticleReader articleId={readerArticle} onBack={() => onReadArticle(null)} />;
@@ -126,31 +136,23 @@ export default function Home({ onReadArticle, readerArticle }) {
   return (
     <div className="h-full flex flex-col overflow-hidden">
       {/* ── Global Filter Bar ── */}
-      <form onSubmit={handleFilterSearch} className="flex-shrink-0 flex items-center gap-2 px-4 lg:px-6 py-2.5 border-b border-border-subtle bg-bg-surface/60">
-        <input
-          type="text"
-          value={keyword}
-          onChange={(e) => setKeyword(e.target.value)}
-          placeholder="搜索标题关键词..."
-          className="w-48 px-3 py-1.5 bg-bg-base border border-border-primary rounded-lg text-xs text-text-primary placeholder-text-tertiary/60 focus:outline-none focus:border-accent/50 transition-all"
-        />
-        <select value={importance} onChange={(e) => setImportance(e.target.value)} className="px-2.5 py-1.5 bg-bg-base border border-border-primary rounded-lg text-xs text-text-secondary focus:outline-none focus:border-accent/50">
+      <div className="flex-shrink-0 flex items-center gap-2 px-4 lg:px-6 py-2.5 border-b border-border-subtle bg-bg-surface/60">
+        <select value={importance} onChange={(e) => { setImportance(e.target.value); handleQuickFilter(e.target.value, source, tag); }} className="px-2.5 py-1.5 bg-bg-base border border-border-primary rounded-lg text-xs text-text-secondary focus:outline-none focus:border-accent/50">
           <option value="">全部重要度</option>
           <option value="high">高</option><option value="medium">中</option><option value="low">低</option>
         </select>
-        <select value={source} onChange={(e) => setSource(e.target.value)} className="px-2.5 py-1.5 bg-bg-base border border-border-primary rounded-lg text-xs text-text-secondary focus:outline-none focus:border-accent/50">
+        <select value={source} onChange={(e) => { setSource(e.target.value); handleQuickFilter(importance, e.target.value, tag); }} className="px-2.5 py-1.5 bg-bg-base border border-border-primary rounded-lg text-xs text-text-secondary focus:outline-none focus:border-accent/50">
           <option value="">全部来源</option>
           {sources.map((s) => <option key={s} value={s}>{s}</option>)}
         </select>
-        <select value={tag} onChange={(e) => setTag(e.target.value)} className="px-2.5 py-1.5 bg-bg-base border border-border-primary rounded-lg text-xs text-text-secondary focus:outline-none focus:border-accent/50">
+        <select value={tag} onChange={(e) => { setTag(e.target.value); handleQuickFilter(importance, source, e.target.value); }} className="px-2.5 py-1.5 bg-bg-base border border-border-primary rounded-lg text-xs text-text-secondary focus:outline-none focus:border-accent/50">
           <option value="">全部标签</option>
           {tags.map((t) => <option key={t} value={t}>{t}</option>)}
         </select>
-        <button type="submit" className="px-3.5 py-1.5 bg-accent text-white text-xs rounded-lg hover:bg-accent-subtle transition-all">筛选</button>
         {searching && (
-          <button type="button" onClick={handleClearSearch} className="px-3 py-1.5 text-xs text-text-tertiary hover:text-text-primary transition-colors">清除</button>
+          <button type="button" onClick={handleClearSearch} className="px-3 py-1.5 text-xs text-text-tertiary hover:text-text-primary transition-colors ml-2">清除筛选</button>
         )}
-      </form>
+      </div>
 
       {/* ── Content ── */}
       <div className="flex-1 overflow-y-auto">

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { api } from '../api/client';
 
-export default function AIChatBubble() {
+export default function AIChatBubble({ visible = true }) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
@@ -22,6 +22,11 @@ export default function AIChatBubble() {
       return () => clearTimeout(t);
     }
   }, [open]);
+
+  // Auto-close when hidden (article reading mode)
+  useEffect(() => {
+    if (!visible) setOpen(false);
+  }, [visible]);
 
   // Follow window resize
   useEffect(() => {
@@ -91,7 +96,7 @@ export default function AIChatBubble() {
     }
   };
 
-  return (
+  return !visible ? null : (
     <>
       {/* Bubble */}
       <div

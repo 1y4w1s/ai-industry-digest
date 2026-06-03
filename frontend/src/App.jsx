@@ -10,7 +10,7 @@ export default function App() {
   return (
     <AuthProvider>
       <Routes>
-        <Route element={<Layout />}>
+        <Route element={<Layout isReading={!!readerArticle} />}>
           <Route
             index
             element={<Home onReadArticle={setReaderArticle} readerArticle={readerArticle} />}
