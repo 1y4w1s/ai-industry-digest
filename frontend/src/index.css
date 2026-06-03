@@ -2,16 +2,18 @@
 
 @theme {
   --color-bg-base: #0a0a0f;
-  --color-bg-surface: #13131a;
-  --color-bg-raised: #1a1a25;
-  --color-bg-hover: #222233;
-  --color-border-primary: #2a2a3a;
+  --color-bg-surface: #111118;
+  --color-bg-raised: #1a1a28;
+  --color-bg-hover: #222235;
+  --color-bg-elevated: #252540;
+  --color-border-primary: #2a2a3e;
   --color-border-accent: #6366f1;
+  --color-border-subtle: #1e1e30;
   --color-text-primary: #f0f0f5;
-  --color-text-secondary: #8888a0;
-  --color-text-tertiary: #6b6b80;
+  --color-text-secondary: #9494b0;
+  --color-text-tertiary: #6b6b88;
   --color-accent: #6366f1;
-  --color-accent-glow: rgba(99, 102, 241, 0.2);
+  --color-accent-glow: rgba(99, 102, 241, 0.25);
   --color-accent-subtle: #4f46e5;
   --color-success: #22c55e;
   --color-error: #ef4444;
@@ -21,6 +23,9 @@
   --color-low-imp: #6b7280;
   --font-heading: 'Plus Jakarta Sans', system-ui, sans-serif;
   --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+
+  --sidebar-width: 64px;
+  --sidebar-expanded: 220px;
 }
 
 body {
@@ -32,48 +37,112 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Scrollbar */
-::-webkit-scrollbar { width: 6px; }
+/* ── Scrollbar ───────────── */
+::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #2a2a3a; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #3a3a4a; }
+::-webkit-scrollbar-thumb { background: #2a2a3e; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #3a3a50; }
 
-/* Animations */
+/* ── Animations ───────────── */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
-
 @keyframes slideInRight {
   from { transform: translateX(100%); }
   to { transform: translateX(0); }
 }
-
 @keyframes slideInUp {
   from { opacity: 0; transform: translateY(16px); }
   to { opacity: 1; transform: translateY(0); }
 }
-
-@keyframes pulse-dot {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 1; }
-}
-
 .animate-fade-in { animation: fadeIn 0.4s ease-out; }
 .animate-slide-right { animation: slideInRight 0.3s ease-out; }
 .animate-slide-up { animation: slideInUp 0.3s ease-out; }
 
-/* Mobile sidebar overlay */
+/* ── Sidebar ───────────── */
+.sidebar {
+  width: var(--sidebar-width);
+  transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  white-space: nowrap;
+}
+.sidebar:hover,
+.sidebar.expanded {
+  width: var(--sidebar-expanded);
+}
+
+.sidebar-logo-text,
+.sidebar-label,
+.sidebar-footer-text {
+  opacity: 0;
+  transition: opacity 0.2s ease 0.02s;
+}
+.sidebar:hover .sidebar-logo-text,
+.sidebar.expanded .sidebar-logo-text,
+.sidebar:hover .sidebar-label,
+.sidebar.expanded .sidebar-label,
+.sidebar:hover .sidebar-footer-text,
+.sidebar.expanded .sidebar-footer-text {
+  opacity: 1;
+}
+
+/* Sidebar nav items: center in collapsed, left-align when expanded */
+.sidebar-link {
+  position: relative;
+  justify-content: center !important;
+  padding-left: 14px;
+}
+.sidebar:hover .sidebar-link {
+  justify-content: flex-start !important;
+}
+.sidebar-nav {
+  align-items: center;
+}
+.sidebar:hover .sidebar-nav {
+  align-items: stretch;
+}
+
+/* Sidebar footer: center collapsed, left-align expanded */
+.sidebar-footer {
+  justify-content: center;
+}
+.sidebar:hover .sidebar-footer {
+  justify-content: flex-start;
+}
+.sidebar-link::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 0;
+  background: var(--color-accent);
+  border-radius: 0 3px 3px 0;
+  transition: height 0.2s ease;
+}
+.sidebar-link.active::before {
+  height: 60%;
+}
+
+/* ── Mobile overlay ───────────── */
 .sidebar-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.6);
+  background: rgba(0, 0, 0, 0.65);
   z-index: 40;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.3s;
+  transition: opacity 0.3s ease;
+  backdrop-filter: blur(4px);
 }
 .sidebar-overlay.open {
   opacity: 1;
   pointer-events: auto;
+}
+
+/* ── Header search glow ───────────── */
+.search-input:focus {
+  box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.4), 0 0 20px rgba(99, 102, 241, 0.1);
 }
