@@ -167,16 +167,27 @@ class DatabaseManager:
 
         report = result.data[0]
 
-        # 如果有关联文章 ID，查询文章详情
+        # 如果有关联文章 ID，查询文章详情并按重要性分组
         article_ids = report.get("article_ids", [])
         if article_ids:
-            articles = self.client.table("articles") \
+            raw = self.client.table("articles") \
                 .select("*") \
                 .in_("id", article_ids) \
                 .execute()
-            report["articles"] = articles.data or []
+            raw_articles = raw.data or []
+
+            # 按重要性分组
+            grouped = {"high": [], "medium": [], "low": []}
+            for a in raw_articles:
+                imp = a.get("importance", "low") or "low"
+                if imp in grouped:
+                    grouped[imp].append(a)
+                else:
+                    grouped["low"].append(a)
+
+            report["articles"] = grouped
         else:
-            report["articles"] = []
+            report["articles"] = {"high": [], "medium": [], "low": []}
 
         return report
 
