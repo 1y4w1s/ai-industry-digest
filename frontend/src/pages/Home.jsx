@@ -69,6 +69,26 @@ export default function Home({ onReadArticle, readerArticle }) {
     else { setSearching(false); setSearchResults(null); }
   };
 
+  // Debounced keyword search
+  const handleFilterKeyword = (e) => {
+    const val = e.target.value;
+    setKeyword(val);
+    // Auto-search after typing (debounce handled by onChange + search trigger)
+  };
+
+  const handleKeywordKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      if (keyword.trim() || importance || source || tag) {
+        doSearch(keyword, importance, source, tag, 1);
+      } else {
+        setSearching(false); setSearchResults(null);
+      }
+    }
+  };
+
+  const activeFilterCount = [importance, source, tag].filter(Boolean).length;
+  const isFilterActive = searching || activeFilterCount > 0;
+
   const handleAskAI = (question) => {
     // Find the AI chat bubble button and click it, then set the input
     const aiBubble = document.querySelector('[data-ai-trigger]');
@@ -97,41 +117,95 @@ export default function Home({ onReadArticle, readerArticle }) {
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
-      {/* ═══ Filter Row ═══ */}
-      <div className="flex-shrink-0 flex items-center justify-start gap-3 px-5 py-2.5 border-b border-border-muted bg-bg-surface/70">
-        <select value={importance} onChange={(e) => { setImportance(e.target.value); handleQuickFilter(e.target.value, source, tag); }}
-          className="h-[34px] px-3 text-xs text-text-secondary rounded-[7px] focus:outline-none transition-all cursor-pointer"
-          style={{ background: '#1A1B33', border: '1px solid #2E2F4F' }}>
-          <option value="">全部重要度</option>
-          <option value="high">高</option><option value="medium">中</option><option value="low">低</option>
-        </select>
-        <select value={source} onChange={(e) => { setSource(e.target.value); handleQuickFilter(importance, e.target.value, tag); }}
-          className="h-[34px] px-3 text-xs text-text-secondary rounded-[7px] focus:outline-none transition-all cursor-pointer"
-          style={{ background: '#1A1B33', border: '1px solid #2E2F4F' }}>
-          <option value="">全部来源</option>
-          {sources.map((s) => <option key={s} value={s}>{s}</option>)}
-        </select>
-        <select value={tag} onChange={(e) => { setTag(e.target.value); handleQuickFilter(importance, source, e.target.value); }}
-          className="h-[34px] px-3 text-xs text-text-secondary rounded-[7px] focus:outline-none transition-all cursor-pointer"
-          style={{ background: '#1A1B33', border: '1px solid #2E2F4F' }}>
-          <option value="">全部标签</option>
-          {tags.map((t) => <option key={t} value={t}>{t}</option>)}
-        </select>
-        {searching && (
-          <button onClick={handleClearSearch} className="h-[34px] px-3.5 text-xs text-text-secondary rounded-[7px] hover:text-text-primary transition-all cursor-pointer"
-            style={{ background: '#1A1B33', border: '1px solid #2E2F4F' }}>
-            清除筛选
+      {/* ═══ Unified Filter Bar ═══ */}
+      <div className="flex-shrink-0" style={{ 
+        background: 'linear-gradient(180deg, #1A1B33 0%, #13152A 100%)',
+        borderBottom: '1px solid #2E2F4F',
+        padding: '10px 16px'
+      }}>
+        <div className="flex items-center gap-2.5 flex-wrap">
+          {/* Search input */}
+          <div className="relative flex-1 min-w-[160px] max-w-[320px]">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none" style={{ color: '#6E739C' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              type="text"
+              value={keyword}
+              onChange={handleFilterKeyword}
+              onKeyDown={handleKeywordKeyDown}
+              placeholder={`在 ${!searching && report ? articles.length : '...'} 篇文章中搜索...`}
+              className="w-full pl-9 pr-3 py-[7px] rounded-[7px] text-xs transition-all focus:outline-none"
+              style={{ background: '#16172D', border: '1px solid #2E2F4F', color: '#E2E6F9' }}
+              onFocus={(e) => e.target.style.borderColor = '#6395FF'}
+              onBlur={(e) => e.target.style.borderColor = '#2E2F4F'}
+            />
+          </div>
+
+          {/* Importance pills */}
+          <div className="flex items-center gap-1.5">
+            {[
+              { key: 'high', label: '高', color: '#F27070', bg: 'rgba(242,112,112,0.12)' },
+              { key: 'medium', label: '中', color: '#D4A44A', bg: 'rgba(212,164,74,0.12)' },
+              { key: 'low', label: '低', color: '#6E739C', bg: 'rgba(110,115,156,0.12)' },
+            ].map((opt) => (
+              <button
+                key={opt.key}
+                onClick={() => {
+                  const next = importance === opt.key ? '' : opt.key;
+                  setImportance(next);
+                  if (keyword.trim() || next || source || tag) {
+                    doSearch(keyword, next, source, tag, 1);
+                  } else { setSearching(false); setSearchResults(null); }
+                }}
+                className="text-xs font-medium rounded-full px-3 py-[5px] transition-all cursor-pointer"
+                style={{
+                  background: importance === opt.key ? opt.bg : 'transparent',
+                  color: importance === opt.key ? opt.color : '#6E739C',
+                  border: importance === opt.key ? `1px solid ${opt.color}40` : '1px solid transparent',
+                }}
+              >
+                <span className="inline-block w-1.5 h-1.5 rounded-full mr-1.5" style={{ background: opt.color }} />
+                {opt.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Source dropdown */}
+          <select value={source} onChange={(e) => { setSource(e.target.value); handleQuickFilter(importance, e.target.value, tag); }}
+            className="h-[30px] px-2.5 text-xs rounded-[6px] cursor-pointer focus:outline-none transition-all"
+            style={{ background: '#1A1B33', border: '1px solid #2E2F4F', color: source ? '#E2E6F9' : '#6E739C', maxWidth: '100px' }}>
+            <option value="">来源</option>
+            {sources.map((s) => <option key={s} value={s} style={{ background: '#1A1B33' }}>{s}</option>)}
+          </select>
+
+          {/* Tag dropdown */}
+          <select value={tag} onChange={(e) => { setTag(e.target.value); handleQuickFilter(importance, source, e.target.value); }}
+            className="h-[30px] px-2.5 text-xs rounded-[6px] cursor-pointer focus:outline-none transition-all"
+            style={{ background: '#1A1B33', border: '1px solid #2E2F4F', color: tag ? '#E2E6F9' : '#6E739C', maxWidth: '100px' }}>
+            <option value="">标签</option>
+            {tags.map((t) => <option key={t} value={t} style={{ background: '#1A1B33' }}>{t}</option>)}
+          </select>
+
+          {/* Filter status + clear */}
+          {isFilterActive && (
+            <div className="flex items-center gap-2 ml-1">
+              <span className="text-[11px] whitespace-nowrap" style={{ color: '#6395FF' }}>
+                {searching ? `${searchResults?.total || 0} 条结果` : `${activeFilterCount} 个筛选中`}
+              </span>
+              <button onClick={handleClearSearch} className="text-[11px] transition-all hover:brightness-110 whitespace-nowrap" style={{ color: '#6E739C' }}>
+                清除
+              </button>
+            </div>
+          )}
+
+          {/* Side panel toggle (tablet) */}
+          <button onClick={() => setSidePanelOpen(!sidePanelOpen)}
+            className="hidden lg:flex xl:hidden ml-auto h-[30px] px-2 text-xs rounded-[6px] items-center gap-1 transition-all cursor-pointer"
+            style={{ background: '#1A1B33', border: '1px solid #2E2F4F', color: '#9197C2' }}>
+            <span className={sidePanelOpen ? 'rotate-180' : ''} style={{ display: 'inline-block', transition: 'transform 0.2s' }}>◀</span>
           </button>
-        )}
-        {/* Side panel toggle (tablet) */}
-        <button
-          onClick={() => setSidePanelOpen(!sidePanelOpen)}
-          className="hidden lg:flex xl:hidden ml-auto h-[34px] px-2.5 text-xs text-text-secondary rounded-[7px] items-center gap-1 transition-all"
-          style={{ background: '#1A1B33', border: '1px solid #2E2F4F' }}
-        >
-          <span className={sidePanelOpen ? 'rotate-180' : ''} style={{ display: 'inline-block', transition: 'transform 0.2s' }}>◀</span>
-          <span>{sidePanelOpen ? '收起' : '展开'}</span>
-        </button>
+        </div>
       </div>
 
       {/* ═══ Three-column Content ═══ */}
