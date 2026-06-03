@@ -1,12 +1,9 @@
-name: AI Industry Digest 每日日报
+name: AI Industry Digest Daily
 
 on:
   schedule:
-    # 北京时间 6:00 = UTC 22:00（前一天）
-    # 北京时间 12:00 = UTC 04:00
-    # 北京时间 18:00 = UTC 10:00
     - cron: '0 22,4,10 * * *'
-  workflow_dispatch:  # 允许手动触发
+  workflow_dispatch:
 
 env:
   SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -17,42 +14,37 @@ env:
 jobs:
   daily-digest:
     runs-on: ubuntu-latest
-    timeout-minutes: 15  # 防止超时
+    timeout-minutes: 15
 
     steps:
-      - name: 检出代码
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: 配置 Python
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
-      - name: 安装依赖
-        run: |
-          pip install -r requirements.txt
+      - name: Install deps
+        run: pip install -r requirements.txt
 
-      - name: 运行全流程
+      - name: Run pipeline
         id: run_pipeline
         run: |
           python run.py 2>&1 | tee run_output.log
           echo "status=success" >> $GITHUB_OUTPUT
 
-      - name: 健康检查
-        run: |
-          python scripts/health_check.py
+      - name: Health check
+        run: python scripts/health_check.py
 
-      - name: 状态摘要
+      - name: Summary
         run: |
-          echo "## 🤖 AI Industry Digest 运行报告" >> $GITHUB_STEP_SUMMARY
+          echo "## AI Industry Digest Report" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| 项目 | 状态 |" >> $GITHUB_STEP_SUMMARY
-          echo "|------|------|" >> $GITHUB_STEP_SUMMARY
-          echo "| 运行时间 | $(date '+%Y-%m-%d %H:%M:%S') |" >> $GITHUB_STEP_SUMMARY
-          echo "| 采集流程 | ✅ 完成 |" >> $GITHUB_STEP_SUMMARY
-          echo "| 健康检查 | 已执行 |" >> $GITHUB_STEP_SUMMARY
+          echo "| Item | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Time | $(date '+%Y-%m-%d %H:%M:%S') |" >> $GITHUB_STEP_SUMMARY
+          echo "| Pipeline | completed |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 运行日志" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          tail -50 run_output.log >> $GITHUB_STEP_SUMMARY || echo "(无日志)" >> $GITHUB_STEP_SUMMARY
+          tail -50 run_output.log >> $GITHUB_STEP_SUMMARY || echo "(no log)" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
