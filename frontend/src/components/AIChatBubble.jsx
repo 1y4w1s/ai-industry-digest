@@ -59,6 +59,10 @@ export default function AIChatBubble({ visible = true }) {
       x: e.clientX - bubbleRef.current.getBoundingClientRect().left,
       y: e.clientY - bubbleRef.current.getBoundingClientRect().top,
     });
+    // Scale up on drag start
+    if (bubbleRef.current) {
+      bubbleRef.current.style.transform = 'scale(1.12)';
+    }
   }, []);
 
   useEffect(() => {
@@ -69,7 +73,17 @@ export default function AIChatBubble({ visible = true }) {
         y: Math.max(0, Math.min(e.clientY - dragOffset.y, window.innerHeight - 56)),
       });
     };
-    const handleUp = () => setDragging(false);
+    const handleUp = () => {
+      setDragging(false);
+      // Bounce animation on drop
+      if (bubbleRef.current) {
+        bubbleRef.current.style.transform = 'scale(1)';
+        bubbleRef.current.style.transition = 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
+        setTimeout(() => {
+          if (bubbleRef.current) bubbleRef.current.style.transition = '';
+        }, 400);
+      }
+    };
     window.addEventListener('mousemove', handleMove);
     window.addEventListener('mouseup', handleUp);
     return () => {

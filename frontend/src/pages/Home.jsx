@@ -188,45 +188,59 @@ export default function Home({ onReadArticle, readerArticle }) {
             <div className="text-center text-text-tertiary py-16 text-sm">加载中...</div>
           ) : !searching && report ? (
             <>
+              {/* Bento Stats */}
+              <div className="grid grid-cols-3 gap-3 mb-5">
+                {[
+                  { label: '文章总数', value: articles.length, icon: '📰', color: 'text-accent' },
+                  { label: '信息源', value: Object.keys(groups).length, icon: '📡', color: 'text-success' },
+                  { label: '高重要性', value: articles.filter(a => a._imp === 'high').length, icon: '🔥', color: 'text-high-imp' },
+                ].map((s) => (
+                  <div key={s.label} className="bg-bg-surface border border-border-muted rounded-xl p-4 text-center">
+                    <div className="text-lg mb-1">{s.icon}</div>
+                    <div className={`text-2xl font-heading font-bold ${s.color}`}>{s.value}</div>
+                    <div className="text-[11px] text-text-tertiary mt-0.5">{s.label}</div>
+                  </div>
+                ))}
+              </div>
+
               {/* Overview */}
               {report.summary_insight && (
-                <div className="bg-bg-surface border border-border-subtle rounded-2xl p-5 mb-5">
-                  <div className="flex items-center gap-3 text-xs text-text-tertiary mb-3">
-                    <span>📰 {articles.length} 篇文章</span>
-                    <span>📡 {Object.keys(groups).length} 个来源</span>
-                  </div>
-                  <div className="bg-bg-raised rounded-xl p-4 text-sm text-text-primary leading-relaxed border-l-2 border-accent mb-3">
+                <div className="bg-bg-surface border border-border-muted rounded-xl p-5 mb-5">
+                  <div className="bg-bg-raised rounded-lg p-3.5 text-sm text-text-primary leading-relaxed border-l-[3px] border-accent">
                     {report.summary_insight}
                   </div>
                   {report.trending_keywords?.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5">
+                    <div className="flex flex-wrap gap-1.5 mt-3">
                       {report.trending_keywords.map((k) => (
-                        <span key={k} className="px-2.5 py-1 bg-accent/10 text-accent text-xs rounded-full border border-accent/20">{k}</span>
+                        <span key={k} className="px-2.5 py-0.5 bg-accent/10 text-accent text-[11px] rounded-full border border-accent/20">{k}</span>
                       ))}
                     </div>
                   )}
                 </div>
               )}
 
-              {/* Grouped articles */}
+              {/* Grouped articles with weight */}
               {Object.entries(groups).sort(([,a],[,b]) => b.filter(x=>x._imp==='high').length - a.filter(x=>x._imp==='high').length).map(([src, arts]) => (
                 <div key={src} className="mb-5">
-                  <div className="flex items-center gap-2 mb-2.5 pb-2 border-b border-border-subtle">
+                  <div className="flex items-center gap-2 mb-2 pb-1.5 border-b border-border-muted">
                     <span className="font-heading font-semibold text-sm text-text-primary">{src}</span>
-                    <span className="text-xs text-text-tertiary ml-auto">{arts.length} 篇</span>
+                    <span className="text-[11px] text-text-tertiary ml-auto">{arts.length} 篇</span>
                   </div>
-                  <div className="space-y-1.5">
-                    {arts.map((a) => (
+                  <div className="space-y-px">
+                    {arts.sort((a, b) => ({high:0,medium:1,low:2}[a._imp]||2) - ({high:0,medium:1,low:2}[b._imp]||2)).map((a) => (
                       <div key={a.id || a.url} onClick={() => onReadArticle(a.id)}
-                        className="bg-bg-surface border border-border-subtle rounded-xl p-3.5 cursor-pointer hover:border-accent/30 hover:bg-bg-raised transition-all group">
-                        <div className="flex items-start gap-3">
-                          <div className={`mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0 ${a._imp === 'high' ? 'bg-high-imp' : a._imp === 'medium' ? 'bg-medium-imp' : 'bg-low-imp'}`} />
+                        className={`bg-bg-surface border border-border-muted cursor-pointer hover:border-accent/30 hover:bg-bg-hover transition-all group
+                          ${a._imp === 'high' ? 'article-card-high' : a._imp === 'medium' ? 'article-card-medium' : 'article-card-low'}`}
+                        style={{ borderRadius: '10px', marginBottom: a._imp === 'high' ? '6px' : '2px' }}
+                      >
+                        <div className="flex items-start gap-2.5">
                           <div className="flex-1 min-w-0">
-                            <h3 className="text-sm font-medium text-text-primary group-hover:text-accent transition-colors leading-relaxed">{a.title}</h3>
-                            <div className="flex items-center gap-2 mt-1 text-xs text-text-tertiary">
+                            <h3 className={`title leading-relaxed group-hover:text-accent transition-colors ${a._imp === 'high' ? 'text-[14px]' : 'text-[13px]'}`}>
+                              {a.title}
+                            </h3>
+                            <div className="flex items-center gap-2 mt-1 text-[11px] text-text-tertiary">
                               <span>{a.source_name}</span>
                               {a.published_at && <span>· {a.published_at.slice(0, 10)}</span>}
-                              {a.tags?.length > 0 && <span>· {a.tags.slice(0, 2).join(', ')}{a.tags.length > 2 ? '...' : ''}</span>}
                             </div>
                           </div>
                         </div>

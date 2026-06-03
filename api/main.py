@@ -39,7 +39,7 @@ async def rate_limit_middleware(request: Request, call_next):
     path = request.url.path
 
     # 不限制静态文件和 docs
-    if path.startswith("/test/") or path.startswith("/docs") or path.startswith("/openapi"):
+    if path.startswith("/test/") or path.startswith("/docs") or path.startswith("/openapi") or path.startswith("/api/proxy"):
         return await call_next(request)
 
     now = time.time()

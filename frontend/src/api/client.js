@@ -65,4 +65,7 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ message, article_id: articleId, session_id: sessionId }),
     }),
+
+  // 文章代理（绕过 CORS）
+  getProxyUrl: (url) => `${API_BASE}/proxy?url=${encodeURIComponent(url)}`,
 };

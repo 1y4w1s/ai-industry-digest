@@ -1,11 +1,13 @@
 """
 AI Industry Digest - 内容接口路由
-日报 + 文章查询
+日报 + 文章查询 + 文章代理
 """
 
+import httpx
 from typing import Optional
 
 from fastapi import APIRouter, Query, HTTPException
+from fastapi.responses import Response
 from api.models.database import DatabaseManager
 
 router = APIRouter()
@@ -65,6 +67,35 @@ async def get_article(article_id: str):
     if not article:
         raise HTTPException(status_code=404, detail="文章不存在")
     return article
+
+
+@router.get("/proxy", tags=["代理"])
+async def proxy_article(url: str = Query(..., description="目标 URL")):
+    """代理获取文章内容（绕过 CORS/X-Frame 限制）"""
+    if not url.startswith("http://") and not url.startswith("https://"):
+        raise HTTPException(status_code=400, detail="无效的 URL")
+
+    try:
+        async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
+            resp = await client.get(
+                url,
+                headers={
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                                  "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                    "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+                }
+            )
+            content_type = resp.headers.get("content-type", "text/html")
+            return Response(
+                content=resp.content,
+                media_type=content_type,
+                headers={"X-Frame-Options": "ALLOWALL"}
+            )
+    except httpx.TimeoutException:
+        raise HTTPException(status_code=504, detail="代理请求超时")
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"代理请求失败: {e}")
 
 
 @router.get("/sources", tags=["元数据"])

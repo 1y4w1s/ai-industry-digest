@@ -5,6 +5,7 @@ export default function ArticleReader({ articleId, onBack }) {
   const [article, setArticle] = useState(null);
   const [loading, setLoading] = useState(true);
   const [iframeError, setIframeError] = useState(false);
+  const [proxyUrl, setProxyUrl] = useState('');
 
   // Chat state
   const [messages, setMessages] = useState([]);
@@ -20,11 +21,16 @@ export default function ArticleReader({ articleId, onBack }) {
     setMessages([]);
     setSessionId(null);
     setIframeError(false);
+    setProxyUrl('');
 
     api.getArticle(articleId)
       .then((data) => {
         setArticle(data);
         api.addHistory(articleId).catch(() => {});
+        // Build proxy URL
+        if (data.url) {
+          setProxyUrl(api.getProxyUrl(data.url));
+        }
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -81,13 +87,12 @@ export default function ArticleReader({ articleId, onBack }) {
         <div className="flex-1 flex overflow-hidden">
           {/* ── Left: Original Article ─────────── */}
           <div className="flex-1 min-w-0 border-r border-border-subtle bg-white">
-            {iframeUrl && !iframeError ? (
+            {proxyUrl && !iframeError ? (
               <iframe
-                src={iframeUrl}
+                src={proxyUrl}
                 className="w-full h-full"
                 title="原文"
                 onError={() => setIframeError(true)}
-                sandbox="allow-scripts allow-same-origin allow-forms"
               />
             ) : (
               <div className="p-8 overflow-y-auto h-full">
@@ -110,13 +115,20 @@ export default function ArticleReader({ articleId, onBack }) {
           </div>
 
           {/* ── Right: AI Summary + Chat ─────────── */}
-          <div className="w-[400px] xl:w-[480px] flex-shrink-0 flex flex-col bg-bg-surface overflow-y-auto">
-            {/* AI Summary */}
-            <div className="p-5 border-b border-border-subtle">
-              <h3 className="font-heading font-semibold text-xs text-accent uppercase tracking-wider mb-3 flex items-center gap-2">
-                <span className="w-1 h-4 bg-accent rounded-full" />
-                AI 精读
-              </h3>
+          <div className="w-[420px] xl:w-[500px] flex-shrink-0 flex flex-col bg-bg-surface overflow-y-auto">
+            {/* AI Summary — 60% space */}
+            <div className="flex-[3] min-h-0 overflow-y-auto p-5 border-b border-border-subtle">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-heading font-semibold text-xs text-accent uppercase tracking-wider flex items-center gap-2">
+                  <span className="w-1 h-4 bg-accent rounded-full" />
+                  AI 精读
+                </h3>
+                {article.url && (
+                  <a href={article.url} target="_blank" rel="noreferrer" className="text-[11px] text-accent hover:underline flex items-center gap-1">
+                    原文 ↗
+                  </a>
+                )}
+              </div>
               <div className="bg-bg-raised rounded-xl p-4 text-sm text-text-primary leading-relaxed">
                 {article.summary || '暂无摘要'}
               </div>
@@ -132,9 +144,9 @@ export default function ArticleReader({ articleId, onBack }) {
               )}
             </div>
 
-            {/* AI Chat */}
-            <div className="flex-1 flex flex-col min-h-0">
-              <div className="p-5 pb-2">
+            {/* AI Chat — 40% space */}
+            <div className="flex-[2] flex flex-col min-h-0">
+              <div className="px-5 pt-3 pb-1">
                 <h3 className="font-heading font-semibold text-xs text-text-secondary uppercase tracking-wider flex items-center gap-2">
                   <span className="w-1 h-4 bg-text-tertiary rounded-full" />
                   深入对话

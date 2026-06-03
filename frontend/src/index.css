@@ -1,26 +1,26 @@
 @import "tailwindcss";
 
 @theme {
-  --color-bg-base: #0a0a0f;
-  --color-bg-surface: #111118;
-  --color-bg-raised: #1a1a28;
-  --color-bg-hover: #222235;
-  --color-bg-elevated: #252540;
-  --color-border-primary: #2a2a3e;
+  --color-bg-base: #07070d;
+  --color-bg-surface: #10101a;
+  --color-bg-raised: #181828;
+  --color-bg-hover: #202038;
+  --color-bg-elevated: #282848;
+  --color-border-primary: #2a2a42;
+  --color-border-muted: #1a1a2e;
   --color-border-accent: #6366f1;
-  --color-border-subtle: #1e1e30;
   --color-text-primary: #f0f0f5;
   --color-text-secondary: #9494b0;
   --color-text-tertiary: #6b6b88;
   --color-accent: #6366f1;
-  --color-accent-glow: rgba(99, 102, 241, 0.25);
+  --color-accent-glow: rgba(99, 102, 241, 0.3);
   --color-accent-subtle: #4f46e5;
   --color-success: #22c55e;
   --color-error: #ef4444;
   --color-warning: #f59e0b;
   --color-high-imp: #ef4444;
   --color-medium-imp: #f59e0b;
-  --color-low-imp: #6b7280;
+  --color-low-imp: #4b5563;
   --font-heading: 'Plus Jakarta Sans', system-ui, sans-serif;
   --font-body: 'IBM Plex Sans', system-ui, sans-serif;
 
@@ -40,8 +40,8 @@ body {
 /* ── Scrollbar ───────────── */
 ::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #2a2a3e; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #3a3a50; }
+::-webkit-scrollbar-thumb { background: #2a2a42; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #3a3a58; }
 
 /* ── Animations ───────────── */
 @keyframes fadeIn {
@@ -56,9 +56,16 @@ body {
   from { opacity: 0; transform: translateY(16px); }
   to { opacity: 1; transform: translateY(0); }
 }
+@keyframes bounceIn {
+  0% { transform: scale(0.9); opacity: 0; }
+  50% { transform: scale(1.05); }
+  70% { transform: scale(0.98); }
+  100% { transform: scale(1); opacity: 1; }
+}
 .animate-fade-in { animation: fadeIn 0.4s ease-out; }
 .animate-slide-right { animation: slideInRight 0.3s ease-out; }
 .animate-slide-up { animation: slideInUp 0.3s ease-out; }
+.animate-bounce-in { animation: bounceIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
 
 /* ── Sidebar ───────────── */
 .sidebar {
@@ -87,11 +94,12 @@ body {
   opacity: 1;
 }
 
-/* Sidebar nav items: center in collapsed, left-align when expanded */
+/* Sidebar nav items */
 .sidebar-link {
   position: relative;
   justify-content: center !important;
   padding-left: 14px;
+  transition: all 0.15s ease;
 }
 .sidebar:hover .sidebar-link {
   justify-content: flex-start !important;
@@ -102,8 +110,6 @@ body {
 .sidebar:hover .sidebar-nav {
   align-items: stretch;
 }
-
-/* Sidebar footer: center collapsed, left-align expanded */
 .sidebar-footer {
   justify-content: center;
 }
@@ -126,6 +132,37 @@ body {
   height: 60%;
 }
 
+/* ── Article cards with weight ───────────── */
+.article-card-high {
+  position: relative;
+  border-left: 4px solid var(--color-high-imp);
+  padding: 14px 16px;
+}
+.article-card-high .title {
+  font-weight: 600;
+  font-size: 14px;
+}
+.article-card-medium {
+  border-left: 3px solid rgba(245, 158, 11, 0.5);
+  padding: 12px 16px;
+}
+.article-card-medium .title {
+  font-weight: 500;
+  font-size: 13px;
+}
+.article-card-low {
+  border-left: none;
+  padding: 10px 16px;
+  opacity: 0.7;
+}
+.article-card-low:hover {
+  opacity: 1;
+}
+.article-card-low .title {
+  font-weight: 400;
+  font-size: 13px;
+}
+
 /* ── Mobile overlay ───────────── */
 .sidebar-overlay {
   position: fixed;
@@ -142,7 +179,15 @@ body {
   pointer-events: auto;
 }
 
-/* ── Header search glow ───────────── */
+/* ── Header search ───────────── */
 .search-input:focus {
-  box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.4), 0 0 20px rgba(99, 102, 241, 0.1);
+  box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.4), 0 0 20px rgba(99, 102, 241, 0.12);
+}
+
+/* ── Drag handle cursor ───────────── */
+.drag-handle {
+  cursor: grab;
+}
+.drag-handle:active {
+  cursor: grabbing;
 }
