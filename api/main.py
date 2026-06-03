@@ -13,6 +13,7 @@ from fastapi.staticfiles import StaticFiles
 
 from api.routes.content import router as content_router
 from api.routes.auth import router as auth_router
+from api.routes.chat import router as chat_router
 
 app = FastAPI(
     title="AI Industry Digest API",
@@ -64,6 +65,7 @@ async def rate_limit_middleware(request: Request, call_next):
 # 注册路由
 app.include_router(content_router, prefix="/api")
 app.include_router(auth_router, prefix="/api/auth")
+app.include_router(chat_router, prefix="/api")
 
 # 静态文件托管（测试前端）
 test_dir = Path(__file__).resolve().parent.parent / "test"

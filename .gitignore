@@ -20,3 +20,7 @@ venv/
 # 临时文件
 *.log
 backup_*.json
+
+# 前端
+frontend/dist/
+frontend/node_modules/
