@@ -6,40 +6,16 @@ sources:
   # 学术论文（最稳定）
   # ============================================
 
-  - name: "arXiv cs.AI"
-    id: "arxiv_ai"
+  - name: "arXiv (AI+LG+CL)"
+    id: "arxiv_all"
     priority: 1
     enabled: true
     collectors:
       - type: api
         api_type: arxiv
         params:
-          category: "cs.AI"
-          max_results: 30
-        timeout: 60
-
-  - name: "arXiv cs.LG"
-    id: "arxiv_lg"
-    priority: 1
-    enabled: true
-    collectors:
-      - type: api
-        api_type: arxiv
-        params:
-          category: "cs.LG"
-          max_results: 20
-        timeout: 60
-
-  - name: "arXiv cs.CL"
-    id: "arxiv_cl"
-    priority: 2
-    enabled: true
-    collectors:
-      - type: api
-        api_type: arxiv
-        params:
-          category: "cs.CL"
-          max_results: 20
+          category: "cs.AI+OR+cat:cs.LG+OR+cat:cs.CL"
+          max_results: 50
         timeout: 60
 
   # ============================================
