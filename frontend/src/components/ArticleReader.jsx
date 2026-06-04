@@ -4,8 +4,6 @@ import { api } from '../api/client';
 export default function ArticleReader({ articleId, onBack }) {
   const [article, setArticle] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  // Chat state
   const [messages, setMessages] = useState([]);
   const [chatInput, setChatInput] = useState('');
   const [sessionId, setSessionId] = useState(null);
@@ -18,19 +16,13 @@ export default function ArticleReader({ articleId, onBack }) {
     setLoading(true);
     setMessages([]);
     setSessionId(null);
-
-    api.getArticle(articleId)
-      .then((data) => {
-        setArticle(data);
-        api.addHistory(articleId).catch(() => {});
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    api.getArticle(articleId).then((data) => {
+      setArticle(data);
+      api.addHistory(articleId).catch(() => {});
+    }).catch(() => {}).finally(() => setLoading(false));
   }, [articleId]);
 
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
   const handleChat = async (e) => {
     e.preventDefault();
@@ -45,156 +37,111 @@ export default function ArticleReader({ articleId, onBack }) {
       setMessages((prev) => [...prev, { role: 'assistant', content: res.reply }]);
     } catch (err) {
       setMessages((prev) => [...prev, { role: 'assistant', content: `❌ ${err.message}` }]);
-    } finally {
-      setChatLoading(false);
-    }
+    } finally { setChatLoading(false); }
   };
 
-  // Strip HTML tags for clean display, keep paragraphs
   const stripHtml = (html) => {
     if (!html) return '';
-    // Replace common block tags with newlines
-    let text = html
-      .replace(/<br\s*\/?>/gi, '\n')
-      .replace(/<\/p>/gi, '\n\n')
-      .replace(/<\/div>/gi, '\n')
-      .replace(/<\/li>/gi, '\n')
-      .replace(/<[^>]+>/g, '')
-      .replace(/&nbsp;/g, ' ')
-      .replace(/&amp;/g, '&')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&quot;/g, '"')
-      .replace(/&#39;/g, "'");
-    // Collapse multiple newlines
-    text = text.replace(/\n{3,}/g, '\n\n');
-    return text.trim();
+    return html.replace(/<br\s*\/?>/gi, '\n').replace(/<\/p>/gi, '\n\n').replace(/<\/div>/gi, '\n').replace(/<\/li>/gi, '\n')
+      .replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/\n{3,}/g, '\n\n').trim();
   };
 
   return (
-    <div className="h-full flex flex-col animate-fade-in" style={{ background: '#0F1020' }}>
+    <div className="h-full flex flex-col animate-fade-in" style={{ background: '#FBFCFD' }}>
       {/* Top bar */}
-      <div className="flex items-center gap-3 px-4 lg:px-5 py-2.5 flex-shrink-0" style={{ background: '#1A1B33', borderBottom: '1px solid #2E2F4F' }}>
-        <button onClick={onBack}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg transition-all hover:brightness-110"
-          style={{ background: '#22233D', border: '1px solid #2E2F4F', color: '#9197C2' }}>
-          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <div className="flex items-center gap-3 px-4 lg:px-5 py-2.5 flex-shrink-0" style={{ borderBottom: '1px solid #E8EAED', background: '#fff' }}>
+        <button onClick={onBack} className="flex items-center gap-1 px-2.5 py-1 text-xs rounded transition-all" style={{ background: '#F0F1F2', color: '#686C72' }}>
+          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
           </svg>
-          返回列表
+          返回
         </button>
-        <span className="text-sm font-medium truncate flex-1" style={{ color: '#E2E6F9' }}>
+        <span className="text-sm font-medium truncate flex-1" style={{ color: '#1A1C1E' }}>
           {loading ? '加载中...' : article?.title}
         </span>
-        <span className="text-xs flex-shrink-0" style={{ color: '#6E739C' }}>{article?.source_name}</span>
+        <span className="text-xs flex-shrink-0" style={{ color: '#8C9096' }}>{article?.source_name}</span>
       </div>
 
       {loading ? (
-        <div className="flex-1 flex items-center justify-center text-sm" style={{ color: '#6E739C' }}>加载中...</div>
+        <div className="flex-1 flex items-center justify-center text-sm" style={{ color: '#8C9096' }}>加载中...</div>
       ) : article ? (
         <div className="flex-1 flex overflow-hidden">
-          {/* ── Left: Original Content ─────────── */}
-          <div className="flex-1 min-w-0 overflow-y-auto" style={{ borderRight: '1px solid #2E2F4F', background: '#13152A' }}>
+          {/* Left: Original */}
+          <div className="flex-1 min-w-0 overflow-y-auto" style={{ borderRight: '1px solid #E8EAED', background: '#fff' }}>
             <div className="p-5 lg:p-8 max-w-3xl mx-auto">
-              <h2 className="font-heading font-bold text-xl lg:text-2xl mb-3" style={{ color: '#E2E6F9', lineHeight: 1.4 }}>
+              <h2 style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '22px', fontWeight: 700, color: '#1A1C1E', lineHeight: 1.35, marginBottom: '12px' }}>
                 {article.title}
               </h2>
-              <div className="flex items-center gap-3 text-sm mb-6" style={{ color: '#9197C2' }}>
-                <span>{article.source_name}</span>
-                <span>·</span>
-                <span>{article.published_at?.slice(0, 10)}</span>
+              <div className="flex items-center gap-3 mb-6" style={{ color: '#686C72', fontSize: '13px' }}>
+                <span>{article.source_name}</span><span>·</span><span>{article.published_at?.slice(0, 10)}</span>
                 {article.url && (
-                  <a href={article.url} target="_blank" rel="noreferrer" className="ml-auto text-xs transition-all hover:brightness-110" style={{ color: '#6395FF' }}>
-                    在新窗口阅读原文 ↗
-                  </a>
+                  <a href={article.url} target="_blank" rel="noreferrer" className="ml-auto text-xs" style={{ color: '#2864A8' }}>在新窗口阅读 ↗</a>
                 )}
               </div>
-              <div className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: '#C8CCE6', lineHeight: '1.8', fontSize: '15px' }}>
+              <div className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: '#2C2E32', lineHeight: '1.8', fontSize: '15px' }}>
                 {stripHtml(article.raw_content) || '暂无原文内容'}
               </div>
             </div>
           </div>
 
-          {/* ── Right: AI Summary + Chat ─────────── */}
-          <div className="w-[400px] xl:w-[480px] flex-shrink-0 flex flex-col" style={{ background: '#1A1B33' }}>
-            {/* AI Summary — 60% */}
-            <div className="flex-[3] min-h-0 overflow-y-auto p-5" style={{ borderBottom: '1px solid #2E2F4F' }}>
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="font-heading font-semibold text-xs uppercase tracking-wider flex items-center gap-2" style={{ color: '#6395FF' }}>
-                  <span className="w-1 h-4 rounded-full" style={{ background: '#6395FF' }} />
-                  AI 精读
-                </h3>
-                {article.url && (
-                  <a href={article.url} target="_blank" rel="noreferrer" className="text-xs transition-all hover:brightness-110" style={{ color: '#6395FF' }}>
-                    原文 ↗
-                  </a>
-                )}
-              </div>
-              <div className="rounded-xl p-4 text-sm leading-relaxed" style={{ background: '#22233D', color: '#E2E6F9' }}>
+          {/* Right: AI */}
+          <div className="w-[380px] xl:w-[420px] flex-shrink-0 flex flex-col" style={{ background: '#F6F7F8' }}>
+            <div className="flex-[3] min-h-0 overflow-y-auto p-5" style={{ borderBottom: '1px solid #E8EAED' }}>
+              <h3 className="font-semibold text-xs uppercase tracking-wider mb-3" style={{ color: '#686C72' }}>AI 精读</h3>
+              <div className="text-sm leading-relaxed" style={{ color: '#2C2E32', background: '#fff', padding: '14px', borderRadius: '4px' }}>
                 {article.summary || '暂无摘要'}
               </div>
-              {article.importance_reason && (
-                <div className="mt-2 text-xs italic" style={{ color: '#6E739C' }}>💬 {article.importance_reason}</div>
-              )}
+              {article.importance_reason && <div className="mt-2 text-xs italic" style={{ color: '#8C9096' }}>{article.importance_reason}</div>}
               {article.tags?.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 mt-3">
                   {article.tags.map((t) => (
-                    <span key={t} className="px-2 py-0.5 text-xs rounded-full" style={{ background: 'rgba(99,149,255,0.1)', color: '#6395FF', border: '1px solid rgba(99,149,255,0.2)' }}>{t}</span>
+                    <span key={t} className="px-2 py-0.5 text-xs rounded" style={{ background: '#E8EAED', color: '#686C72' }}>{t}</span>
                   ))}
                 </div>
               )}
             </div>
-
-            {/* AI Chat — 40% */}
             <div className="flex-[2] flex flex-col min-h-0">
               <div className="px-5 pt-3 pb-1">
-                <h3 className="font-heading font-semibold text-xs uppercase tracking-wider flex items-center gap-2" style={{ color: '#9197C2' }}>
-                  <span className="w-1 h-4 rounded-full" style={{ background: '#9197C2' }} />
-                  深入对话
-                </h3>
+                <h3 className="font-semibold text-xs uppercase tracking-wider" style={{ color: '#8C9096' }}>深入对话</h3>
               </div>
-              <div className="flex-1 overflow-y-auto px-5 pb-2 space-y-3">
+              <div className="flex-1 overflow-y-auto px-5 pb-2 space-y-2.5">
                 {messages.length === 0 && (
-                  <div className="text-center py-6">
-                    <p className="text-xs mb-3" style={{ color: '#6E739C' }}>问关于这篇文章的问题</p>
-                    <div className="flex flex-wrap gap-2 justify-center">
+                  <div className="text-center py-4">
+                    <p className="text-xs mb-2" style={{ color: '#8C9096' }}>问关于这篇文章的问题</p>
+                    <div className="flex flex-wrap gap-1.5 justify-center">
                       {['总结核心观点', '有哪些技术细节？', '有什么争议？'].map((q) => (
                         <button key={q} onClick={() => { setChatInput(q); setTimeout(() => chatInputRef.current?.focus(), 100); }}
-                          className="px-3 py-1.5 text-xs rounded-lg transition-all hover:brightness-110"
-                          style={{ background: '#23243E', color: '#9197C2', border: '1px solid #2E2F4F' }}>{q}</button>
+                          className="px-2.5 py-1 text-[10px] rounded" style={{ background: '#E8EAED', color: '#686C72' }}>{q}</button>
                       ))}
                     </div>
                   </div>
                 )}
                 {messages.map((msg, i) => (
                   <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[90%] px-3.5 py-2.5 rounded-xl text-sm leading-relaxed ${
-                      msg.role === 'user' ? 'text-white' : ''
-                    }`} style={msg.role === 'user' ? { background: '#6395FF' } : { background: '#22233D', color: '#E2E6F9' }}>
+                    <div className={`max-w-[90%] px-3 py-2 text-xs leading-relaxed rounded ${msg.role === 'user' ? 'text-white' : ''}`}
+                      style={msg.role === 'user' ? { background: '#1A1C1E' } : { background: '#fff', color: '#2C2E32' }}>
                       {msg.content}
                     </div>
                   </div>
                 ))}
                 {chatLoading && (
                   <div className="flex justify-start">
-                    <div className="rounded-xl px-4 py-3 flex gap-1" style={{ background: '#22233D' }}>
-                      <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: '#6E739C', animationDelay: '0ms' }} />
-                      <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: '#6E739C', animationDelay: '150ms' }} />
-                      <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: '#6E739C', animationDelay: '300ms' }} />
+                    <div className="px-3 py-2 rounded flex gap-1" style={{ background: '#fff' }}>
+                      <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: '#8C9096', animationDelay: '0ms' }} />
+                      <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: '#8C9096', animationDelay: '150ms' }} />
+                      <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: '#8C9096', animationDelay: '300ms' }} />
                     </div>
                   </div>
                 )}
                 <div ref={chatEndRef} />
               </div>
-              <div className="p-4" style={{ borderTop: '1px solid #2E2F4F' }}>
+              <div className="p-4" style={{ borderTop: '1px solid #E8EAED' }}>
                 <form onSubmit={handleChat} className="flex gap-2">
                   <input ref={chatInputRef} type="text" value={chatInput} onChange={(e) => setChatInput(e.target.value)}
-                    placeholder="输入问题..."
-                    className="flex-1 px-3 py-2 rounded-xl text-sm transition-all"
-                    style={{ background: '#16172D', border: '1px solid #2E2F4F', color: '#E2E6F9' }} />
+                    placeholder="输入问题..." className="flex-1 px-2.5 py-1.5 text-xs rounded" style={{ background: '#fff', border: '1px solid #E8EAED', color: '#2C2E32' }} />
                   <button type="submit" disabled={chatLoading || !chatInput.trim()}
-                    className="px-4 py-2 rounded-xl text-sm disabled:opacity-40 transition-all hover:brightness-110"
-                    style={{ background: '#6395FF', color: '#fff' }}>
+                    className="px-3 py-1.5 text-xs rounded disabled:opacity-40" style={{ background: '#1A1C1E', color: '#fff' }}>
                     发送
                   </button>
                 </form>
@@ -203,7 +150,7 @@ export default function ArticleReader({ articleId, onBack }) {
           </div>
         </div>
       ) : (
-        <div className="flex-1 flex items-center justify-center text-sm" style={{ color: '#6E739C' }}>加载失败</div>
+        <div className="flex-1 flex items-center justify-center text-sm" style={{ color: '#8C9096' }}>加载失败</div>
       )}
     </div>
   );

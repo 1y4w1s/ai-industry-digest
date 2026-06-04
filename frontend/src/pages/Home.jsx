@@ -15,7 +15,6 @@ export default function Home({ onReadArticle, readerArticle }) {
   const [total, setTotal] = useState(0);
   const [sidePanelOpen, setSidePanelOpen] = useState(true);
 
-  const [keyword, setKeyword] = useState(searchParams.get('q') || '');
   const [importance, setImportance] = useState('');
   const [source, setSource] = useState('');
   const [tag, setTag] = useState('');
@@ -28,11 +27,6 @@ export default function Home({ onReadArticle, readerArticle }) {
     api.getSources().then((d) => setSources(d.sources || [])).catch(() => {});
     api.getTags().then((d) => setTags(d.tags || [])).catch(() => {});
   }, []);
-
-  useEffect(() => {
-    const q = searchParams.get('q');
-    if (q) { setKeyword(q); doSearch(q, '', '', '', 1); }
-  }, [searchParams]);
 
   useEffect(() => {
     if (searching) return;
@@ -60,12 +54,12 @@ export default function Home({ onReadArticle, readerArticle }) {
   };
 
   const handleClearSearch = () => {
-    setKeyword(''); setImportance(''); setSource(''); setTag('');
+    setImportance(''); setSource(''); setTag('');
     setSearching(false); setSearchResults(null);
   };
 
   const handleQuickFilter = (imp, src, tg) => {
-    if (imp || src || tg) doSearch(keyword || '', imp, src, tg, 1);
+    if (imp || src || tg) doSearch('', imp, src, tg, 1);
     else { setSearching(false); setSearchResults(null); }
   };
 
@@ -73,10 +67,6 @@ export default function Home({ onReadArticle, readerArticle }) {
   const isFilterActive = searching || activeFilterCount > 0;
 
   const handleAskAI = (question) => {
-    // Find the AI chat bubble button and click it, then set the input
-    const aiBubble = document.querySelector('[data-ai-trigger]');
-    if (aiBubble) aiBubble.click();
-    // Dispatch custom event with the question
     window.dispatchEvent(new CustomEvent('ai-ask', { detail: { question } }));
   };
 
@@ -95,144 +85,141 @@ export default function Home({ onReadArticle, readerArticle }) {
     groups[src].push(a);
   }
 
-  const topArticles = articles.filter((a) => a._imp === 'high').slice(0, 5);
+  const highArticles = articles.filter((a) => a._imp === 'high');
+  const heroArticle = highArticles[0];
   const displayReporting = !searching && report;
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
-      {/* ═══ Unified Filter Bar ═══ */}
-      <div className="flex-shrink-0" style={{ 
-        background: 'linear-gradient(180deg, #1A1B33 0%, #13152A 100%)',
-        borderBottom: '1px solid #2E2F4F',
-        padding: '8px 16px'
-      }}>
-        <div className="flex items-center gap-2.5 flex-wrap">
-          {/* Importance pills */}
-          <div className="flex items-center gap-1.5">
+    <div className="h-full flex flex-col overflow-hidden" style={{ background: '#FBFCFD' }}>
+      {/* ═══ Filter Bar ═══ */}
+      <div className="flex-shrink-0" style={{ background: '#F6F7F8', borderBottom: '1px solid #E8EAED', padding: '6px 16px' }}>
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Importance pills — gray scale */}
+          <div className="flex items-center gap-1">
             {[
-              { key: 'high', label: '高', color: '#F27070', bg: 'rgba(242,112,112,0.12)' },
-              { key: 'medium', label: '中', color: '#D4A44A', bg: 'rgba(212,164,74,0.12)' },
-              { key: 'low', label: '低', color: '#6E739C', bg: 'rgba(110,115,156,0.12)' },
+              { key: 'high', label: '高', color: '#D4322E' },
+              { key: 'medium', label: '中', color: '#C8960A' },
+              { key: 'low', label: '低', color: '#8C9096' },
             ].map((opt) => (
-              <button
-                key={opt.key}
-                onClick={() => {
-                  const next = importance === opt.key ? '' : opt.key;
-                  setImportance(next);
-                  if (keyword.trim() || next || source || tag) {
-                    doSearch(keyword, next, source, tag, 1);
-                  } else { setSearching(false); setSearchResults(null); }
-                }}
-                className="text-xs font-medium rounded-full px-3 py-[5px] transition-all cursor-pointer"
-                style={{
-                  background: importance === opt.key ? opt.bg : 'transparent',
-                  color: importance === opt.key ? opt.color : '#6E739C',
-                  border: importance === opt.key ? `1px solid ${opt.color}40` : '1px solid transparent',
-                }}
-              >
-                <span className="inline-block w-1.5 h-1.5 rounded-full mr-1.5" style={{ background: opt.color }} />
+              <button key={opt.key} onClick={() => {
+                const next = importance === opt.key ? '' : opt.key;
+                setImportance(next);
+                if (next || source || tag) doSearch('', next, source, tag, 1);
+                else { setSearching(false); setSearchResults(null); }
+              }} className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] rounded transition-all"
+                style={{ background: importance === opt.key ? '#D8DCE0' : 'transparent', color: importance === opt.key ? '#1A1C1E' : '#686C72' }}>
+                <span className="w-1.5 h-1.5 rounded-full" style={{ background: opt.color }} />
                 {opt.label}
               </button>
             ))}
           </div>
 
-          {/* Source dropdown */}
+          {/* Source/Tag dropdowns */}
           <select value={source} onChange={(e) => { setSource(e.target.value); handleQuickFilter(importance, e.target.value, tag); }}
-            className="h-[30px] px-2.5 text-xs rounded-[6px] cursor-pointer focus:outline-none transition-all"
-            style={{ background: '#1A1B33', border: '1px solid #2E2F4F', color: source ? '#E2E6F9' : '#6E739C', maxWidth: '100px' }}>
+            className="text-[11px] px-2 py-1 rounded cursor-pointer" style={{ background: '#EDEEF0', border: '1px solid #E8EAED', color: source ? '#1A1C1E' : '#8C9096' }}>
             <option value="">来源</option>
-            {sources.map((s) => <option key={s} value={s} style={{ background: '#1A1B33' }}>{s}</option>)}
+            {sources.map((s) => <option key={s} value={s}>{s}</option>)}
           </select>
-
-          {/* Tag dropdown */}
           <select value={tag} onChange={(e) => { setTag(e.target.value); handleQuickFilter(importance, source, e.target.value); }}
-            className="h-[30px] px-2.5 text-xs rounded-[6px] cursor-pointer focus:outline-none transition-all"
-            style={{ background: '#1A1B33', border: '1px solid #2E2F4F', color: tag ? '#E2E6F9' : '#6E739C', maxWidth: '100px' }}>
+            className="text-[11px] px-2 py-1 rounded cursor-pointer" style={{ background: '#EDEEF0', border: '1px solid #E8EAED', color: tag ? '#1A1C1E' : '#8C9096' }}>
             <option value="">标签</option>
-            {tags.map((t) => <option key={t} value={t} style={{ background: '#1A1B33' }}>{t}</option>)}
+            {tags.map((t) => <option key={t} value={t}>{t}</option>)}
           </select>
 
-          {/* Filter status + clear */}
+          {/* Filter status */}
           {isFilterActive && (
             <div className="flex items-center gap-2 ml-1">
-              <span className="text-[11px] whitespace-nowrap" style={{ color: '#6395FF' }}>
+              <span className="text-[11px]" style={{ color: '#686C72' }}>
                 {searching ? `${searchResults?.total || 0} 条结果` : `${activeFilterCount} 个筛选中`}
               </span>
-              <button onClick={handleClearSearch} className="text-[11px] transition-all hover:brightness-110 whitespace-nowrap" style={{ color: '#6E739C' }}>
-                清除
-              </button>
+              <button onClick={handleClearSearch} className="text-[11px]" style={{ color: '#8C9096' }}>清除</button>
             </div>
           )}
 
-          {/* Side panel toggle (tablet) */}
+          {/* Side panel toggle */}
           <button onClick={() => setSidePanelOpen(!sidePanelOpen)}
-            className="hidden lg:flex xl:hidden ml-auto h-[30px] px-2 text-xs rounded-[6px] items-center gap-1 transition-all cursor-pointer"
-            style={{ background: '#1A1B33', border: '1px solid #2E2F4F', color: '#9197C2' }}>
+            className="hidden lg:flex xl:hidden ml-auto items-center gap-1 px-2 py-1 text-[11px] rounded cursor-pointer" style={{ background: '#EDEEF0', border: '1px solid #E8EAED', color: '#686C72' }}>
             <span className={sidePanelOpen ? 'rotate-180' : ''} style={{ display: 'inline-block', transition: 'transform 0.2s' }}>◀</span>
           </button>
         </div>
       </div>
 
       {/* ═══ Three-column Content ═══ */}
-      <div className="flex-1 flex overflow-hidden" style={{ background: '#13152A' }}>
-        {/* Main content area */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Main content */}
         <div className="flex-1 min-w-0 overflow-y-auto">
-          <div className="px-5" style={{ paddingTop: '20px', paddingBottom: '32px' }}>
-            {/* Date chips */}
+          <div className="px-5 lg:px-6" style={{ paddingTop: '20px', paddingBottom: '32px' }}>
+            {/* Date nav + inline stats */}
             {!searching && reports.length > 0 && (
-              <div className="flex gap-[10px] mb-5 overflow-x-auto pb-1">
-                {reports.map((r) => (
-                  <button key={r.report_date} onClick={() => { setSelectedDate(r.report_date); setPage(1); }}
-                    className="flex-shrink-0 px-4 py-[6px] rounded-md text-xs font-medium transition-all hover:border-accent/50"
-                    style={{
-                      background: selectedDate === r.report_date ? '#202A4F' : '#1A1B33',
-                      color: selectedDate === r.report_date ? '#E2E6F9' : '#9197C2',
-                      border: selectedDate === r.report_date ? '1px solid transparent' : '1px solid #2E2F4F',
-                    }}>
-                    <span className="opacity-70">{formatDateShort(r.report_date)}</span>
-                    <span className="ml-1.5 font-semibold">{r.report_date}</span>
-                  </button>
-                ))}
+              <div className="flex items-center gap-4 mb-5 flex-wrap">
+                <h1 style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '20px', fontWeight: 700, color: '#1A1C1E' }}>
+                  每日简报
+                </h1>
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                  {reports.map((r) => (
+                    <button key={r.report_date} onClick={() => { setSelectedDate(r.report_date); setPage(1); }}
+                      className="flex-shrink-0 px-3 py-1 text-xs font-medium rounded transition-all"
+                      style={{ background: selectedDate === r.report_date ? '#D8DCE0' : '#F0F1F2', color: selectedDate === r.report_date ? '#1A1C1E' : '#686C72' }}>
+                      {formatDateShort(r.report_date)} <span className="font-semibold">{r.report_date}</span>
+                    </button>
+                  ))}
+                </div>
+                {/* Inline stats */}
+                {displayReporting && (
+                  <div className="flex items-center gap-3 text-xs ml-auto" style={{ color: '#686C72' }}>
+                    <span>📰 {articles.length} 篇</span>
+                    <span>📡 {Object.keys(groups).length} 个来源</span>
+                    <span>🔥 {highArticles.length} 篇高重要性</span>
+                  </div>
+                )}
               </div>
             )}
 
             {searching && (
-              <div className="text-xs mb-4" style={{ color: '#9197C2' }}>
+              <div className="text-xs mb-4" style={{ color: '#686C72' }}>
                 {searchResults ? `搜索到 ${searchResults.total} 条结果` : '搜索中...'}
                 <span className="mx-2">·</span>
-                <button onClick={handleClearSearch} className="hover:underline" style={{ color: '#6395FF' }}>返回日报</button>
+                <button onClick={handleClearSearch} style={{ color: '#2864A8' }}>返回日报</button>
               </div>
             )}
 
             {detailLoading ? (
-              <div className="text-center py-16 text-sm" style={{ color: '#6E739C' }}>加载中...</div>
+              <div className="text-center py-16 text-sm" style={{ color: '#8C9096' }}>加载中...</div>
             ) : displayReporting ? (
               <>
-                {/* Bento Stats */}
-                <div className="grid grid-cols-3 gap-4 mb-5">
-                  {[
-                    { label: '文章总数', value: articles.length, icon: '📰', color: '#6395FF' },
-                    { label: '信息源', value: Object.keys(groups).length, icon: '📡', color: '#39C488' },
-                    { label: '高重要性', value: articles.filter((a) => a._imp === 'high').length, icon: '🔥', color: '#F27070' },
-                  ].map((s) => (
-                    <div key={s.label} className="stat-card text-center rounded-xl" style={{ background: '#16172D', padding: '22px 12px' }}>
-                      <div className="text-lg mb-1">{s.icon}</div>
-                      <div className="font-heading font-bold" style={{ fontSize: '28px', color: s.color, lineHeight: 1.2 }}>{s.value}</div>
-                      <div className="text-xs mt-1" style={{ color: '#9197C2' }}>{s.label}</div>
-                    </div>
-                  ))}
-                </div>
-
                 {/* Overview */}
                 {report.summary_insight && (
-                  <div className="mb-5 p-4 rounded-xl" style={{ background: '#1A1B33', border: '1px solid #2E2F4F' }}>
-                    <div className="text-sm leading-relaxed" style={{ color: '#E2E6F9', borderLeft: '3px solid #6395FF', paddingLeft: '14px' }}>
+                  <div className="mb-5 p-4" style={{ background: '#F6F7F8', borderRadius: '4px' }}>
+                    <div className="text-sm leading-relaxed" style={{ color: '#2C2E32', borderLeft: '3px solid #1A1C1E', paddingLeft: '14px' }}>
                       {report.summary_insight}
                     </div>
                     {report.trending_keywords?.length > 0 && (
                       <div className="flex flex-wrap gap-1.5 mt-3">
                         {report.trending_keywords.map((k) => (
-                          <span key={k} className="px-2.5 py-0.5 text-xs rounded-full" style={{ background: 'rgba(99,149,255,0.08)', color: '#6395FF', border: '1px solid rgba(99,149,255,0.15)' }}>{k}</span>
+                          <span key={k} className="px-2 py-0.5 text-xs rounded" style={{ background: '#E8EAED', color: '#686C72' }}>{k}</span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Hero article */}
+                {heroArticle && (
+                  <div className="hero-card mb-5" onClick={() => onReadArticle(heroArticle.id)}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: '#D4322E' }}>头条</span>
+                      <span className="text-[10px]" style={{ color: '#8C9096' }}>{heroArticle.source_name} · {heroArticle.published_at?.slice(0, 10)}</span>
+                    </div>
+                    <h2 style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '18px', fontWeight: 700, color: '#1A1C1E', lineHeight: 1.35, marginBottom: '8px' }}>
+                      {heroArticle.title}
+                    </h2>
+                    {heroArticle.summary && (
+                      <p className="text-sm leading-relaxed line-clamp-2" style={{ color: '#2C2E32' }}>{heroArticle.summary}</p>
+                    )}
+                    {heroArticle.tags?.length > 0 && (
+                      <div className="flex gap-1.5 mt-2">
+                        {heroArticle.tags.map((t) => (
+                          <span key={t} className="px-2 py-0.5 text-[10px] rounded" style={{ background: '#E8EAED', color: '#686C72' }}>{t}</span>
                         ))}
                       </div>
                     )}
@@ -241,78 +228,75 @@ export default function Home({ onReadArticle, readerArticle }) {
 
                 {/* Source groups */}
                 {Object.entries(groups).sort(([,a],[,b]) => b.filter(x=>x._imp==='high').length - a.filter(x=>x._imp==='high').length).map(([src, arts]) => (
-                  <div key={src} className="mb-5">
-                    <div className="flex items-center pb-3 mb-3" style={{ borderBottom: '1px solid #2E2F4F', marginTop: '24px' }}>
-                      <span className="font-heading font-semibold text-sm" style={{ color: '#E2E6F9' }}>{src}</span>
-                      <span className="text-xs ml-auto" style={{ color: '#6E739C' }}>{arts.length} 篇</span>
+                  <div key={src} style={{ marginTop: '24px' }}>
+                    <div className="flex items-center pb-1.5 mb-1" style={{ borderBottom: '1px solid #E8EAED' }}>
+                      <span style={{ fontSize: '13px', fontWeight: 600, color: '#1A1C1E' }}>{src}</span>
+                      <span className="text-xs ml-auto" style={{ color: '#8C9096' }}>{arts.length} 篇</span>
                     </div>
-                    <div className="space-y-2">
-                      {arts.sort((a, b) => ({high:0,medium:1,low:2}[a._imp]||2) - ({high:0,medium:1,low:2}[b._imp]||2)).map((a) => (
-                        <div key={a.id || a.url} onClick={() => onReadArticle(a.id)}
-                          className={`article-card ${a._imp === 'high' ? 'article-card-high' : a._imp === 'medium' ? 'article-card-medium' : 'article-card-low'}`}>
-                          <div className="title">{a.title}</div>
-                          <div className="flex items-center gap-2 mt-1 text-xs" style={{ color: '#9197C2' }}>
+                    {arts.sort((a, b) => ({high:0,medium:1,low:2}[a._imp]||2) - ({high:0,medium:1,low:2}[b._imp]||2)).map((a) => (
+                      <div key={a.id || a.url} onClick={() => onReadArticle(a.id)}
+                        className="article-item flex items-start gap-2" style={{ padding: '6px 0' }}>
+                        <div className={`flex-1 min-w-0 ${a._imp === 'high' ? 'imp-high' : a._imp === 'medium' ? 'imp-medium' : 'imp-low'}`}>
+                          <span className="text-sm leading-relaxed" style={{ color: '#1A1C1E', fontWeight: a._imp === 'high' ? 500 : 400 }}>
+                            {a.title}
+                          </span>
+                          <div className="flex items-center gap-2 mt-0.5" style={{ color: '#8C9096', fontSize: '11px' }}>
                             <span>{a.source_name}</span>
                             {a.published_at && <span>· {a.published_at.slice(0, 10)}</span>}
                           </div>
                         </div>
-                      ))}
-                    </div>
+                      </div>
+                    ))}
                   </div>
                 ))}
-                {articles.length === 0 && <div className="text-center py-16 text-sm" style={{ color: '#6E739C' }}>暂无内容</div>}
+                {articles.length === 0 && <div className="text-center py-16 text-sm" style={{ color: '#8C9096' }}>暂无内容</div>}
               </>
             ) : searching && searchResults ? (
-              <div className="space-y-2">
+              <div className="space-y-1">
                 {searchResults.items.map((a) => (
                   <div key={a.id || a.url} onClick={() => onReadArticle(a.id)}
-                    className="article-card" style={{ borderLeft: '3px solid ' + (a.importance === 'high' ? '#F27070' : a.importance === 'medium' ? 'rgba(212,164,74,0.5)' : 'transparent') }}>
-                    <div className="title">{a.title}</div>
-                    <div className="flex items-center gap-2 mt-1 text-xs" style={{ color: '#9197C2' }}>
-                      <span>{a.source_name}</span>
-                      {a.published_at && <span>· {a.published_at.slice(0, 10)}</span>}
+                    className="article-item" style={{ padding: '6px 0' }}>
+                    <div className={`${a.importance === 'high' ? 'imp-high' : a.importance === 'medium' ? 'imp-medium' : 'imp-low'}`}>
+                      <span className="text-sm" style={{ color: '#1A1C1E' }}>{a.title}</span>
+                      <div className="flex items-center gap-2 mt-0.5 text-xs" style={{ color: '#8C9096' }}>
+                        <span>{a.source_name}</span>
+                        {a.published_at && <span>· {a.published_at.slice(0, 10)}</span>}
+                      </div>
+                      {a.summary && <p className="text-xs mt-1 line-clamp-2" style={{ color: '#686C72' }}>{a.summary}</p>}
                     </div>
-                    {a.summary && <p className="text-xs mt-1.5 line-clamp-2" style={{ color: '#6E739C' }}>{a.summary}</p>}
                   </div>
                 ))}
-                {searchResults.items.length === 0 && <div className="text-center py-16 text-sm" style={{ color: '#6E739C' }}>未找到相关文章</div>}
+                {searchResults.items.length === 0 && <div className="text-center py-16 text-sm" style={{ color: '#8C9096' }}>未找到相关文章</div>}
               </div>
             ) : (
-              <div className="text-center py-16 text-sm" style={{ color: '#6E739C' }}>暂无数据</div>
+              <div className="text-center py-16 text-sm" style={{ color: '#8C9096' }}>暂无数据</div>
             )}
 
             {/* Pagination */}
             {searching && searchResults?.pages > 1 && (
-              <div className="flex justify-center gap-2 mt-6">
-                <button disabled={page <= 1} onClick={() => doSearch(keyword, importance, source, tag, page - 1)}
-                  className="px-3 py-1.5 rounded-lg text-xs transition-all disabled:opacity-40" style={{ background: '#22233D', border: '1px solid #2E2F4F', color: '#9197C2' }}>←</button>
+              <div className="flex justify-center gap-1 mt-6">
+                <button disabled={page <= 1} onClick={() => doSearch('', importance, source, tag, page - 1)}
+                  className="px-2.5 py-1 text-xs rounded disabled:opacity-40" style={{ background: '#F0F1F2', color: '#686C72' }}>←</button>
                 {Array.from({ length: Math.min(searchResults.pages, 5) }, (_, i) => {
                   const p = Math.max(1, page - 2) + i;
                   if (p > searchResults.pages) return null;
-                  return <button key={p} onClick={() => doSearch(keyword, importance, source, tag, p)}
-                    className="px-3 py-1.5 rounded-lg text-xs transition-all"
-                    style={p === page ? { background: '#6395FF', color: '#fff' } : { background: '#22233D', border: '1px solid #2E2F4F', color: '#9197C2' }}>{p}</button>;
+                  return <button key={p} onClick={() => doSearch('', importance, source, tag, p)}
+                    className="px-2.5 py-1 text-xs rounded" style={p === page ? { background: '#1A1C1E', color: '#fff' } : { background: '#F0F1F2', color: '#686C72' }}>{p}</button>;
                 })}
-                <button disabled={page >= searchResults.pages} onClick={() => doSearch(keyword, importance, source, tag, page + 1)}
-                  className="px-3 py-1.5 rounded-lg text-xs transition-all disabled:opacity-40" style={{ background: '#22233D', border: '1px solid #2E2F4F', color: '#9197C2' }}>→</button>
+                <button disabled={page >= searchResults.pages} onClick={() => doSearch('', importance, source, tag, page + 1)}
+                  className="px-2.5 py-1 text-xs rounded disabled:opacity-40" style={{ background: '#F0F1F2', color: '#686C72' }}>→</button>
               </div>
             )}
           </div>
         </div>
 
         {/* ═══ Right Side Panel ═══ */}
-        <div
-          className={`flex-shrink-0 overflow-y-auto transition-all duration-300 ${
-            sidePanelOpen ? 'w-[340px] xl:w-[380px] opacity-100' : 'w-0 opacity-0 overflow-hidden'
-          } ${searching ? 'hidden' : ''}`}
-          style={{ borderLeft: '1px solid #2E2F4F', padding: '20px 16px', background: '#13152A' }}
-        >
+        <div className={`flex-shrink-0 overflow-y-auto transition-all duration-300 ${sidePanelOpen ? 'w-[280px] opacity-100' : 'w-0 opacity-0 overflow-hidden'} ${searching ? 'hidden' : ''}`}
+          style={{ borderLeft: '1px solid #E8EAED', padding: '20px 16px', background: '#FBFCFD' }}>
           <SidePanel
             keywords={report?.trending_keywords || []}
             insight={report?.summary_insight || ''}
-            topArticles={topArticles}
-            allArticles={articles}
-            sources={Object.keys(groups)}
+            topArticles={highArticles}
             onArticleClick={(id) => onReadArticle(id)}
             onAskAI={handleAskAI}
           />
