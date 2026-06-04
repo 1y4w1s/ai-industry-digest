@@ -9,6 +9,7 @@ export default function LoginPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const { login, signup, resetPassword } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -18,6 +19,7 @@ export default function LoginPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
     setLoading(true);
 
     try {
@@ -28,8 +30,9 @@ export default function LoginPage() {
         if (password !== confirmPassword) {
           throw new Error('两次输入的密码不一致');
         }
-        await signup(email, password);
-        navigate('/');
+        const result = await signup(email, password);
+        setSuccess(result.message);
+        setMode('login');
       } else if (mode === 'reset') {
         await resetPassword(email);
         setError('重置链接已发送到您的邮箱');
@@ -70,6 +73,13 @@ export default function LoginPage() {
           </h1>
           <p style={{ fontSize: '14px', color: '#686C72', marginTop: '4px' }}>{getSubtitle()}</p>
         </div>
+
+        {/* Success message */}
+        {success && (
+          <div style={{ padding: '12px 14px', background: '#F0FDF4', borderRadius: '6px', marginBottom: '16px' }}>
+            <p style={{ fontSize: '13px', color: '#16A34A' }}>{success}</p>
+          </div>
+        )}
 
         {/* Error message */}
         {error && (

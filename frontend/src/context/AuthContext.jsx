@@ -37,9 +37,12 @@ export function AuthProvider({ children }) {
         data: {
           nickname: options.nickname || email.split('@')[0],
         },
+        emailRedirectTo: `${window.location.origin}/login`,
       },
     });
     if (error) throw error;
+    
+    return { message: '注册成功！请检查邮箱完成验证' };
   };
 
   const logout = async () => {
