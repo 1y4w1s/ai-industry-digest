@@ -85,7 +85,7 @@ export default function BookmarksPage({ onReadArticle }) {
                 <div key={b.id || b.article_id} className="flex items-start gap-2 group">
                   <div className="flex-1 min-w-0">
                     <ArticleCard
-                      article={{ ...b.article, _imp: b.article?.importance || '' }}
+                      article={{ ...b.articles, _imp: b.articles?.importance || '' }}
                       onSelect={onReadArticle}
                       variant="detailed"
                     />

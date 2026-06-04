@@ -104,7 +104,7 @@ export default function HistoryPage({ onReadArticle }) {
                     {g.items.map((h) => (
                       <ArticleCard
                         key={h.id || h.article_id}
-                        article={{ ...h.article, _imp: h.article?.importance || '' }}
+                        article={{ ...h.articles, _imp: h.articles?.importance || '' }}
                         onSelect={onReadArticle}
                         variant="detailed"
                       />
