@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
 import { api } from '../api/client';
-import dompdf from 'dompdf.js';
 
 export default function ArticleReader({ articleId, onBack }) {
   const [article, setArticle] = useState(null);
@@ -12,7 +11,6 @@ export default function ArticleReader({ articleId, onBack }) {
   const [bookmarkId, setBookmarkId] = useState(null);
   const chatEndRef = useRef(null);
   const chatInputRef = useRef(null);
-  const printContentRef = useRef(null);
 
   const isBookmarked = !!bookmarkId;
 
@@ -52,32 +50,34 @@ export default function ArticleReader({ articleId, onBack }) {
 
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
-  const downloadPDF = async () => {
-    if (!printContentRef.current || !article) return;
-    try {
-      dompdf(printContentRef.current, {
-        useCORS: true,
-        pagination: true,
-        format: 'a4',
-        pageConfig: {
-          footer: {
-            content: '',
-            height: 0,
-          },
-        },
-      }).then((blob) => {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${article.title.slice(0, 30)}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      });
-    } catch (err) {
-      console.error('PDF 生成失败:', err);
-    }
+  const downloadPDF = () => {
+    if (!article) return;
+    const win = window.open('', '_blank');
+    if (!win) return;
+    win.document.write(`<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><title>${article.title}</title>
+<style>
+  @page { margin: 2.5cm 2cm; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Source Serif 4', 'Noto Serif CJK SC', 'STSong', Georgia, serif;
+    color: #1a1a1a; line-height: 1.8; font-size: 12pt; padding: 0;
+  }
+  h1 { font-size: 22pt; font-weight: 700; margin-bottom: 10pt; line-height: 1.35; }
+  .meta { font-size: 10pt; color: #666; margin-bottom: 28pt; }
+  .content { font-size: 11pt; line-height: 1.9; white-space: pre-wrap; }
+</style>
+</head>
+<body>
+  <h1>${article.title}</h1>
+  <p class="meta">${article.source_name}${article.published_at ? ` · ${article.published_at.slice(0, 10)}` : ''}</p>
+  <div class="content">${stripHtml(article.raw_content) || '暂无原文内容'}</div>
+</body>
+</html>`);
+    win.document.close();
+    win.focus();
+    setTimeout(() => { win.print(); }, 300);
   };
 
   const handleChat = async (e) => {
@@ -257,21 +257,6 @@ export default function ArticleReader({ articleId, onBack }) {
                 返回
               </button>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Hidden PDF print content */}
-      {article && (
-        <div ref={printContentRef} foreignObjectRendering style={{ position: 'fixed', top: '-9999px', left: '-9999px', width: '794px', padding: '60px 60px 40px', fontFamily: "'Source Serif 4', Georgia, serif", lineHeight: 1.8, color: '#1a1a1a', background: 'white' }}>
-          <h1 style={{ fontSize: '22pt', fontWeight: 700, fontFamily: "'Source Serif 4', Georgia, serif", marginBottom: '8pt', lineHeight: 1.35 }}>
-            {article.title}
-          </h1>
-          <p style={{ fontSize: '11pt', color: '#666', marginBottom: '20pt' }}>
-            {article.source_name}{article.published_at ? ` · ${article.published_at.slice(0, 10)}` : ''}
-          </p>
-          <div style={{ fontSize: '11pt', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
-            {stripHtml(article.raw_content) || '暂无原文内容'}
           </div>
         </div>
       )}
