@@ -53,37 +53,35 @@ export default function AIRecommendPanel({ keyword }) {
   };
 
   return (
-    <div className="h-full flex flex-col" style={{ background: 'white', borderRadius: '8px', border: '1px solid #E8EAED' }}>
-      {/* Header */}
-      <div className="px-4 py-3 border-b border-[#E8EAED]">
+    <div className="h-full flex flex-col" style={{ background: 'var(--color-bg-white)', borderRadius: '8px', border: '1px solid var(--color-border-light)' }}>
+      <div className="px-4 py-3 border-b border-[var(--color-border-light)]">
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px]" style={{ background: '#1A1C1E', color: 'white' }}>
+          <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px]" style={{ background: 'var(--color-text-title)', color: 'white' }}>
             AI
           </div>
-          <span style={{ fontSize: '13px', fontWeight: 600, color: '#1A1C1E' }}>智能推荐</span>
+          <span style={{ fontSize: 'var(--fs-sm)', fontWeight: 600, color: 'var(--color-text-title)' }}>智能推荐</span>
         </div>
         {keyword && (
-          <p style={{ fontSize: '11px', color: '#8C9096', marginTop: '2px' }}>
+          <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--color-text-label)', marginTop: '2px' }}>
             基于 "{keyword}" 的推荐
           </p>
         )}
       </div>
 
-      {/* Chat area */}
       <div className="flex-1 overflow-y-auto p-3 space-y-2">
         {loading && (
           <div className="flex justify-center py-8">
             <div className="flex gap-1.5">
-              <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: '#8C9096', animationDelay: '0ms' }} />
-              <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: '#8C9096', animationDelay: '150ms' }} />
-              <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: '#8C9096', animationDelay: '300ms' }} />
+              <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: 'var(--color-text-label)', animationDelay: '0ms' }} />
+              <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: 'var(--color-text-label)', animationDelay: '150ms' }} />
+              <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: 'var(--color-text-label)', animationDelay: '300ms' }} />
             </div>
           </div>
         )}
         
         {!loading && messages.length === 0 && (
           <div className="py-4">
-            <p style={{ fontSize: '12px', color: '#686C72', marginBottom: '8px' }}>
+            <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--color-text-muted)', marginBottom: '8px' }}>
               问我关于 AI 行业的问题，或者获取个性化推荐
             </p>
             <div className="space-y-2">
@@ -94,8 +92,8 @@ export default function AIRecommendPanel({ keyword }) {
                     setInput(q);
                     setTimeout(() => inputRef.current?.focus(), 100);
                   }}
-                  className="w-full text-left px-3 py-2 rounded text-xs transition-all hover:bg-[#F0F1F2]"
-                  style={{ background: '#F8F9FA', border: '1px solid #E8EAED', color: '#686C72' }}
+                  className="w-full text-left px-3 py-2 rounded text-xs transition-all"
+                  style={{ background: 'var(--color-bg-off)', border: '1px solid var(--color-border-light)', color: 'var(--color-text-muted)' }}
                 >
                   {q}
                 </button>
@@ -107,7 +105,7 @@ export default function AIRecommendPanel({ keyword }) {
         {messages.map((msg, i) => (
           <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div className={`max-w-[90%] px-3 py-2 rounded text-xs leading-relaxed ${msg.role === 'user' ? 'text-white' : ''}`}
-              style={msg.role === 'user' ? { background: '#1A1C1E' } : { background: '#F0F1F2', color: '#2C2E32' }}>
+              style={msg.role === 'user' ? { background: 'var(--color-text-title)' } : { background: 'var(--color-bg-hover)', color: 'var(--color-text-body)' }}>
               {msg.content}
             </div>
           </div>
@@ -115,10 +113,10 @@ export default function AIRecommendPanel({ keyword }) {
         
         {loading && messages.length > 0 && (
           <div className="flex justify-start">
-            <div className="px-3 py-2 rounded flex gap-1" style={{ background: '#F0F1F2' }}>
-              <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: '#8C9096', animationDelay: '0ms' }} />
-              <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: '#8C9096', animationDelay: '150ms' }} />
-              <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: '#8C9096', animationDelay: '300ms' }} />
+            <div className="px-3 py-2 rounded flex gap-1" style={{ background: 'var(--color-bg-hover)' }}>
+              <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: 'var(--color-text-label)', animationDelay: '0ms' }} />
+              <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: 'var(--color-text-label)', animationDelay: '150ms' }} />
+              <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: 'var(--color-text-label)', animationDelay: '300ms' }} />
             </div>
           </div>
         )}
@@ -126,8 +124,7 @@ export default function AIRecommendPanel({ keyword }) {
         <div ref={chatEndRef} />
       </div>
 
-      {/* Input */}
-      <form onSubmit={handleSubmit} className="p-3 border-t border-[#E8EAED]">
+      <form onSubmit={handleSubmit} className="p-3 border-t border-[var(--color-border-light)]">
         <div className="flex items-center gap-2">
           <input
             ref={inputRef}
@@ -136,13 +133,13 @@ export default function AIRecommendPanel({ keyword }) {
             onChange={(e) => setInput(e.target.value)}
             placeholder="输入消息..."
             className="flex-1 px-3 py-2 text-xs rounded"
-            style={{ background: '#F8F9FA', border: '1px solid #E8EAED', color: '#2C2E32', outline: 'none' }}
+            style={{ background: 'var(--color-bg-off)', border: '1px solid var(--color-border-light)', color: 'var(--color-text-body)', outline: 'none' }}
           />
           <button
             type="submit"
             disabled={loading || !input.trim()}
             className="px-4 py-2 text-xs rounded transition-all disabled:opacity-50"
-            style={{ background: '#1A1C1E', color: 'white' }}
+            style={{ background: 'var(--color-text-title)', color: 'white' }}
           >
             发送
           </button>

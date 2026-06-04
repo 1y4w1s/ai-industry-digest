@@ -59,20 +59,20 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: '#FBFCFD' }}>
-      <div style={{ width: '100%', maxWidth: '400px', background: 'white', borderRadius: '12px', boxShadow: '0 4px 24px rgba(0, 0, 0, 0.08)', padding: '32px' }}>
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'var(--color-bg-white)' }}>
+      <div style={{ width: '100%', maxWidth: '400px', background: 'var(--color-bg-white)', borderRadius: '12px', boxShadow: '0 4px 24px rgba(0, 0, 0, 0.08)', padding: '32px' }}>
         {/* Logo */}
         <div className="text-center mb-8">
-          <span style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '24px', fontWeight: 700, color: '#1A1C1E' }}>Signal</span>
-          <p style={{ fontSize: '13px', color: '#686C72', marginTop: '4px' }}>AI行业资讯聚合平台</p>
+          <span style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '24px', fontWeight: 700, color: 'var(--color-text-title)' }}>Signal</span>
+          <p style={{ fontSize: '13px', color: 'var(--color-text-muted)', marginTop: '4px' }}>AI行业资讯聚合平台</p>
         </div>
 
         {/* Title */}
         <div className="text-center mb-6">
-          <h1 style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '24px', fontWeight: 700, color: '#1A1C1E' }}>
+          <h1 style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '24px', fontWeight: 700, color: 'var(--color-text-title)' }}>
             {getTitle()}
           </h1>
-          <p style={{ fontSize: '14px', color: '#686C72', marginTop: '4px' }}>{getSubtitle()}</p>
+          <p style={{ fontSize: '14px', color: 'var(--color-text-muted)', marginTop: '4px' }}>{getSubtitle()}</p>
         </div>
 
         {/* Success message */}

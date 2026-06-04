@@ -55,9 +55,10 @@ body {
 .animate-slide-up { animation: slideInUp 0.3s ease-out; }
 
 /* ── Font size variants ───────────── */
-[data-font-size="small"] { --font-size-base: 13px; }
-[data-font-size="medium"] { --font-size-base: 15px; }
-[data-font-size="large"] { --font-size-base: 17px; }
+[data-font-size="small"] { --font-size-base: 13px; --fs-xs: 10px; --fs-sm: 11px; --fs-base: 13px; --fs-md: 14px; --fs-lg: 16px; --fs-xl: 20px; --fs-2xl: 24px; }
+[data-font-size="medium"] { --font-size-base: 15px; --fs-xs: 11px; --fs-sm: 12px; --fs-base: 15px; --fs-md: 15px; --fs-lg: 17px; --fs-xl: 22px; --fs-2xl: 26px; }
+[data-font-size="large"] { --font-size-base: 17px; --fs-xs: 12px; --fs-sm: 13px; --fs-base: 17px; --fs-md: 16px; --fs-lg: 19px; --fs-xl: 24px; --fs-2xl: 28px; }
+:root { --fs-xs: 11px; --fs-sm: 12px; --fs-base: 14px; --fs-md: 15px; --fs-lg: 17px; --fs-xl: 22px; --fs-2xl: 26px; }
 
 /* ── Dark theme ───────────── */
 [data-theme="dark"] {

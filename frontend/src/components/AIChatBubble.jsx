@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { api } from '../api/client';
 
 export default function AIChatBubble({ visible = true }) {
@@ -45,11 +45,10 @@ export default function AIChatBubble({ visible = true }) {
 
   return (
     <>
-      {/* Bubble trigger — 42px, more visible */}
       <button
         onClick={toggle}
         className="fixed z-50 bottom-6 right-6 w-[42px] h-[42px] flex items-center justify-center transition-all duration-200 hover:scale-110 select-none shadow-md"
-        style={{ background: '#1A1C1E', border: 'none', borderRadius: '50%', color: '#FFFFFF', boxShadow: '0 2px 12px rgba(0,0,0,0.15)' }}
+        style={{ background: 'var(--color-text-title)', border: 'none', borderRadius: '50%', color: '#FFFFFF', boxShadow: '0 2px 12px rgba(0,0,0,0.15)' }}
       >
         {open ? (
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -62,27 +61,24 @@ export default function AIChatBubble({ visible = true }) {
         )}
       </button>
 
-      {/* Chat window */}
       <div
         className={`fixed z-50 bottom-20 right-6 w-[340px] max-w-[calc(100vw-32px)] flex flex-col transition-all duration-250 origin-bottom-right ${open ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}
-        style={{ background: '#FBFCFD', border: '1px solid #D8DCE0', borderRadius: '6px', boxShadow: '0 4px 16px rgba(0,0,0,0.08)' }}
+        style={{ background: 'var(--color-bg-white)', border: '1px solid var(--color-border)', borderRadius: '6px', boxShadow: '0 4px 16px rgba(0,0,0,0.08)' }}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 py-2.5" style={{ borderBottom: '1px solid #E8EAED' }}>
-          <span className="text-xs font-semibold" style={{ color: '#1A1C1E' }}>AI 助手</span>
-          <button onClick={() => { setMessages([]); setSessionId(null); }} className="text-[10px]" style={{ color: '#8C9096' }}>清空</button>
+        <div className="flex items-center justify-between px-4 py-2.5" style={{ borderBottom: '1px solid var(--color-border-light)' }}>
+          <span className="text-xs font-semibold" style={{ color: 'var(--color-text-title)' }}>AI 助手</span>
+          <button onClick={() => { setMessages([]); setSessionId(null); }} style={{ fontSize: 'var(--fs-xs)', color: 'var(--color-text-label)' }}>清空</button>
         </div>
 
-        {/* Messages */}
         <div className="overflow-y-auto p-3 space-y-2 min-h-[140px] max-h-[320px]">
           {messages.length === 0 && (
             <div className="text-center py-4">
-              <p className="text-xs mb-2" style={{ color: '#8C9096' }}>问我关于 AI 行业的问题</p>
+              <p className="text-xs mb-2" style={{ color: 'var(--color-text-label)' }}>问我关于 AI 行业的问题</p>
               <div className="flex flex-wrap gap-1.5 justify-center">
                 {['今天有什么大新闻？', 'AI 融资情况？', '推荐好文章'].map((q) => (
                   <button key={q} onClick={() => { setInput(q); setTimeout(() => inputRef.current?.focus(), 100); }}
                     className="px-2.5 py-1 text-[10px] rounded transition-all"
-                    style={{ background: '#F0F1F2', color: '#686C72', border: '1px solid #E8EAED' }}>{q}</button>
+                    style={{ background: 'var(--color-bg-hover)', color: 'var(--color-text-muted)', border: '1px solid var(--color-border-light)' }}>{q}</button>
                 ))}
               </div>
             </div>
@@ -90,32 +86,31 @@ export default function AIChatBubble({ visible = true }) {
           {messages.map((msg, i) => (
             <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               <div className={`max-w-[85%] px-3 py-2 rounded text-xs leading-relaxed ${msg.role === 'user' ? 'text-white' : ''}`}
-                style={msg.role === 'user' ? { background: '#1A1C1E' } : { background: '#F0F1F2', color: '#2C2E32' }}>
+                style={msg.role === 'user' ? { background: 'var(--color-text-title)' } : { background: 'var(--color-bg-hover)', color: 'var(--color-text-body)' }}>
                 {msg.content}
               </div>
             </div>
           ))}
           {loading && (
             <div className="flex justify-start">
-              <div className="px-3 py-2 rounded flex gap-1" style={{ background: '#F0F1F2' }}>
-                <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: '#8C9096', animationDelay: '0ms' }} />
-                <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: '#8C9096', animationDelay: '150ms' }} />
-                <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: '#8C9096', animationDelay: '300ms' }} />
+              <div className="px-3 py-2 rounded flex gap-1" style={{ background: 'var(--color-bg-hover)' }}>
+                <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: 'var(--color-text-label)', animationDelay: '0ms' }} />
+                <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: 'var(--color-text-label)', animationDelay: '150ms' }} />
+                <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: 'var(--color-text-label)', animationDelay: '300ms' }} />
               </div>
             </div>
           )}
           <div ref={chatEndRef} />
         </div>
 
-        {/* Input */}
-        <form onSubmit={handleSubmit} className="flex items-center gap-2 p-3" style={{ borderTop: '1px solid #E8EAED' }}>
+        <form onSubmit={handleSubmit} className="flex items-center gap-2 p-3" style={{ borderTop: '1px solid var(--color-border-light)' }}>
           <input ref={inputRef} type="text" value={input} onChange={(e) => setInput(e.target.value)}
             placeholder="输入消息..."
             className="flex-1 px-2.5 py-1.5 text-xs rounded transition-all"
-            style={{ background: '#F0F1F2', border: '1px solid #E8EAED', color: '#2C2E32' }} />
+            style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border-light)', color: 'var(--color-text-body)' }} />
           <button type="submit" disabled={loading || !input.trim()}
             className="px-3 py-1.5 text-xs rounded disabled:opacity-40 transition-all"
-            style={{ background: '#1A1C1E', color: '#fff' }}>
+            style={{ background: 'var(--color-text-title)', color: '#fff' }}>
             发送
           </button>
         </form>

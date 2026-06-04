@@ -1,10 +1,10 @@
 import Select from './Select';
 
 const IMPORTANCE_OPTIONS = [
-  { value: '', label: '全部重要度', dotColor: null },
-  { value: 'high', label: '高', dotColor: '#D4322E' },
-  { value: 'medium', label: '中', dotColor: '#C8960A' },
-  { value: 'low', label: '低', dotColor: '#8C9096' },
+  { value: '', label: '全部重要度', dotColor: 'var(--color-high)' },
+  { value: 'high', label: '高', dotColor: 'var(--color-high)' },
+  { value: 'medium', label: '中', dotColor: 'var(--color-medium)' },
+  { value: 'low', label: '低', dotColor: 'var(--color-low)' },
 ];
 
 export default function FilterBar({
@@ -16,15 +16,14 @@ export default function FilterBar({
 }) {
   const isActive = activeFilterCount > 0;
   const sourceOptions = [{ value: '', label: '全部来源' }, ...sources.map((s) => ({ value: s, label: s }))];
-  // Tag options: first option is "全部" (value=''), then individual tags
   const tagOptions = [{ value: '', label: '全部标签' }, ...tags.map((t) => ({ value: t, label: t }))];
 
   const handleTagChange = (newTags) => {
-    onTagChange(newTags); // newTags is an array in multi-select mode
+    onTagChange(newTags);
   };
 
   return (
-    <div style={{ background: '#F6F7F8', borderBottom: '1px solid #E8EAED', padding: '6px 16px' }}>
+    <div style={{ background: 'var(--color-bg-off)', borderBottom: '1px solid var(--color-border-light)', padding: '6px 16px' }}>
       <div className="flex items-center gap-2 flex-wrap">
         <Select
           value={importance}
@@ -46,17 +45,16 @@ export default function FilterBar({
           multi
         />
 
-        {/* Filter status + clear */}
         {isActive && (
           <div className="flex items-center gap-2" style={{ marginLeft: '4px' }}>
-            <span style={{ fontSize: '11px', color: '#686C72' }}>
+            <span style={{ fontSize: 'var(--fs-sm)', color: 'var(--color-text-muted)' }}>
               {activeFilterCount} 个筛选中
             </span>
             <button
               onClick={onClear}
               style={{
-                fontSize: '11px',
-                color: '#2864A8',
+                fontSize: 'var(--fs-sm)',
+                color: 'var(--color-blue-link)',
                 background: 'none',
                 border: 'none',
                 cursor: 'pointer',
@@ -71,11 +69,10 @@ export default function FilterBar({
           </div>
         )}
         
-        {/* Side panel toggle (tablet) */}
         {onToggleSidePanel && (
           <button onClick={onToggleSidePanel}
             className="hidden lg:flex xl:hidden ml-auto items-center gap-1 px-2 py-1 text-[11px] rounded cursor-pointer"
-            style={{ background: '#EDEEF0', border: '1px solid #E8EAED', color: '#686C72' }}>
+            style={{ background: 'var(--color-bg-toolbar)', border: '1px solid var(--color-border-light)', color: 'var(--color-text-muted)' }}>
             <span style={{ display: 'inline-block', transition: 'transform 0.2s', transform: sidePanelOpen ? 'rotate(180deg)' : 'none' }}>◀</span>
           </button>
         )}

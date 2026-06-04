@@ -9,7 +9,6 @@ export default function DateNav({ reports, selectedDate, onSelect }) {
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef(null);
 
-  // Click outside to close dropdown
   useEffect(() => {
     if (!showDropdown) return;
     const handleClick = (e) => {
@@ -35,11 +34,10 @@ export default function DateNav({ reports, selectedDate, onSelect }) {
 
   return (
     <div className="mb-5">
-      <h1 style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '20px', fontWeight: 700, color: '#1A1C1E', marginBottom: '12px' }}>
+      <h1 style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: 'var(--fs-xl)', fontWeight: 700, color: 'var(--color-text-title)', marginBottom: '12px' }}>
         每日简报
       </h1>
       <div className="flex items-center gap-1 flex-wrap">
-        {/* Date chips */}
         {visibleReports.map((r) => {
           const label = getDateLabel(r.report_date);
           const isSelected = selectedDate === r.report_date;
@@ -49,11 +47,11 @@ export default function DateNav({ reports, selectedDate, onSelect }) {
               onClick={() => handleSelect(r.report_date)}
               style={{
                 padding: '6px 14px',
-                background: isSelected ? '#E8EAED' : 'transparent',
+                background: isSelected ? 'var(--color-border-light)' : 'transparent',
                 borderRadius: '4px',
-                color: isSelected ? '#1A1C1E' : '#686C72',
+                color: isSelected ? 'var(--color-text-title)' : 'var(--color-text-muted)',
                 fontWeight: isSelected ? 500 : 400,
-                fontSize: '12px',
+                fontSize: 'var(--fs-sm)',
                 transition: 'all 0.15s ease',
                 border: 'none',
                 cursor: 'pointer',
@@ -61,20 +59,19 @@ export default function DateNav({ reports, selectedDate, onSelect }) {
             >
               <span>{label}</span>
               {(label === '今天' || label === '昨天' || label === '前天') && (
-                <span style={{ fontSize: '10px', color: '#8C9096', marginLeft: '4px' }}>{r.report_date.slice(5)}</span>
+                <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--color-text-label)', marginLeft: '4px' }}>{r.report_date.slice(5)}</span>
               )}
             </button>
           );
         })}
 
-        {/* Expand button: 3 → 7 */}
         {reports.length > VISIBLE_DEFAULT && !showAll && (
           <button
             onClick={() => setShowAll(true)}
             style={{
               padding: '6px 8px',
-              fontSize: '11px',
-              color: '#686C72',
+              fontSize: 'var(--fs-sm)',
+              color: 'var(--color-text-muted)',
               cursor: 'pointer',
               background: 'none',
               border: 'none',
@@ -85,22 +82,21 @@ export default function DateNav({ reports, selectedDate, onSelect }) {
           >
             展开
             <svg width="10" height="6" viewBox="0 0 10 6" style={{ marginTop: '1px' }}>
-              <path d="M1 1l4 4 4-4" stroke="#686C72" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+              <path d="M1 1l4 4 4-4" stroke="var(--color-text-muted)" strokeWidth="1.5" fill="none" strokeLinecap="round" />
             </svg>
           </button>
         )}
 
-        {/* More button: 7 → all (dropdown) */}
         {reports.length > VISIBLE_EXPANDED && showAll && hiddenReports.length > 0 && (
           <div ref={dropdownRef} style={{ position: 'relative', display: 'inline-block' }}>
             <button
               onClick={() => setShowDropdown(!showDropdown)}
               style={{
                 padding: '6px 8px',
-                fontSize: '11px',
-                color: '#686C72',
+                fontSize: 'var(--fs-sm)',
+                color: 'var(--color-text-muted)',
                 cursor: 'pointer',
-                background: showDropdown ? '#E8EAED' : 'transparent',
+                background: showDropdown ? 'var(--color-border-light)' : 'transparent',
                 border: 'none',
                 borderRadius: '4px',
                 display: 'inline-flex',
@@ -110,11 +106,10 @@ export default function DateNav({ reports, selectedDate, onSelect }) {
             >
               更早
               <svg width="10" height="6" viewBox="0 0 10 6" style={{ marginTop: '1px' }}>
-                <path d="M1 1l4 4 4-4" stroke="#686C72" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+                <path d="M1 1l4 4 4-4" stroke="var(--color-text-muted)" strokeWidth="1.5" fill="none" strokeLinecap="round" />
               </svg>
             </button>
 
-            {/* Dropdown */}
             {showDropdown && (
               <div
                 style={{
@@ -122,8 +117,8 @@ export default function DateNav({ reports, selectedDate, onSelect }) {
                   top: '100%',
                   left: '0',
                   marginTop: '4px',
-                  background: '#FFFFFF',
-                  border: '1px solid #D8DCE0',
+                  background: 'var(--color-bg-white)',
+                  border: '1px solid var(--color-border)',
                   borderRadius: '6px',
                   boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
                   zIndex: 30,
@@ -133,7 +128,7 @@ export default function DateNav({ reports, selectedDate, onSelect }) {
                   padding: '6px 0',
                 }}
               >
-                <div style={{ padding: '6px 14px 4px', fontSize: '10px', color: '#8C9096', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                <div style={{ padding: '6px 14px 4px', fontSize: 'var(--fs-xs)', color: 'var(--color-text-label)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                   选择日期
                 </div>
                 {hiddenReports.map((r) => {
@@ -150,21 +145,21 @@ export default function DateNav({ reports, selectedDate, onSelect }) {
                         width: '100%',
                         textAlign: 'left',
                         padding: '7px 14px',
-                        fontSize: '12px',
-                        color: isSelected ? '#1A1C1E' : '#2C2E32',
-                        background: isSelected ? '#F0F1F2' : 'transparent',
+                        fontSize: 'var(--fs-sm)',
+                        color: isSelected ? 'var(--color-text-title)' : 'var(--color-text-body)',
+                        background: isSelected ? 'var(--color-bg-hover)' : 'transparent',
                         border: 'none',
                         cursor: 'pointer',
                         transition: 'background 0.1s',
                       }}
-                      onMouseEnter={(e) => { if (!isSelected) e.target.style.background = '#F6F7F8'; }}
+                      onMouseEnter={(e) => { if (!isSelected) e.target.style.background = 'var(--color-bg-off)'; }}
                       onMouseLeave={(e) => { if (!isSelected) e.target.style.background = 'transparent'; }}
                     >
                       {display}
                     </button>
                   );
                 })}
-                <div style={{ padding: '6px 14px 2px', fontSize: '10px', color: '#8C9096', borderTop: '1px solid #E8EAED', marginTop: '4px', paddingTop: '6px' }}>
+                <div style={{ padding: '6px 14px 2px', fontSize: 'var(--fs-xs)', color: 'var(--color-text-label)', borderTop: '1px solid var(--color-border-light)', marginTop: '4px', paddingTop: '6px' }}>
                   共 {reports.length} 期
                 </div>
               </div>
@@ -172,14 +167,13 @@ export default function DateNav({ reports, selectedDate, onSelect }) {
           </div>
         )}
 
-        {/* Collapse button (when showing 7) */}
         {showAll && reports.length <= VISIBLE_EXPANDED && (
           <button
             onClick={() => setShowAll(false)}
             style={{
               padding: '6px 8px',
-              fontSize: '11px',
-              color: '#686C72',
+              fontSize: 'var(--fs-sm)',
+              color: 'var(--color-text-muted)',
               cursor: 'pointer',
               background: 'none',
               border: 'none',
@@ -190,7 +184,7 @@ export default function DateNav({ reports, selectedDate, onSelect }) {
           >
             收起
             <svg width="10" height="6" viewBox="0 0 10 6" style={{ marginTop: '1px', transform: 'rotate(180deg)' }}>
-              <path d="M1 1l4 4 4-4" stroke="#686C72" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+              <path d="M1 1l4 4 4-4" stroke="var(--color-text-muted)" strokeWidth="1.5" fill="none" strokeLinecap="round" />
             </svg>
           </button>
         )}

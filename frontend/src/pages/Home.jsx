@@ -98,7 +98,7 @@ export default function Home({ onReadArticle, readerArticle }) {
             )}
 
             {detailLoading ? (
-              <div className="text-center py-16 text-sm" style={{ color: '#8C9096' }}>加载中...</div>
+              <div className="text-center py-16 text-sm" style={{ color: 'var(--color-text-label)' }}>加载中...</div>
             ) : displayReporting ? (
               <>
                 {heroArticle && <HeroArticle article={heroArticle} onSelect={onReadArticle} />}
@@ -107,10 +107,10 @@ export default function Home({ onReadArticle, readerArticle }) {
                   .map(([src, arts]) => (
                     <ArticleGroup key={src} sourceName={src} articles={arts} onSelectArticle={onReadArticle} />
                   ))}
-                {articles.length === 0 && <div className="text-center py-16 text-sm" style={{ color: '#8C9096' }}>暂无内容</div>}
+                {articles.length === 0 && <div className="text-center py-16 text-sm" style={{ color: 'var(--color-text-label)' }}>暂无内容</div>}
               </>
             ) : (
-              <div className="text-center py-16 text-sm" style={{ color: '#8C9096' }}>暂无数据</div>
+              <div className="text-center py-16 text-sm" style={{ color: 'var(--color-text-label)' }}>暂无数据</div>
             )}
           </div>
         </div>
