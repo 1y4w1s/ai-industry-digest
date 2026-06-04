@@ -64,8 +64,8 @@ export default function SearchPage({ onReadArticle }) {
             )}
           </div>
 
-          <div className="flex gap-6">
-            <div className="flex-1">
+          <div className="flex gap-6" style={{ position: 'relative' }}>
+            <div className="flex-1 min-w-0">
               {loading && (
                 <div className="text-center py-16">
                   <div className="flex gap-1.5 justify-center mb-3">
@@ -114,7 +114,7 @@ export default function SearchPage({ onReadArticle }) {
               )}
             </div>
 
-            <div className="hidden lg:block w-80 flex-shrink-0">
+            <div className="hidden lg:block w-80 flex-shrink-0" style={{ position: 'sticky', top: '20px', alignSelf: 'flex-start', maxHeight: 'calc(100vh - 100px)', overflowY: 'auto' }}>
               <AIRecommendPanel keyword={query} />
             </div>
           </div>

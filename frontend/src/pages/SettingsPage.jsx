@@ -30,7 +30,7 @@ function RadioGroup({ label, options, value, onChange }) {
                 fontSize: '13px',
                 fontWeight: isSelected ? 500 : 400,
                 background: isSelected ? 'var(--color-text-title)' : 'var(--color-bg-off)',
-                color: isSelected ? '#FFFFFF' : 'var(--color-text-body)',
+                color: isSelected ? 'var(--color-bg-white)' : 'var(--color-text-body)',
                 border: isSelected ? '1px solid var(--color-text-title)' : '1px solid var(--color-border-light)',
                 borderRadius: '6px',
                 cursor: 'pointer',

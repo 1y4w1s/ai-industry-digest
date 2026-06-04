@@ -205,19 +205,19 @@ export default function ArticleReader({ articleId, onBack }) {
           </div>
 
           {/* Right: only 深入对话 */}
-          <div className="w-[380px] xl:w-[420px] flex-shrink-0 flex flex-col no-print" style={{ background: '#F6F7F8' }}>
+          <div className="w-[380px] xl:w-[420px] flex-shrink-0 flex flex-col no-print" style={{ background: 'var(--color-bg-off)' }}>
             <div className="flex flex-col flex-1 min-h-0">
               <div className="px-5 pt-4 pb-1">
-                <h3 className="font-semibold text-xs uppercase tracking-wider" style={{ color: '#8C9096' }}>深入对话</h3>
+                <h3 className="font-semibold text-xs uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>深入对话</h3>
               </div>
               <div className="flex-1 overflow-y-auto px-5 pb-2 space-y-2.5">
                 {messages.length === 0 && (
                   <div className="text-center py-4">
-                    <p className="text-xs mb-2" style={{ color: '#8C9096' }}>问关于这篇文章的问题</p>
+                    <p className="text-xs mb-2" style={{ color: 'var(--color-text-label)' }}>问关于这篇文章的问题</p>
                     <div className="flex flex-wrap gap-1.5 justify-center">
                       {['总结核心观点', '有哪些技术细节？', '有什么争议？'].map((q) => (
                         <button key={q} onClick={() => { setChatInput(q); setTimeout(() => chatInputRef.current?.focus(), 100); }}
-                          className="px-2.5 py-1 text-[10px] rounded" style={{ background: '#E8EAED', color: '#686C72' }}>{q}</button>
+                          className="px-2.5 py-1 text-[10px] rounded" style={{ background: 'var(--color-border-light)', color: 'var(--color-text-muted)' }}>{q}</button>
                       ))}
                     </div>
                   </div>
@@ -225,17 +225,17 @@ export default function ArticleReader({ articleId, onBack }) {
                 {messages.map((msg, i) => (
                   <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                     <div className={`max-w-[90%] px-3 py-2 text-xs leading-relaxed rounded ${msg.role === 'user' ? 'text-white' : ''}`}
-                      style={msg.role === 'user' ? { background: '#1A1C1E' } : { background: '#fff', color: '#2C2E32' }}>
-                      {msg.content}
-                    </div>
-                  </div>
-                ))}
-                {chatLoading && (
-                  <div className="flex justify-start">
-                    <div className="px-3 py-2 rounded flex gap-1" style={{ background: '#fff' }}>
-                      <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: '#8C9096', animationDelay: '0ms' }} />
-                      <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: '#8C9096', animationDelay: '150ms' }} />
-                      <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: '#8C9096', animationDelay: '300ms' }} />
+                      style={msg.role === 'user' ? { background: 'var(--color-text-title)' } : { background: 'var(--color-bg-white)', color: 'var(--color-text-body)' }}>
+                {msg.content}
+              </div>
+            </div>
+          ))}
+          {loading && (
+            <div className="flex justify-start">
+              <div className="px-3 py-2 rounded flex gap-1" style={{ background: 'var(--color-bg-white)' }}>
+                <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: 'var(--color-text-label)', animationDelay: '0ms' }} />
+                <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: 'var(--color-text-label)', animationDelay: '150ms' }} />
+                <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: 'var(--color-text-label)', animationDelay: '300ms' }} />
                     </div>
                   </div>
                 )}
@@ -244,9 +244,9 @@ export default function ArticleReader({ articleId, onBack }) {
               <div className="p-4" style={{ borderTop: '1px solid #E8EAED' }}>
                 <form onSubmit={handleChat} className="flex gap-2">
                   <input ref={chatInputRef} type="text" value={chatInput} onChange={(e) => setChatInput(e.target.value)}
-                    placeholder="输入问题..." className="flex-1 px-2.5 py-1.5 text-xs rounded" style={{ background: '#fff', border: '1px solid #E8EAED', color: '#2C2E32' }} />
+                    placeholder="输入问题..." className="flex-1 px-2.5 py-1.5 text-xs rounded" style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border-light)', color: 'var(--color-text-body)' }} />
                   <button type="submit" disabled={chatLoading || !chatInput.trim()}
-                    className="px-3 py-1.5 text-xs rounded disabled:opacity-40" style={{ background: '#1A1C1E', color: '#fff' }}>
+                    className="px-3 py-1.5 text-xs rounded disabled:opacity-40" style={{ background: 'var(--color-text-title)', color: 'var(--color-bg-white)' }}>
                     发送
                   </button>
                 </form>
