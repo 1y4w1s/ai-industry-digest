@@ -84,15 +84,6 @@ export default function ArticleReader({ articleId, onBack }) {
         <span className="text-sm font-medium truncate flex-1" style={{ color: '#1A1C1E' }}>
           {loading ? '加载中...' : article?.title}
         </span>
-        {!loading && article && (
-          <button onClick={toggleBookmark} title={isBookmarked ? '取消收藏' : '收藏'}
-            style={{ fontSize: '14px', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px', color: isBookmarked ? '#1A1C1E' : '#8C9096', transition: 'color 0.15s' }}>
-            {isBookmarked ? '♥' : '♡'}
-          </button>
-        )}
-        <span className="text-xs flex-shrink-0" style={{ color: '#8C9096' }}>
-          {article?.source_name}{article?.published_at ? ` · ${article.published_at.slice(0, 10)}` : ''}
-        </span>
       </div>
 
       {loading ? (
@@ -136,9 +127,18 @@ export default function ArticleReader({ articleId, onBack }) {
               </h2>
               <div className="flex items-center gap-3 mb-6" style={{ color: '#686C72', fontSize: '13px' }}>
                 <span>{article.source_name}</span><span>·</span><span>{article.published_at?.slice(0, 10)}</span>
-                {article.url && (
-                  <a href={article.url} target="_blank" rel="noreferrer" className="ml-auto text-xs" style={{ color: '#2864A8' }}>在新窗口阅读 ↗</a>
-                )}
+                <div className="ml-auto flex items-center gap-3">
+                  <button onClick={toggleBookmark} title={isBookmarked ? '取消收藏' : '收藏'}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px', color: isBookmarked ? '#C8960A' : '#8C9096', transition: 'color 0.15s' }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill={isBookmarked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                    </svg>
+                    <span>{isBookmarked ? '已收藏' : '收藏'}</span>
+                  </button>
+                  {article.url && (
+                    <a href={article.url} target="_blank" rel="noreferrer" style={{ color: '#2864A8' }}>在新窗口阅读 ↗</a>
+                  )}
+                </div>
               </div>
               <div className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: '#2C2E32', lineHeight: '1.8', fontSize: '15px' }}>
                 {stripHtml(article.raw_content) || '暂无原文内容'}
