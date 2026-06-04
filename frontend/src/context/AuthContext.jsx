@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 
 const AuthContext = createContext(null);
+const TOKEN_KEY = 'signal_auth_token';
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -10,12 +11,20 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const getInitialSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
+      if (session?.access_token) {
+        localStorage.setItem(TOKEN_KEY, session.access_token);
+      }
       setUser(session?.user || null);
       setLoading(false);
     };
     getInitialSession();
 
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.access_token) {
+        localStorage.setItem(TOKEN_KEY, session.access_token);
+      } else {
+        localStorage.removeItem(TOKEN_KEY);
+      }
       setUser(session?.user || null);
     });
 
