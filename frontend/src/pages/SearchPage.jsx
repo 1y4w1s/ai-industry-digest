@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import ArticleCard from '../components/ArticleCard';
 import Pagination from '../components/Pagination';
@@ -7,6 +7,7 @@ import Pagination from '../components/Pagination';
 export default function SearchPage({ onReadArticle }) {
   const [searchParams] = useSearchParams();
   const query = searchParams.get('q') || '';
+  const navigate = useNavigate();
 
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -37,6 +38,11 @@ export default function SearchPage({ onReadArticle }) {
         <div className="px-5 lg:px-6" style={{ paddingTop: '20px', paddingBottom: '32px' }}>
           {/* Search header */}
           <div className="mb-5">
+            <div className="flex items-center gap-3 mb-2">
+              <button onClick={() => navigate('/')} style={{ fontSize: '12px', color: '#2864A8', background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                ← 返回首页
+              </button>
+            </div>
             <h1 style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '20px', fontWeight: 700, color: '#1A1C1E', marginBottom: '8px' }}>
               搜索结果
             </h1>
