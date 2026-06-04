@@ -120,3 +120,24 @@ body {
 .search-input:focus {
   box-shadow: 0 0 0 1px rgba(26, 28, 30, 0.2);
 }
+
+/* ── Logo ───────────── */
+.logo {
+  font-family: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+  font-weight: 700;
+  color: #1A1C1E;
+  letter-spacing: -0.3px;
+  position: relative;
+  display: inline-block;
+}
+.logo::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 140%;
+  height: 1px;
+  background: #1A1C1E;
+}
+.logo-sm { font-size: 17px; }
+.logo-lg { font-size: 20px; }

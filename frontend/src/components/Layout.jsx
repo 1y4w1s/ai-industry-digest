@@ -57,9 +57,7 @@ export default function Layout({ isReading }) {
         style={{ width: '200px', background: '#FAFBFC', borderRight: '1px solid #E8EAED' }}>
         {/* Logo */}
         <div className="h-12 flex items-center px-5 border-b border-[#E8EAED] flex-shrink-0">
-          <span style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '20px', fontWeight: 700, color: '#1A1C1E', letterSpacing: '-0.3px' }}>
-            Signal
-          </span>
+          <span className="logo logo-lg">Signal</span>
         </div>
 
         {/* Nav */}
@@ -113,20 +111,25 @@ export default function Layout({ isReading }) {
 
       {/* ── Main area ─────────────── */}
       <div className="flex flex-col flex-1 min-w-0">
-        {/* Header (48px) — clean: logo (mobile) + search icon */}
+        {/* Header (48px) — clean: logo + search icon */}
         <header className="h-12 flex items-center gap-4 px-4 lg:px-6 border-b border-[#E8EAED] bg-white flex-shrink-0">
-          {/* Mobile hamburger + logo */}
+          {/* Mobile hamburger */}
           <button onClick={() => setMobileSidebarOpen(true)} className="lg:hidden p-1.5 -ml-1" style={{ color: '#686C72' }} aria-label="打开菜单">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
             </svg>
           </button>
-          <span className="lg:hidden" style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '17px', fontWeight: 700, color: '#1A1C1E' }}>
+
+          {/* Desktop logo (visible on lg+) */}
+          <span className="hidden lg:block logo logo-sm" style={{ marginRight: 'auto' }}>Signal</span>
+
+          {/* Mobile logo (visible below lg) */}
+          <span className="lg:hidden" style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '17px', fontWeight: 700, color: '#1A1C1E', letterSpacing: '-0.3px' }}>
             Signal
           </span>
 
           {/* Spacer */}
-          <div className="flex-1" />
+          <div className="flex-1 lg:flex-initial" />
 
           {/* Search icon → expandable input */}
           <div className="flex items-center justify-end">
