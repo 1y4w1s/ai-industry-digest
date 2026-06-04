@@ -111,7 +111,7 @@ export default function Layout({ isReading }) {
 
       {/* ── Main area ─────────────── */}
       <div className="flex flex-col flex-1 min-w-0">
-        {/* Header (48px) — clean: logo + search icon */}
+        {/* Header (48px) — clean */}
         <header className="h-12 flex items-center gap-4 px-4 lg:px-6 border-b border-[#E8EAED] bg-white flex-shrink-0">
           {/* Mobile hamburger */}
           <button onClick={() => setMobileSidebarOpen(true)} className="lg:hidden p-1.5 -ml-1" style={{ color: '#686C72' }} aria-label="打开菜单">
@@ -120,10 +120,7 @@ export default function Layout({ isReading }) {
             </svg>
           </button>
 
-          {/* Desktop logo (visible on lg+) */}
-          <span className="hidden lg:block logo logo-sm" style={{ marginRight: 'auto' }}>Signal</span>
-
-          {/* Mobile logo (visible below lg) */}
+          {/* Mobile logo (visible below lg, sidebar hidden) */}
           <span className="lg:hidden" style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '17px', fontWeight: 700, color: '#1A1C1E', letterSpacing: '-0.3px' }}>
             Signal
           </span>

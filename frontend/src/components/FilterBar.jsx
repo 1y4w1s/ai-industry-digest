@@ -1,7 +1,7 @@
 import Select from './Select';
 
 const IMPORTANCE_OPTIONS = [
-  { value: '', label: '全部', dotColor: null },
+  { value: '', label: '全部重要度', dotColor: null },
   { value: 'high', label: '高', dotColor: '#D4322E' },
   { value: 'medium', label: '中', dotColor: '#C8960A' },
   { value: 'low', label: '低', dotColor: '#8C9096' },
