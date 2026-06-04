@@ -22,7 +22,10 @@ export default function SearchPage({ onReadArticle }) {
     if (!query) return;
     setLoading(true);
     api.getArticles({ page, page_size: 50, keyword: query })
-      .then((data) => setResults(data))
+      .then((data) => {
+        const items = (data.items || []).map((a) => ({ ...a, _imp: a.importance }));
+        setResults({ ...data, items });
+      })
       .catch(() => setResults({ items: [], total: 0, pages: 0 }))
       .finally(() => setLoading(false));
   }, [query, page]);
@@ -31,7 +34,10 @@ export default function SearchPage({ onReadArticle }) {
     setPage(pg);
     setLoading(true);
     api.getArticles({ page: pg, page_size: 50, keyword: query })
-      .then((data) => setResults(data))
+      .then((data) => {
+        const items = (data.items || []).map((a) => ({ ...a, _imp: a.importance }));
+        setResults({ ...data, items });
+      })
       .catch(() => setResults({ items: [], total: 0, pages: 0 }))
       .finally(() => setLoading(false));
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -78,7 +84,7 @@ export default function SearchPage({ onReadArticle }) {
               {results.items.map((a) => (
                 <ArticleCard
                   key={a.id || a.url}
-                  article={{ ...a, _imp: a.importance }}
+                  article={a}
                   onSelect={onReadArticle}
                   variant="detailed"
                 />

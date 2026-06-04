@@ -1,11 +1,12 @@
-export default function ArticleCard({ article, onSelect, variant = 'compact' }) {
+import { memo, useMemo } from 'react';
+
+function ArticleCard({ article, onSelect, variant = 'compact' }) {
   const imp = article._imp || article.importance || '';
 
   const impClass = imp === 'high' ? 'imp-high'
     : imp === 'medium' ? 'imp-medium' : 'imp-low';
 
-  // Build excerpt from summary or raw_content
-  const excerpt = () => {
+  const text = useMemo(() => {
     if (variant === 'detailed' && article.summary) {
       return article.summary;
     }
@@ -18,9 +19,7 @@ export default function ArticleCard({ article, onSelect, variant = 'compact' }) 
       return clean.length > 100 ? clean.slice(0, 100) + '...' : clean;
     }
     return article.summary || '';
-  };
-
-  const text = excerpt();
+  }, [article.raw_content, article.summary, variant]);
 
   return (
     <div
@@ -50,3 +49,5 @@ export default function ArticleCard({ article, onSelect, variant = 'compact' }) 
     </div>
   );
 }
+
+export default memo(ArticleCard);
