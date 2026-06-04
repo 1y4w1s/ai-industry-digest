@@ -50,26 +50,55 @@ export default function ArticleReader({ articleId, onBack }) {
   return (
     <div className="h-full flex flex-col animate-fade-in" style={{ background: '#FBFCFD' }}>
       {/* Top bar */}
-      <div className="flex items-center gap-3 px-4 lg:px-5 py-2.5 flex-shrink-0" style={{ borderBottom: '1px solid #E8EAED', background: '#fff' }}>
-        <button onClick={onBack} className="flex items-center gap-1 px-2.5 py-1 text-xs rounded transition-all" style={{ background: '#F0F1F2', color: '#686C72' }}>
-          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-          </svg>
-          返回
+      <div className="flex items-center gap-3 px-4 lg:px-5 py-2.5 flex-shrink-0" style={{ borderBottom: '1px solid #E8EAED', background: '#FFFFFF' }}>
+        <button onClick={onBack}
+          style={{ fontSize: '12px', color: '#2864A8', background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px', padding: 0 }}>
+          ← 返回
         </button>
         <span className="text-sm font-medium truncate flex-1" style={{ color: '#1A1C1E' }}>
           {loading ? '加载中...' : article?.title}
         </span>
-        <span className="text-xs flex-shrink-0" style={{ color: '#8C9096' }}>{article?.source_name}</span>
+        <span className="text-xs flex-shrink-0" style={{ color: '#8C9096' }}>
+          {article?.source_name}{article?.published_at ? ` · ${article.published_at.slice(0, 10)}` : ''}
+        </span>
       </div>
 
       {loading ? (
-        <div className="flex-1 flex items-center justify-center text-sm" style={{ color: '#8C9096' }}>加载中...</div>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="flex gap-1.5 justify-center mb-3">
+              <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: '#8C9096', animationDelay: '0ms' }} />
+              <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: '#8C9096', animationDelay: '150ms' }} />
+              <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: '#8C9096', animationDelay: '300ms' }} />
+            </div>
+            <span style={{ fontSize: '13px', color: '#686C72' }}>加载中...</span>
+          </div>
+        </div>
       ) : article ? (
         <div className="flex-1 flex overflow-hidden">
-          {/* Left: Original */}
-          <div className="flex-1 min-w-0 overflow-y-auto" style={{ borderRight: '1px solid #E8EAED', background: '#fff' }}>
+          {/* Left: AI精读 + Original */}
+          <div className="flex-1 min-w-0 overflow-y-auto" style={{ borderRight: '1px solid #E8EAED', background: '#FBFCFD' }}>
             <div className="p-5 lg:p-8 max-w-3xl mx-auto">
+              {/* AI 精读 — moved from right panel to here */}
+              {article.summary && (
+                <div style={{ background: '#F6F7F8', borderRadius: '4px', padding: '16px', marginBottom: '24px' }}>
+                  <h3 className="font-semibold text-xs uppercase tracking-wider mb-3" style={{ color: '#8C9096' }}>AI 精读</h3>
+                  <div className="text-sm leading-relaxed" style={{ color: '#2C2E32' }}>
+                    {article.summary}
+                  </div>
+                  {article.importance_reason && (
+                    <div className="mt-2 text-xs italic" style={{ color: '#8C9096' }}>{article.importance_reason}</div>
+                  )}
+                  {article.tags?.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-3">
+                      {article.tags.map((t) => (
+                        <span key={t} className="px-2 py-0.5 text-xs rounded" style={{ background: '#E8EAED', color: '#686C72' }}>{t}</span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
               <h2 style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '22px', fontWeight: 700, color: '#1A1C1E', lineHeight: 1.35, marginBottom: '12px' }}>
                 {article.title}
               </h2>
@@ -85,24 +114,10 @@ export default function ArticleReader({ articleId, onBack }) {
             </div>
           </div>
 
-          {/* Right: AI */}
+          {/* Right: only 深入对话 */}
           <div className="w-[380px] xl:w-[420px] flex-shrink-0 flex flex-col" style={{ background: '#F6F7F8' }}>
-            <div className="flex-[3] min-h-0 overflow-y-auto p-5" style={{ borderBottom: '1px solid #E8EAED' }}>
-              <h3 className="font-semibold text-xs uppercase tracking-wider mb-3" style={{ color: '#686C72' }}>AI 精读</h3>
-              <div className="text-sm leading-relaxed" style={{ color: '#2C2E32', background: '#fff', padding: '14px', borderRadius: '4px' }}>
-                {article.summary || '暂无摘要'}
-              </div>
-              {article.importance_reason && <div className="mt-2 text-xs italic" style={{ color: '#8C9096' }}>{article.importance_reason}</div>}
-              {article.tags?.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mt-3">
-                  {article.tags.map((t) => (
-                    <span key={t} className="px-2 py-0.5 text-xs rounded" style={{ background: '#E8EAED', color: '#686C72' }}>{t}</span>
-                  ))}
-                </div>
-              )}
-            </div>
-            <div className="flex-[2] flex flex-col min-h-0">
-              <div className="px-5 pt-3 pb-1">
+            <div className="flex flex-col flex-1 min-h-0">
+              <div className="px-5 pt-4 pb-1">
                 <h3 className="font-semibold text-xs uppercase tracking-wider" style={{ color: '#8C9096' }}>深入对话</h3>
               </div>
               <div className="flex-1 overflow-y-auto px-5 pb-2 space-y-2.5">
@@ -150,7 +165,24 @@ export default function ArticleReader({ articleId, onBack }) {
           </div>
         </div>
       ) : (
-        <div className="flex-1 flex items-center justify-center text-sm" style={{ color: '#8C9096' }}>加载失败</div>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div style={{ width: '48px', height: '48px', margin: '0 auto 16px', borderRadius: '50%', background: '#F0F1F2', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8C9096" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+              </svg>
+            </div>
+            <p style={{ fontSize: '14px', color: '#1A1C1E', marginBottom: '8px' }}>文章加载失败</p>
+            <div className="flex gap-3 justify-center">
+              <button onClick={() => window.location.reload()} style={{ fontSize: '12px', color: '#2864A8', background: 'none', border: 'none', cursor: 'pointer' }}>
+                重试
+              </button>
+              <button onClick={onBack} style={{ fontSize: '12px', color: '#2864A8', background: 'none', border: 'none', cursor: 'pointer' }}>
+                返回
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
