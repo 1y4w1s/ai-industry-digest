@@ -222,7 +222,10 @@ export default function LoginPage() {
         {/* GitHub OAuth */}
         {mode !== 'reset' && (
           <button
-            onClick={() => supabase.auth.signInWithOAuth({ provider: 'github' })}
+            onClick={() => supabase.auth.signInWithOAuth({
+              provider: 'github',
+              options: { redirectTo: window.location.origin }
+            })}
             disabled={loading}
             style={{
               width: '100%',
