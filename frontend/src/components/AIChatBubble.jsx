@@ -45,18 +45,18 @@ export default function AIChatBubble({ visible = true }) {
 
   return (
     <>
-      {/* Bubble trigger — 36px */}
+      {/* Bubble trigger — 42px, more visible */}
       <button
         onClick={toggle}
-        className="fixed z-50 bottom-5 right-5 w-9 h-9 flex items-center justify-center transition-all duration-200 hover:scale-105 select-none"
-        style={{ background: '#F0F1F2', border: '1px solid #D8DCE0', borderRadius: '50%', color: '#686C72' }}
+        className="fixed z-50 bottom-6 right-6 w-[42px] h-[42px] flex items-center justify-center transition-all duration-200 hover:scale-110 select-none shadow-md"
+        style={{ background: '#1A1C1E', border: 'none', borderRadius: '50%', color: '#FFFFFF', boxShadow: '0 2px 12px rgba(0,0,0,0.15)' }}
       >
         {open ? (
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
           </svg>
         ) : (
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
           </svg>
         )}
@@ -64,7 +64,7 @@ export default function AIChatBubble({ visible = true }) {
 
       {/* Chat window */}
       <div
-        className={`fixed z-50 bottom-16 right-5 w-[320px] max-w-[calc(100vw-32px)] flex flex-col transition-all duration-250 origin-bottom-right ${open ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}
+        className={`fixed z-50 bottom-20 right-6 w-[340px] max-w-[calc(100vw-32px)] flex flex-col transition-all duration-250 origin-bottom-right ${open ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}
         style={{ background: '#FBFCFD', border: '1px solid #D8DCE0', borderRadius: '6px', boxShadow: '0 4px 16px rgba(0,0,0,0.08)' }}
       >
         {/* Header */}

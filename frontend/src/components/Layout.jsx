@@ -5,10 +5,6 @@ import AIChatBubble from './AIChatBubble';
 
 const NAV_ITEMS = [
   { path: '/', label: '今日日报' },
-  { path: '/search', label: '全文检索' },
-  { path: '/bookmarks', label: '我的收藏' },
-  { path: '/history', label: '浏览历史' },
-  { path: '/stats', label: '数据统计' },
 ];
 
 export default function Layout({ isReading }) {
