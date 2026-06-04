@@ -5,6 +5,7 @@ import ArticleReader from '../components/ArticleReader';
 import SidePanel from '../components/SidePanel';
 import DateNav from '../components/DateNav';
 import FilterBar from '../components/FilterBar';
+import ArticleCard from '../components/ArticleCard';
 
 export default function Home({ onReadArticle, readerArticle }) {
   const [searchParams] = useSearchParams();
@@ -191,18 +192,7 @@ export default function Home({ onReadArticle, readerArticle }) {
                       <span className="text-xs ml-auto" style={{ color: '#8C9096' }}>{arts.length} 篇</span>
                     </div>
                     {arts.sort((a, b) => ({high:0,medium:1,low:2}[a._imp]||2) - ({high:0,medium:1,low:2}[b._imp]||2)).map((a) => (
-                      <div key={a.id || a.url} onClick={() => onReadArticle(a.id)}
-                        className="article-item flex items-start gap-2" style={{ padding: '6px 0' }}>
-                        <div className={`flex-1 min-w-0 ${a._imp === 'high' ? 'imp-high' : a._imp === 'medium' ? 'imp-medium' : 'imp-low'}`}>
-                          <span className="text-sm leading-relaxed" style={{ color: '#1A1C1E', fontWeight: a._imp === 'high' ? 500 : 400 }}>
-                            {a.title}
-                          </span>
-                          <div className="flex items-center gap-2 mt-0.5" style={{ color: '#8C9096', fontSize: '11px' }}>
-                            <span>{a.source_name}</span>
-                            {a.published_at && <span>· {a.published_at.slice(0, 10)}</span>}
-                          </div>
-                        </div>
-                      </div>
+                      <ArticleCard key={a.id || a.url} article={a} onSelect={onReadArticle} variant="compact" />
                     ))}
                   </div>
                 ))}
@@ -211,17 +201,7 @@ export default function Home({ onReadArticle, readerArticle }) {
             ) : searching && searchResults ? (
               <div className="space-y-1">
                 {searchResults.items.map((a) => (
-                  <div key={a.id || a.url} onClick={() => onReadArticle(a.id)}
-                    className="article-item" style={{ padding: '6px 0' }}>
-                    <div className={`${a.importance === 'high' ? 'imp-high' : a.importance === 'medium' ? 'imp-medium' : 'imp-low'}`}>
-                      <span className="text-sm" style={{ color: '#1A1C1E' }}>{a.title}</span>
-                      <div className="flex items-center gap-2 mt-0.5 text-xs" style={{ color: '#8C9096' }}>
-                        <span>{a.source_name}</span>
-                        {a.published_at && <span>· {a.published_at.slice(0, 10)}</span>}
-                      </div>
-                      {a.summary && <p className="text-xs mt-1 line-clamp-2" style={{ color: '#686C72' }}>{a.summary}</p>}
-                    </div>
-                  </div>
+                  <ArticleCard key={a.id || a.url} article={{ ...a, _imp: a.importance }} onSelect={onReadArticle} variant="detailed" />
                 ))}
                 {searchResults.items.length === 0 && <div className="text-center py-16 text-sm" style={{ color: '#8C9096' }}>未找到相关文章</div>}
               </div>
