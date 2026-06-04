@@ -15,12 +15,22 @@ router = APIRouter()
 db = DatabaseManager()
 
 
+# Demo 用户配置（用于开发测试）
+# 在生产环境中应移除或使用真实的用户系统
+DEMO_USER_ID = "demo-user"
+# 生成一个有效的 UUID 作为 demo 用户的数据库 ID
+DEMO_USER_UUID = "00000000-0000-0000-0000-000000000001"
+
 def get_user_id(authorization: str = Header(None)) -> str:
     """从 Authorization Header 验证 JWT token 并提取用户 ID"""
     if not authorization:
         raise HTTPException(status_code=401, detail="未登录")
     
     token = authorization.replace("Bearer ", "")
+    
+    # Demo 用户特殊处理：转换为有效的 UUID
+    if token == DEMO_USER_ID:
+        return DEMO_USER_UUID
     
     # 尝试解析 JWT token
     try:

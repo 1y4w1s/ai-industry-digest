@@ -1,12 +1,14 @@
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 const TOKEN_KEY = 'signal_auth_token';
+// Demo 用户 token（用于未登录时的演示模式）
+const DEMO_TOKEN = 'demo-user';
 
 function getToken() {
   try { return localStorage.getItem(TOKEN_KEY); } catch { return null; }
 }
 
 async function request(path, options = {}) {
-  const token = getToken();
+  const token = getToken() || DEMO_TOKEN;
   const headers = { 'Content-Type': 'application/json', ...options.headers };
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
