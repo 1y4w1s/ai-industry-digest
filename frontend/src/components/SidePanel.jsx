@@ -1,4 +1,8 @@
-export default function SidePanel({ keywords = [], insight = '', topArticles = [], onArticleClick, onAskAI }) {
+export default function SidePanel({ keywords = [], insight = '', topArticles = [], onArticleClick, onAskAI, onTagFilter, activeTags = [] }) {
+  const handleTagClick = (k) => {
+    if (onTagFilter) onTagFilter(k);
+  };
+
   return (
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       {/* 🔥 今日热点 */}
@@ -8,11 +12,27 @@ export default function SidePanel({ keywords = [], insight = '', topArticles = [
             <span style={{ marginRight: '6px' }}>🔥</span> 今日热点
           </h3>
           <div className="flex flex-wrap gap-2">
-            {keywords.map((k) => (
-              <span key={k} className="px-2.5 py-1 text-xs rounded-full cursor-pointer hover:brightness-95" style={{ background: '#E8EAED', color: '#2C2E32' }}>
-                {k}
-              </span>
-            ))}
+            {keywords.map((k) => {
+              const isActive = activeTags.includes(k);
+              return (
+                <span
+                  key={k}
+                  onClick={() => handleTagClick(k)}
+                  style={{
+                    padding: '4px 12px',
+                    fontSize: '11px',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s',
+                    background: isActive ? '#D8DCE0' : '#E8EAED',
+                    color: isActive ? '#1A1C1E' : '#2C2E32',
+                    border: isActive ? '1px solid #B0B4B8' : '1px solid transparent',
+                  }}
+                >
+                  {k}
+                </span>
+              );
+            })}
           </div>
         </div>
       )}

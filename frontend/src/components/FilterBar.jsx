@@ -15,7 +15,12 @@ export default function FilterBar({
 }) {
   const isActive = activeFilterCount > 0;
   const sourceOptions = [{ value: '', label: '全部来源' }, ...sources.map((s) => ({ value: s, label: s }))];
+  // Tag options: first option is "全部" (value=''), then individual tags
   const tagOptions = [{ value: '', label: '全部标签' }, ...tags.map((t) => ({ value: t, label: t }))];
+
+  const handleTagChange = (newTags) => {
+    onTagChange(newTags); // newTags is an array in multi-select mode
+  };
 
   return (
     <div style={{ background: '#F6F7F8', borderBottom: '1px solid #E8EAED', padding: '6px 16px' }}>
@@ -34,9 +39,10 @@ export default function FilterBar({
         />
         <Select
           value={tag}
-          onChange={onTagChange}
+          onChange={handleTagChange}
           options={tagOptions}
           placeholder="标签"
+          multi
         />
 
         {/* Filter status + clear */}

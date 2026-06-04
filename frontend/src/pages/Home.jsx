@@ -19,7 +19,7 @@ export default function Home({ onReadArticle, readerArticle }) {
 
   const [importance, setImportance] = useState('');
   const [source, setSource] = useState('');
-  const [tag, setTag] = useState('');
+  const [tag, setTag] = useState([]);
   const [sources, setSources] = useState([]);
   const [tags, setTags] = useState([]);
   const [searchResults, setSearchResults] = useState(null);
@@ -56,10 +56,10 @@ export default function Home({ onReadArticle, readerArticle }) {
   };
 
   const handleClearSearch = () => {
-    setImportance(''); setSource(''); setTag('');
+    setImportance(''); setSource(''); setTag([]);
   };
 
-  const activeFilterCount = [importance, source, tag].filter(Boolean).length;
+  const activeFilterCount = [importance, source].filter(Boolean).length + tag.length;
 
   const handleAskAI = (question) => {
     window.dispatchEvent(new CustomEvent('ai-ask', { detail: { question } }));
@@ -83,7 +83,7 @@ export default function Home({ onReadArticle, readerArticle }) {
     return articles.filter((a) => {
       if (importance && a._imp !== importance) return false;
       if (source && a.source_name !== source) return false;
-      if (tag && !(a.tags || []).includes(tag)) return false;
+      if (tag.length > 0 && !(a.tags || []).some((t) => tag.includes(t))) return false;
       return true;
     });
   }, [articles, importance, source, tag, searching, searchResults]);
@@ -256,6 +256,14 @@ export default function Home({ onReadArticle, readerArticle }) {
             topArticles={highArticles}
             onArticleClick={(id) => onReadArticle(id)}
             onAskAI={handleAskAI}
+            onTagFilter={(keyword) => {
+              setTag((prev) => {
+                const idx = prev.indexOf(keyword);
+                if (idx >= 0) return prev.filter((_, i) => i !== idx);
+                return [...prev, keyword];
+              });
+            }}
+            activeTags={tag}
           />
         </div>
       </div>
