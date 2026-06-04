@@ -118,14 +118,14 @@ export default function ArticleReader({ articleId, onBack }) {
   };
 
   return (
-    <div className="h-full flex flex-col animate-fade-in" style={{ background: '#FBFCFD' }}>
+    <div className="h-full flex flex-col animate-fade-in" style={{ background: 'var(--color-bg-white)' }}>
       {/* Top bar */}
-      <div className="flex items-center gap-3 px-4 lg:px-5 py-2.5 flex-shrink-0 no-print" style={{ borderBottom: '1px solid #E8EAED', background: '#FFFFFF' }}>
+      <div className="flex items-center gap-3 px-4 lg:px-5 py-2.5 flex-shrink-0 no-print" style={{ borderBottom: '1px solid var(--color-border-light)', background: 'var(--color-bg-white)' }}>
         <button onClick={onBack}
           style={{ fontSize: '12px', color: '#2864A8', background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px', padding: 0 }}>
           ← 返回
         </button>
-        <span className="text-sm font-medium truncate flex-1" style={{ color: '#1A1C1E' }}>
+        <span className="text-sm font-medium truncate flex-1" style={{ color: 'var(--color-text-title)' }}>
           {loading ? '加载中...' : article?.title}
         </span>
       </div>
@@ -134,9 +134,9 @@ export default function ArticleReader({ articleId, onBack }) {
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <div className="flex gap-1.5 justify-center mb-3">
-              <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: '#8C9096', animationDelay: '0ms' }} />
-              <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: '#8C9096', animationDelay: '150ms' }} />
-              <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: '#8C9096', animationDelay: '300ms' }} />
+              <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: 'var(--color-text-label)', animationDelay: '0ms' }} />
+              <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: 'var(--color-text-label)', animationDelay: '150ms' }} />
+              <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: 'var(--color-text-label)', animationDelay: '300ms' }} />
             </div>
             <span style={{ fontSize: '13px', color: '#686C72' }}>加载中...</span>
           </div>
@@ -144,32 +144,32 @@ export default function ArticleReader({ articleId, onBack }) {
       ) : article ? (
         <div className="flex-1 flex overflow-hidden">
           {/* Left: AI精读 + Original */}
-          <div className="flex-1 min-w-0 overflow-y-auto" style={{ borderRight: '1px solid #E8EAED', background: '#FBFCFD' }}>
+          <div className="flex-1 min-w-0 overflow-y-auto" style={{ borderRight: '1px solid var(--color-border-light)', background: 'var(--color-bg-white)' }}>
             <div className="p-5 lg:p-8 max-w-3xl mx-auto">
               {/* AI 精读 — moved from right panel to here */}
               {article.summary && (
-                <div className="no-print" style={{ background: '#F6F7F8', borderRadius: '4px', padding: '16px', marginBottom: '24px' }}>
-                  <h3 className="font-semibold text-xs uppercase tracking-wider mb-3" style={{ color: '#8C9096' }}>AI 精读</h3>
-                  <div className="text-sm leading-relaxed" style={{ color: '#2C2E32' }}>
+                <div className="no-print" style={{ background: 'var(--color-bg-off)', borderRadius: '4px', padding: '16px', marginBottom: '24px' }}>
+                  <h3 className="font-semibold text-xs uppercase tracking-wider mb-3" style={{ color: 'var(--color-text-muted)' }}>AI 精读</h3>
+                  <div className="text-sm leading-relaxed" style={{ color: 'var(--color-text-body)' }}>
                     {article.summary}
                   </div>
                   {article.importance_reason && (
-                    <div className="mt-2 text-xs italic" style={{ color: '#8C9096' }}>{article.importance_reason}</div>
+                    <div className="mt-2 text-xs italic" style={{ color: 'var(--color-text-label)' }}>{article.importance_reason}</div>
                   )}
                   {article.tags?.length > 0 && (
                     <div className="flex flex-wrap gap-1.5 mt-3">
                       {article.tags.map((t) => (
-                        <span key={t} className="px-2 py-0.5 text-xs rounded" style={{ background: '#E8EAED', color: '#686C72' }}>{t}</span>
+                        <span key={t} className="px-2 py-0.5 text-xs rounded" style={{ background: 'var(--color-border-light)', color: 'var(--color-text-muted)' }}>{t}</span>
                       ))}
                     </div>
                   )}
                 </div>
               )}
 
-              <h2 style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '22px', fontWeight: 700, color: '#1A1C1E', lineHeight: 1.35, marginBottom: '12px' }}>
+              <h2 style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '22px', fontWeight: 700, color: 'var(--color-text-title)', lineHeight: 1.35, marginBottom: '12px' }}>
                 {article.title}
               </h2>
-              <div className="flex items-center gap-3 mb-6" style={{ color: '#686C72', fontSize: '13px' }}>
+              <div className="flex items-center gap-3 mb-6" style={{ color: 'var(--color-text-muted)', fontSize: '13px' }}>
                 <span>{article.source_name}</span><span>·</span><span>{article.published_at?.slice(0, 10)}</span>
                 <div className="ml-auto flex items-center gap-3 no-print">
                   <button onClick={toggleBookmark} title={isBookmarked ? '取消收藏' : '收藏'}
@@ -184,14 +184,14 @@ export default function ArticleReader({ articleId, onBack }) {
                   )}
                 </div>
               </div>
-              <div className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: '#2C2E32', lineHeight: '1.8', fontSize: '15px' }}>
+              <div className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: 'var(--color-text-body)', lineHeight: '1.8', fontSize: '15px' }}>
                 {stripHtml(article.raw_content) || '暂无原文内容'}
               </div>
 
               {/* PDF export */}
-              <div className="mt-8 pt-6 text-center no-print" style={{ borderTop: '1px solid #E8EAED' }}>
+              <div className="mt-8 pt-6 text-center no-print" style={{ borderTop: '1px solid var(--color-border-light)' }}>
                 <button onClick={downloadPDF} disabled={loading}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 16px', fontSize: '12px', color: '#686C72', background: 'transparent', border: '1px solid #D8DCE0', borderRadius: '4px', cursor: 'pointer', transition: 'all 0.15s' }}>
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 16px', fontSize: '12px', color: 'var(--color-text-muted)', background: 'transparent', border: '1px solid var(--color-border)', borderRadius: '4px', cursor: 'pointer', transition: 'all 0.15s' }}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M6 9V2h12v7" />
                     <path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2" />

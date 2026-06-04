@@ -82,6 +82,12 @@ body {
 [data-theme="dark"] ::-webkit-scrollbar-thumb { background: #3C3E42; }
 [data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: #5C5E62; }
 
+/* Dark mode overrides for common patterns */
+[data-theme="dark"] .bg-white,
+[data-theme="dark"] [class*="bg-white"] { background: var(--color-bg-white) !important; }
+[data-theme="dark"] .sidebar-link:hover { background: var(--color-bg-hover) !important; }
+[data-theme="dark"] [class*="hover:bg-\\[#F0F1F2\\]"]:hover { background: var(--color-bg-hover) !important; }
+
 /* ── Sidebar ───────────── */
 .sidebar-link {
   position: relative;

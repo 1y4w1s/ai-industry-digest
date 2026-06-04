@@ -40,15 +40,15 @@ export default function Home({ onReadArticle, readerArticle }) {
   // Loading state
   if (loading && !fromCache) {
     return (
-      <div className="h-full flex flex-col overflow-hidden" style={{ background: '#FBFCFD' }}>
+      <div className="h-full flex flex-col overflow-hidden" style={{ background: 'var(--color-bg-white)' }}>
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <div className="flex gap-1.5 justify-center mb-3">
-              <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: '#8C9096', animationDelay: '0ms' }} />
-              <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: '#8C9096', animationDelay: '150ms' }} />
-              <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: '#8C9096', animationDelay: '300ms' }} />
+              <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: 'var(--color-text-label)', animationDelay: '0ms' }} />
+              <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: 'var(--color-text-label)', animationDelay: '150ms' }} />
+              <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: 'var(--color-text-label)', animationDelay: '300ms' }} />
             </div>
-            <span style={{ fontSize: '13px', color: '#686C72' }}>加载中...</span>
+            <span style={{ fontSize: '13px', color: 'var(--color-text-muted)' }}>加载中...</span>
           </div>
         </div>
       </div>
@@ -56,7 +56,7 @@ export default function Home({ onReadArticle, readerArticle }) {
   }
 
   return (
-    <div className="h-full flex flex-col overflow-hidden" style={{ background: '#FBFCFD' }}>
+    <div className="h-full flex flex-col overflow-hidden" style={{ background: 'var(--color-bg-white)' }}>
       <FilterBar
         importance={importance}
         source={source}

@@ -29,19 +29,19 @@ function ArticleCard({ article, onSelect, variant = 'compact' }) {
     >
       <div className={impClass}>
         <span className="text-sm leading-relaxed" style={{
-          color: '#1A1C1E',
+          color: 'var(--color-text-title)',
           fontWeight: imp === 'high' ? 500 : 400,
           display: 'block',
           lineHeight: '1.4',
         }}>
           {article.title}
         </span>
-        <div className="flex items-center gap-2 mt-0.5" style={{ color: '#8C9096', fontSize: '11px' }}>
+        <div className="flex items-center gap-2 mt-0.5" style={{ color: 'var(--color-text-label)', fontSize: '11px' }}>
           <span>{article.source_name}</span>
           {article.published_at && <span>· {article.published_at.slice(0, 10)}</span>}
         </div>
         {text && (
-          <p className="text-xs mt-1 leading-relaxed line-clamp-2" style={{ color: '#686C72', lineHeight: '1.6' }}>
+          <p className="text-xs mt-1 leading-relaxed line-clamp-2" style={{ color: 'var(--color-text-muted)', lineHeight: '1.6' }}>
             {text}
           </p>
         )}
