@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { api } from '../api/client';
 import ArticleReader from '../components/ArticleReader';
 import SidePanel from '../components/SidePanel';
 import DateNav from '../components/DateNav';
+import FilterBar from '../components/FilterBar';
 
 export default function Home({ onReadArticle, readerArticle }) {
   const [searchParams] = useSearchParams();
@@ -56,16 +57,9 @@ export default function Home({ onReadArticle, readerArticle }) {
 
   const handleClearSearch = () => {
     setImportance(''); setSource(''); setTag('');
-    setSearching(false); setSearchResults(null);
-  };
-
-  const handleQuickFilter = (imp, src, tg) => {
-    if (imp || src || tg) doSearch('', imp, src, tg, 1);
-    else { setSearching(false); setSearchResults(null); }
   };
 
   const activeFilterCount = [importance, source, tag].filter(Boolean).length;
-  const isFilterActive = searching || activeFilterCount > 0;
 
   const handleAskAI = (question) => {
     window.dispatchEvent(new CustomEvent('ai-ask', { detail: { question } }));
@@ -79,71 +73,45 @@ export default function Home({ onReadArticle, readerArticle }) {
       for (const a of (report.articles?.[level] || [])) articles.push({ ...a, _imp: level });
   }
 
-  const groups = {};
-  for (const a of (searchResults?.items || articles)) {
-    const src = a.source_name || '其他';
-    if (!groups[src]) groups[src] = [];
-    groups[src].push(a);
-  }
-
   const highArticles = articles.filter((a) => a._imp === 'high');
   const heroArticle = highArticles[0];
   const displayReporting = !searching && report;
 
+  // Front-end filtering
+  const filteredArticles = useMemo(() => {
+    if (searching) return searchResults?.items || [];
+    return articles.filter((a) => {
+      if (importance && a._imp !== importance) return false;
+      if (source && a.source_name !== source) return false;
+      if (tag && !(a.tags || []).includes(tag)) return false;
+      return true;
+    });
+  }, [articles, importance, source, tag, searching, searchResults]);
+
+  const filteredGroups = {};
+  for (const a of filteredArticles) {
+    const src = a.source_name || '其他';
+    if (!filteredGroups[src]) filteredGroups[src] = [];
+    filteredGroups[src].push(a);
+  }
+
+  const hasFilteredResults = filteredArticles.length > 0;
+
   return (
     <div className="h-full flex flex-col overflow-hidden" style={{ background: '#FBFCFD' }}>
       {/* ═══ Filter Bar ═══ */}
-      <div className="flex-shrink-0" style={{ background: '#F6F7F8', borderBottom: '1px solid #E8EAED', padding: '6px 16px' }}>
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* Importance pills — gray scale */}
-          <div className="flex items-center gap-1">
-            {[
-              { key: 'high', label: '高', color: '#D4322E' },
-              { key: 'medium', label: '中', color: '#C8960A' },
-              { key: 'low', label: '低', color: '#8C9096' },
-            ].map((opt) => (
-              <button key={opt.key} onClick={() => {
-                const next = importance === opt.key ? '' : opt.key;
-                setImportance(next);
-                if (next || source || tag) doSearch('', next, source, tag, 1);
-                else { setSearching(false); setSearchResults(null); }
-              }} className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] rounded transition-all"
-                style={{ background: importance === opt.key ? '#D8DCE0' : 'transparent', color: importance === opt.key ? '#1A1C1E' : '#686C72' }}>
-                <span className="w-1.5 h-1.5 rounded-full" style={{ background: opt.color }} />
-                {opt.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Source/Tag dropdowns */}
-          <select value={source} onChange={(e) => { setSource(e.target.value); handleQuickFilter(importance, e.target.value, tag); }}
-            className="text-[11px] px-2 py-1 rounded cursor-pointer" style={{ background: '#EDEEF0', border: '1px solid #E8EAED', color: source ? '#1A1C1E' : '#8C9096' }}>
-            <option value="">来源</option>
-            {sources.map((s) => <option key={s} value={s}>{s}</option>)}
-          </select>
-          <select value={tag} onChange={(e) => { setTag(e.target.value); handleQuickFilter(importance, source, e.target.value); }}
-            className="text-[11px] px-2 py-1 rounded cursor-pointer" style={{ background: '#EDEEF0', border: '1px solid #E8EAED', color: tag ? '#1A1C1E' : '#8C9096' }}>
-            <option value="">标签</option>
-            {tags.map((t) => <option key={t} value={t}>{t}</option>)}
-          </select>
-
-          {/* Filter status */}
-          {isFilterActive && (
-            <div className="flex items-center gap-2 ml-1">
-              <span className="text-[11px]" style={{ color: '#686C72' }}>
-                {searching ? `${searchResults?.total || 0} 条结果` : `${activeFilterCount} 个筛选中`}
-              </span>
-              <button onClick={handleClearSearch} className="text-[11px]" style={{ color: '#8C9096' }}>清除</button>
-            </div>
-          )}
-
-          {/* Side panel toggle */}
-          <button onClick={() => setSidePanelOpen(!sidePanelOpen)}
-            className="hidden lg:flex xl:hidden ml-auto items-center gap-1 px-2 py-1 text-[11px] rounded cursor-pointer" style={{ background: '#EDEEF0', border: '1px solid #E8EAED', color: '#686C72' }}>
-            <span className={sidePanelOpen ? 'rotate-180' : ''} style={{ display: 'inline-block', transition: 'transform 0.2s' }}>◀</span>
-          </button>
-        </div>
-      </div>
+      <FilterBar
+        importance={importance}
+        source={source}
+        tag={tag}
+        sources={sources}
+        tags={tags}
+        activeFilterCount={activeFilterCount}
+        onImportanceChange={(val) => setImportance(val)}
+        onSourceChange={(val) => setSource(val)}
+        onTagChange={(val) => setTag(val)}
+        onClear={handleClearSearch}
+      />
 
       {/* ═══ Three-column Content ═══ */}
       <div className="flex-1 flex overflow-hidden">
@@ -160,7 +128,7 @@ export default function Home({ onReadArticle, readerArticle }) {
             )}
             {displayReporting && (
               <div style={{ fontSize: '12px', color: '#686C72', marginTop: '8px', marginBottom: '20px', paddingTop: '8px', borderTop: '1px solid #E8EAED' }}>
-                {articles.length} 篇文章 · {Object.keys(groups).length} 个来源 · {highArticles.length} 篇高重要性
+                {articles.length} 篇文章 · {Object.keys(filteredGroups).length} 个来源 · {highArticles.length} 篇高重要性
               </div>
             )}
 
@@ -216,7 +184,7 @@ export default function Home({ onReadArticle, readerArticle }) {
                 )}
 
                 {/* Source groups */}
-                {Object.entries(groups).sort(([,a],[,b]) => b.filter(x=>x._imp==='high').length - a.filter(x=>x._imp==='high').length).map(([src, arts]) => (
+                {Object.entries(filteredGroups).sort(([,a],[,b]) => b.filter(x=>x._imp==='high').length - a.filter(x=>x._imp==='high').length).map(([src, arts]) => (
                   <div key={src} style={{ marginTop: '24px' }}>
                     <div className="flex items-center pb-1.5 mb-1" style={{ borderBottom: '1px solid #E8EAED' }}>
                       <span style={{ fontSize: '13px', fontWeight: 600, color: '#1A1C1E' }}>{src}</span>

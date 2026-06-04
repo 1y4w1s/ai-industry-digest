@@ -60,7 +60,7 @@ export default function DateNav({ reports, selectedDate, onSelect }) {
               }}
             >
               <span>{label}</span>
-              {(label === '今天' || label === '昨天') && (
+              {(label === '今天' || label === '昨天' || label === '前天') && (
                 <span style={{ fontSize: '10px', color: '#8C9096', marginLeft: '4px' }}>{r.report_date.slice(5)}</span>
               )}
             </button>
