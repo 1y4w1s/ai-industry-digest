@@ -77,6 +77,7 @@ export default function ArticleReader({ articleId, onBack }) {
 </html>`);
     win.document.close();
     win.focus();
+    win.onafterprint = () => win.close();
     setTimeout(() => { win.print(); }, 300);
   };
 
