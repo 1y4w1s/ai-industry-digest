@@ -1,0 +1,21 @@
+name: Auto Deploy
+
+on:
+  push:
+    branches: [master]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: 部署到服务器
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: 43.139.133.245
+          username: ubuntu
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /opt/ai-industry-digest
+            bash scripts/deploy.sh
