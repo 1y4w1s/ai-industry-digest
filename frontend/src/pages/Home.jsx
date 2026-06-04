@@ -150,23 +150,7 @@ export default function Home({ onReadArticle, readerArticle }) {
             {detailLoading ? (
               <div className="text-center py-16 text-sm" style={{ color: '#8C9096' }}>加载中...</div>
             ) : displayReporting ? (
-              <>
-                {/* Overview */}
-                {report.summary_insight && (
-                  <div className="mb-5 p-4" style={{ background: '#F6F7F8', borderRadius: '4px' }}>
-                    <div className="text-sm leading-relaxed" style={{ color: '#2C2E32', borderLeft: '3px solid #1A1C1E', paddingLeft: '14px' }}>
-                      {report.summary_insight}
-                    </div>
-                    {report.trending_keywords?.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 mt-3">
-                        {report.trending_keywords.map((k) => (
-                          <span key={k} className="px-2 py-0.5 text-xs rounded" style={{ background: '#E8EAED', color: '#686C72' }}>{k}</span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-
+              <>                
                 {/* Hero article */}
                 {heroArticle && (
                   <HeroArticle article={heroArticle} onSelect={onReadArticle} />
