@@ -53,24 +53,6 @@ body {
 .animate-slide-right { animation: slideInRight 0.25s ease-out; }
 .animate-slide-up { animation: slideInUp 0.3s ease-out; }
 
-/* ── Print styles ───────────── */
-@media print {
-  body { background: white !important; color: #1a1a1a !important; }
-  .no-print { display: none !important; }
-  * { box-shadow: none !important; }
-  .whitespace-pre-wrap { white-space: pre-wrap !important; }
-
-  /* Article print: optimize font sizes */
-  h2[style*="font-size: 22px"] {
-    font-size: 18pt !important;
-    margin-bottom: 8pt !important;
-  }
-  div.text-sm.leading-relaxed[style*="font-size: 15px"] {
-    font-size: 11pt !important;
-    line-height: 1.6 !important;
-  }
-}
-
 /* ── Sidebar ───────────── */
 .sidebar-link {
   position: relative;

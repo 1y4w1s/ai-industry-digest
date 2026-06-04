@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { api } from '../api/client';
+import dompdf from 'dompdf.js';
 
 export default function ArticleReader({ articleId, onBack }) {
   const [article, setArticle] = useState(null);
@@ -11,6 +12,7 @@ export default function ArticleReader({ articleId, onBack }) {
   const [bookmarkId, setBookmarkId] = useState(null);
   const chatEndRef = useRef(null);
   const chatInputRef = useRef(null);
+  const printContentRef = useRef(null);
 
   const isBookmarked = !!bookmarkId;
 
@@ -49,6 +51,38 @@ export default function ArticleReader({ articleId, onBack }) {
   };
 
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
+
+  const downloadPDF = async () => {
+    if (!printContentRef.current || !article) return;
+    try {
+      dompdf(printContentRef.current, {
+        useCORS: true,
+        pagination: true,
+        format: 'a4',
+        fontConfig: {
+          fontFamily: 'SourceHanSansSC-Normal-Min',
+          fontBase64: window.fontBase64,
+        },
+        pageConfig: {
+          footer: {
+            content: '',
+            height: 0,
+          },
+        },
+      }).then((blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${article.title.slice(0, 30)}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      });
+    } catch (err) {
+      console.error('PDF 生成失败:', err);
+    }
+  };
 
   const handleChat = async (e) => {
     e.preventDefault();
@@ -146,7 +180,7 @@ export default function ArticleReader({ articleId, onBack }) {
 
               {/* PDF export */}
               <div className="mt-8 pt-6 text-center no-print" style={{ borderTop: '1px solid #E8EAED' }}>
-                <button onClick={() => window.print()}
+                <button onClick={downloadPDF}
                   style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 16px', fontSize: '12px', color: '#686C72', background: 'transparent', border: '1px solid #D8DCE0', borderRadius: '4px', cursor: 'pointer', transition: 'all 0.15s' }}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M6 9V2h12v7" />
@@ -227,6 +261,21 @@ export default function ArticleReader({ articleId, onBack }) {
                 返回
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Hidden PDF print content */}
+      {article && (
+        <div ref={printContentRef} style={{ position: 'fixed', top: '-9999px', left: '-9999px', width: '794px', padding: '60px 60px 40px', fontFamily: 'SourceHanSansSC-Normal-Min, serif', lineHeight: 1.8, color: '#1a1a1a', background: 'white' }}>
+          <h1 style={{ fontSize: '22pt', fontWeight: 700, fontFamily: 'SourceHanSansSC-Normal-Min, serif', marginBottom: '8pt', lineHeight: 1.35 }}>
+            {article.title}
+          </h1>
+          <p style={{ fontSize: '11pt', color: '#666', marginBottom: '20pt' }}>
+            {article.source_name}{article.published_at ? ` · ${article.published_at.slice(0, 10)}` : ''}
+          </p>
+          <div style={{ fontSize: '11pt', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
+            {stripHtml(article.raw_content) || '暂无原文内容'}
           </div>
         </div>
       )}
