@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
+import { useAuth } from '../context/AuthContext';
 import ArticleCard from '../components/ArticleCard';
 import Pagination from '../components/Pagination';
 
 export default function BookmarksPage({ onReadArticle }) {
+  const { isLoggedIn, login } = useAuth();
   const [bookmarks, setBookmarks] = useState(null);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -38,6 +40,22 @@ export default function BookmarksPage({ onReadArticle }) {
               ← 返回首页
             </button>
           </div>
+
+          {/* Login guard */}
+          {!isLoggedIn ? (
+            <div className="text-center py-20">
+              <div style={{ width: '48px', height: '48px', margin: '0 auto 16px', borderRadius: '50%', background: '#F0F1F2', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8C9096" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </div>
+              <p style={{ fontSize: '14px', color: '#1A1C1E', marginBottom: '8px' }}>当前页面需要登录才能浏览</p>
+              <button onClick={() => { login(); }}
+                style={{ fontSize: '12px', color: '#2864A8', background: 'none', border: 'none', cursor: 'pointer' }}>
+                登录 / 注册
+              </button>
+            </div>
+          ) : (<>
 
           {/* Header */}
           <div className="mb-6" style={{ borderBottom: '1px solid #E8EAED', paddingBottom: '16px' }}>
@@ -93,6 +111,7 @@ export default function BookmarksPage({ onReadArticle }) {
               <p style={{ fontSize: '12px', color: '#686C72' }}>在阅读文章时可以收藏喜欢的内容</p>
             </div>
           )}
+          </>)}
 
           {bookmarks?.pages > 1 && (
             <Pagination page={page} totalPages={bookmarks.pages} onPageChange={(pg) => setPage(pg)} />

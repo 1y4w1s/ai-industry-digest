@@ -1,10 +1,12 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
+import { useAuth } from '../context/AuthContext';
 import ArticleCard from '../components/ArticleCard';
 import Pagination from '../components/Pagination';
 
 export default function HistoryPage({ onReadArticle }) {
+  const { isLoggedIn, login } = useAuth();
   const [history, setHistory] = useState(null);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -54,6 +56,21 @@ export default function HistoryPage({ onReadArticle }) {
             </button>
           </div>
 
+          {!isLoggedIn ? (
+            <div className="text-center py-20">
+              <div style={{ width: '48px', height: '48px', margin: '0 auto 16px', borderRadius: '50%', background: '#F0F1F2', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8C9096" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </div>
+              <p style={{ fontSize: '14px', color: '#1A1C1E', marginBottom: '8px' }}>当前页面需要登录才能浏览</p>
+              <button onClick={() => { login(); }}
+                style={{ fontSize: '12px', color: '#2864A8', background: 'none', border: 'none', cursor: 'pointer' }}>
+                登录 / 注册
+              </button>
+            </div>
+          ) : (
+          <>
           {/* Header */}
           <div className="mb-6" style={{ borderBottom: '1px solid #E8EAED', paddingBottom: '16px' }}>
             <h1 style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '20px', fontWeight: 700, color: '#1A1C1E' }}>
@@ -107,6 +124,7 @@ export default function HistoryPage({ onReadArticle }) {
               <p style={{ fontSize: '12px', color: '#686C72' }}>阅读文章后会自动记录在这里</p>
             </div>
           )}
+          </>)}
 
           {history?.pages > 1 && (
             <Pagination page={page} totalPages={history.pages} onPageChange={(pg) => setPage(pg)} />
