@@ -43,10 +43,11 @@ export function ThemeProvider({ children }) {
     document.documentElement.setAttribute('data-theme', resolvedTheme);
   }, [resolvedTheme]);
 
+  // 初始挂载时同步一次 data-font-size
   useEffect(() => {
-    console.log(`[ThemeContext] apply data-font-size="${fontSize}" to <html> | current html:`, document.documentElement.outerHTML.slice(0, 300));
     document.documentElement.setAttribute('data-font-size', fontSize);
-  }, [fontSize]);
+    console.log(`[ThemeContext] mount: set data-font-size="${fontSize}"`);
+  }, []);
 
   useEffect(() => {
     if (themeMode !== 'system') return;
@@ -61,16 +62,23 @@ export function ThemeProvider({ children }) {
   }, [themeMode]);
 
   const updateThemeMode = useCallback((mode) => {
-    console.log(`[ThemeContext] updateThemeMode called with "${mode}" | previous="${themeMode}"`);
+    console.log(`[ThemeContext] updateThemeMode called with "${mode}"`);
     setThemeMode(mode);
     persist('themeMode', mode);
-  }, [themeMode, persist]);
+    // 同步写入 DOM
+    const resolved = mode === 'system' ? getSystemTheme() : mode;
+    document.documentElement.setAttribute('data-theme', resolved);
+    console.log(`[ThemeContext] sync DOM: data-theme="${resolved}"`);
+  }, [persist]);
 
   const updateFontSize = useCallback((size) => {
-    console.log(`[ThemeContext] updateFontSize called with "${size}" | previous fontSize="${fontSize}"`);
+    console.log(`[ThemeContext] updateFontSize called with "${size}"`);
     setFontSize(size);
     persist('fontSize', size);
-  }, [fontSize, persist]);
+    // 同步写入 DOM，绕过 React 调度延迟
+    document.documentElement.setAttribute('data-font-size', size);
+    console.log(`[ThemeContext] sync DOM: data-font-size="${document.documentElement.getAttribute('data-font-size')}"`);
+  }, [persist]);
 
   const updateLangPref = useCallback((lang) => {
     setLangPref(lang);
