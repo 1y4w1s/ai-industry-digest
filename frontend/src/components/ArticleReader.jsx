@@ -59,10 +59,6 @@ export default function ArticleReader({ articleId, onBack }) {
         useCORS: true,
         pagination: true,
         format: 'a4',
-        fontConfig: {
-          fontFamily: 'SourceHanSansSC-Normal-Min',
-          fontBase64: window.fontBase64,
-        },
         pageConfig: {
           footer: {
             content: '',
@@ -267,8 +263,8 @@ export default function ArticleReader({ articleId, onBack }) {
 
       {/* Hidden PDF print content */}
       {article && (
-        <div ref={printContentRef} style={{ position: 'fixed', top: '-9999px', left: '-9999px', width: '794px', padding: '60px 60px 40px', fontFamily: 'SourceHanSansSC-Normal-Min, serif', lineHeight: 1.8, color: '#1a1a1a', background: 'white' }}>
-          <h1 style={{ fontSize: '22pt', fontWeight: 700, fontFamily: 'SourceHanSansSC-Normal-Min, serif', marginBottom: '8pt', lineHeight: 1.35 }}>
+        <div ref={printContentRef} foreignObjectRendering style={{ position: 'fixed', top: '-9999px', left: '-9999px', width: '794px', padding: '60px 60px 40px', fontFamily: "'Source Serif 4', Georgia, serif", lineHeight: 1.8, color: '#1a1a1a', background: 'white' }}>
+          <h1 style={{ fontSize: '22pt', fontWeight: 700, fontFamily: "'Source Serif 4', Georgia, serif", marginBottom: '8pt', lineHeight: 1.35 }}>
             {article.title}
           </h1>
           <p style={{ fontSize: '11pt', color: '#666', marginBottom: '20pt' }}>
