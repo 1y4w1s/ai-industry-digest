@@ -61,15 +61,15 @@ body {
 :root { --fs-xs: 11px; --fs-sm: 12px; --fs-base: 14px; --fs-md: 15px; --fs-lg: 17px; --fs-xl: 22px; --fs-2xl: 26px; }
 
 /* Override hardcoded inline font-size values to respect CSS variables */
-[data-font-size] [style*="font-size: 10px"] { font-size: var(--fs-xs) !important; }
-[data-font-size] [style*="font-size: 11px"] { font-size: var(--fs-xs) !important; }
-[data-font-size] [style*="font-size: 12px"] { font-size: var(--fs-sm) !important; }
-[data-font-size] [style*="font-size: 13px"] { font-size: var(--fs-base) !important; }
-[data-font-size] [style*="font-size: 14px"] { font-size: var(--fs-base) !important; }
-[data-font-size] [style*="font-size: 15px"] { font-size: var(--fs-md) !important; }
-[data-font-size] [style*="font-size: 17px"] { font-size: var(--fs-lg) !important; }
-[data-font-size] [style*="font-size: 22px"] { font-size: var(--fs-xl) !important; }
-[data-font-size] [style*="font-size: 24px"] { font-size: var(--fs-2xl) !important; }
+[data-font-size] [style*="font-size:10"] { font-size: var(--fs-xs) !important; }
+[data-font-size] [style*="font-size:11"] { font-size: var(--fs-xs) !important; }
+[data-font-size] [style*="font-size:12"] { font-size: var(--fs-sm) !important; }
+[data-font-size] [style*="font-size:13"] { font-size: var(--fs-base) !important; }
+[data-font-size] [style*="font-size:14"] { font-size: var(--fs-base) !important; }
+[data-font-size] [style*="font-size:15"] { font-size: var(--fs-md) !important; }
+[data-font-size] [style*="font-size:17"] { font-size: var(--fs-lg) !important; }
+[data-font-size] [style*="font-size:22"] { font-size: var(--fs-xl) !important; }
+[data-font-size] [style*="font-size:24"] { font-size: var(--fs-2xl) !important; }
 
 /* ── Dark theme ───────────── */
 [data-theme="dark"] {
