@@ -46,7 +46,7 @@ export default function Layout({ isReading }) {
   };
 
   const handleLogin = () => {
-    login();
+    navigate('/login');
   };
 
   return (

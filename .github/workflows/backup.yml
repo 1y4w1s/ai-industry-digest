@@ -23,19 +23,7 @@ jobs:
         run: pip install supabase python-dotenv
 
       - name: Export data
-        run: |
-          python -c "
-import os, json
-from supabase import create_client
-url = os.environ['SUPABASE_URL']
-key = os.environ['SUPABASE_KEY']
-client = create_client(url, key)
-
-arts = client.table('articles').select('*').execute()
-with open('backup_articles.json', 'w', encoding='utf-8') as f:
-    json.dump(arts.data, f, ensure_ascii=False, default=str)
-print(f'Exported {len(arts.data)} articles')
-"
+        run: python scripts/backup.py
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4

@@ -3,6 +3,9 @@ import { useAuth } from '../context/AuthContext';
 export default function ProfilePage({ onReadArticle }) {
   const { user, logout } = useAuth();
 
+  const nickname = user?.user_metadata?.nickname || user?.email?.split('@')[0] || '用户';
+  const initial = nickname[0].toUpperCase();
+
   return (
     <div className="h-full flex flex-col" style={{ background: '#FBFCFD' }}>
       <div className="flex-1 overflow-y-auto">
@@ -10,16 +13,14 @@ export default function ProfilePage({ onReadArticle }) {
           {/* Avatar + Name */}
           <div className="text-center mb-8">
             <div className="w-16 h-16 rounded-full flex items-center justify-center text-lg font-semibold mx-auto mb-3" style={{ background: '#E8EAED', color: '#686C72' }}>
-              {(user?.nickname || 'U')[0].toUpperCase()}
+              {initial}
             </div>
             <h1 style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '20px', fontWeight: 700, color: '#1A1C1E' }}>
-              {user?.nickname || '用户'}
+              {nickname}
             </h1>
-            {user?.created_at && (
-              <p style={{ fontSize: '12px', color: '#686C72', marginTop: '4px' }}>
-                加入时间: {user.created_at.slice(0, 10)}
-              </p>
-            )}
+            <p style={{ fontSize: '12px', color: '#686C72', marginTop: '4px' }}>
+              {user?.email}
+            </p>
           </div>
 
           {/* Stats links */}
