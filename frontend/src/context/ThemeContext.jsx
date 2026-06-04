@@ -23,51 +23,54 @@ function getSystemTheme() {
 
 export function ThemeProvider({ children }) {
   const stored = loadPrefs();
+  console.log('[ThemeContext] init | localStorage prefs:', stored);
 
-  const [themeMode, setThemeMode] = useState(stored.themeMode || 'system'); // 'light' | 'dark' | 'system'
-  const [fontSize, setFontSize] = useState(stored.fontSize || 'medium');   // 'small' | 'medium' | 'large'
-  const [langPref, setLangPref] = useState(stored.langPref || 'all');       // 'zh' | 'en' | 'all'
+  const [themeMode, setThemeMode] = useState(stored.themeMode || 'system');
+  const [fontSize, setFontSize] = useState(stored.fontSize || 'medium');
+  const [langPref, setLangPref] = useState(stored.langPref || 'all');
 
-  // Resolve actual theme from mode
   const resolvedTheme = themeMode === 'system' ? getSystemTheme() : themeMode;
 
-  // Persist preferences
   const persist = useCallback((key, value) => {
     const prefs = loadPrefs();
     prefs[key] = value;
     savePrefs(prefs);
+    console.log(`[ThemeContext] persist | ${key} = ${value} | full prefs:`, prefs);
   }, []);
 
-  // Apply theme to <html>
   useEffect(() => {
+    console.log(`[ThemeContext] apply data-theme="${resolvedTheme}" to <html>`);
     document.documentElement.setAttribute('data-theme', resolvedTheme);
   }, [resolvedTheme]);
 
-  // Apply font size to <html>
   useEffect(() => {
+    console.log(`[ThemeContext] apply data-font-size="${fontSize}" to <html> | current html:`, document.documentElement.outerHTML.slice(0, 300));
     document.documentElement.setAttribute('data-font-size', fontSize);
   }, [fontSize]);
 
-  // Listen to system theme changes when in 'system' mode
   useEffect(() => {
     if (themeMode !== 'system') return;
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
     const handler = () => {
-      document.documentElement.setAttribute('data-theme', getSystemTheme());
+      const t = getSystemTheme();
+      console.log(`[ThemeContext] system theme changed → ${t}`);
+      document.documentElement.setAttribute('data-theme', t);
     };
     mq.addEventListener('change', handler);
     return () => mq.removeEventListener('change', handler);
   }, [themeMode]);
 
   const updateThemeMode = useCallback((mode) => {
+    console.log(`[ThemeContext] updateThemeMode called with "${mode}" | previous="${themeMode}"`);
     setThemeMode(mode);
     persist('themeMode', mode);
-  }, [persist]);
+  }, [themeMode, persist]);
 
   const updateFontSize = useCallback((size) => {
+    console.log(`[ThemeContext] updateFontSize called with "${size}" | previous fontSize="${fontSize}"`);
     setFontSize(size);
     persist('fontSize', size);
-  }, [persist]);
+  }, [fontSize, persist]);
 
   const updateLangPref = useCallback((lang) => {
     setLangPref(lang);
