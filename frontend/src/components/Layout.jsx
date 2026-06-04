@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import AIChatBubble from './AIChatBubble';
 
@@ -10,13 +10,15 @@ const NAV_ITEMS = [
   { path: '/settings', label: '设置' },
 ];
 
-export default function Layout({ isReading }) {
+export default function Layout() {
   const { isLoggedIn, user, login, logout } = useAuth();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const searchRef = useRef(null);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isReading = !!searchParams.get('article');
 
   useEffect(() => {
     if (searchOpen) {

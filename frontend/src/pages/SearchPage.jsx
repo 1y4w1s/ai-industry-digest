@@ -5,10 +5,11 @@ import ArticleCard from '../components/ArticleCard';
 import Pagination from '../components/Pagination';
 import AIRecommendPanel from '../components/AIRecommendPanel';
 
-export default function SearchPage({ onReadArticle }) {
+export default function SearchPage() {
   const [searchParams] = useSearchParams();
   const query = searchParams.get('q') || '';
   const navigate = useNavigate();
+  const goToArticle = (id) => navigate(`/?article=${encodeURIComponent(id)}`);
 
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -80,7 +81,7 @@ export default function SearchPage({ onReadArticle }) {
               {!loading && results && results.items.length > 0 && (
                 <div className="space-y-1">
                   {results.items.map((a) => (
-                    <ArticleCard key={a.id || a.url} article={a} onSelect={onReadArticle} variant="detailed" />
+                    <ArticleCard key={a.id || a.url} article={a} onSelect={goToArticle} variant="detailed" />
                   ))}
                 </div>
               )}

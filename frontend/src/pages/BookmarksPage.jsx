@@ -5,12 +5,13 @@ import { useAuth } from '../context/AuthContext';
 import ArticleCard from '../components/ArticleCard';
 import Pagination from '../components/Pagination';
 
-export default function BookmarksPage({ onReadArticle }) {
+export default function BookmarksPage() {
   const { isLoggedIn, login } = useAuth();
   const [bookmarks, setBookmarks] = useState(null);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const navigate = useNavigate();
+  const goToArticle = (id) => navigate(`/?article=${encodeURIComponent(id)}`);
 
   const fetchBookmarks = (pg) => {
     setLoading(true);
@@ -80,7 +81,7 @@ export default function BookmarksPage({ onReadArticle }) {
               {bookmarks.items.map((b) => (
                 <div key={b.id || b.article_id} className="flex items-start gap-2 group">
                   <div className="flex-1 min-w-0">
-                    <ArticleCard article={{ ...b.articles, _imp: b.articles?.importance || '' }} onSelect={onReadArticle} variant="detailed" />
+                    <ArticleCard article={{ ...b.articles, _imp: b.articles?.importance || '' }} onSelect={goToArticle} variant="detailed" />
                   </div>
                   <button onClick={(e) => handleRemove(e, b.id)}
                     style={{ fontSize: 'var(--fs-sm)', color: 'var(--color-text-label)', background: 'none', border: 'none', cursor: 'pointer', padding: '8px 4px', opacity: 0, transition: 'opacity 0.15s' }}

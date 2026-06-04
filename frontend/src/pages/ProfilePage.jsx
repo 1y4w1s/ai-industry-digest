@@ -1,6 +1,6 @@
 import { useAuth } from '../context/AuthContext';
 
-export default function ProfilePage({ onReadArticle }) {
+export default function ProfilePage() {
   const { user, logout } = useAuth();
 
   const nickname = user?.user_metadata?.nickname || user?.email?.split('@')[0] || '用户';

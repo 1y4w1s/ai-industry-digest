@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useReport } from '../hooks/useReport';
 import { useFilter } from '../hooks/useFilter';
 import ArticleReader from '../components/ArticleReader';
@@ -9,8 +10,13 @@ import ArticleGroup from '../components/ArticleGroup';
 import HeroArticle from '../components/HeroArticle';
 import DataStats from '../components/DataStats';
 
-export default function Home({ onReadArticle, readerArticle }) {
+export default function Home() {
   const [sidePanelOpen, setSidePanelOpen] = useState(true);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const articleId = searchParams.get('article');
+
+  const goToArticle = (id) => navigate(`/?article=${encodeURIComponent(id)}`);
 
   const {
     reports, selectedDate, setSelectedDate,
@@ -32,7 +38,7 @@ export default function Home({ onReadArticle, readerArticle }) {
     window.dispatchEvent(new CustomEvent('ai-ask', { detail: { question } }));
   };
 
-  if (readerArticle) return <ArticleReader articleId={readerArticle} onBack={() => onReadArticle(null)} />;
+  if (articleId) return <ArticleReader articleId={articleId} onBack={() => setSearchParams({})} />;
 
   const heroArticle = highArticles[0];
   const displayReporting = !!report;
@@ -101,11 +107,11 @@ export default function Home({ onReadArticle, readerArticle }) {
               <div className="text-center py-16 text-sm" style={{ color: 'var(--color-text-label)' }}>加载中...</div>
             ) : displayReporting ? (
               <>
-                {heroArticle && <HeroArticle article={heroArticle} onSelect={onReadArticle} />}
+                {heroArticle && <HeroArticle article={heroArticle} onSelect={goToArticle} />}
                 {Object.entries(filteredGroups)
                   .sort(([, a], [, b]) => b.filter((x) => x._imp === 'high').length - a.filter((x) => x._imp === 'high').length)
                   .map(([src, arts]) => (
-                    <ArticleGroup key={src} sourceName={src} articles={arts} onSelectArticle={onReadArticle} />
+                    <ArticleGroup key={src} sourceName={src} articles={arts} onSelectArticle={goToArticle} />
                   ))}
                 {articles.length === 0 && <div className="text-center py-16 text-sm" style={{ color: 'var(--color-text-label)' }}>暂无内容</div>}
               </>
@@ -121,7 +127,7 @@ export default function Home({ onReadArticle, readerArticle }) {
             keywords={report?.trending_keywords || []}
             insight={report?.summary_insight || ''}
             topArticles={highArticles}
-            onArticleClick={(id) => onReadArticle(id)}
+            onArticleClick={(id) => goToArticle(id)}
             onAskAI={handleAskAI}
             onTagFilter={toggleTag}
             activeTags={tag}

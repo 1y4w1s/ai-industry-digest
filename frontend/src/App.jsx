@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -17,9 +16,9 @@ function PrivateRoute({ children }) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="flex gap-1.5">
-          <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: '#8C9096', animationDelay: '0ms' }} />
-          <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: '#8C9096', animationDelay: '150ms' }} />
-          <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: '#8C9096', animationDelay: '300ms' }} />
+          <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: 'var(--color-text-label)', animationDelay: '0ms' }} />
+          <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: 'var(--color-text-label)', animationDelay: '150ms' }} />
+          <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: 'var(--color-text-label)', animationDelay: '300ms' }} />
         </div>
       </div>
     );
@@ -28,51 +27,16 @@ function PrivateRoute({ children }) {
 }
 
 function AppContent() {
-  const [readerArticle, setReaderArticle] = useState(null);
-
   return (
     <Routes>
-      {/* Public routes */}
       <Route path="/login" element={<LoginPage />} />
-
-      {/* Protected routes with layout */}
-      <Route element={<Layout isReading={!!readerArticle} />}>
-        <Route
-          index
-          element={<Home onReadArticle={setReaderArticle} readerArticle={readerArticle} />}
-        />
-        <Route
-          path="search"
-          element={<SearchPage onReadArticle={setReaderArticle} />}
-        />
-        <Route
-          path="bookmarks"
-          element={
-            <PrivateRoute>
-              <BookmarksPage onReadArticle={setReaderArticle} />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="history"
-          element={
-            <PrivateRoute>
-              <HistoryPage onReadArticle={setReaderArticle} />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="profile"
-          element={
-            <PrivateRoute>
-              <ProfilePage onReadArticle={setReaderArticle} />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="settings"
-          element={<SettingsPage />}
-        />
+      <Route element={<Layout />}>
+        <Route index element={<Home />} />
+        <Route path="search" element={<SearchPage />} />
+        <Route path="bookmarks" element={<PrivateRoute><BookmarksPage /></PrivateRoute>} />
+        <Route path="history" element={<PrivateRoute><HistoryPage /></PrivateRoute>} />
+        <Route path="profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
+        <Route path="settings" element={<SettingsPage />} />
       </Route>
     </Routes>
   );

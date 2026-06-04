@@ -5,12 +5,13 @@ import { useAuth } from '../context/AuthContext';
 import ArticleCard from '../components/ArticleCard';
 import Pagination from '../components/Pagination';
 
-export default function HistoryPage({ onReadArticle }) {
+export default function HistoryPage() {
   const { isLoggedIn, login } = useAuth();
   const [history, setHistory] = useState(null);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const navigate = useNavigate();
+  const goToArticle = (id) => navigate(`/?article=${encodeURIComponent(id)}`);
 
   useEffect(() => {
     setLoading(true);
@@ -89,7 +90,7 @@ export default function HistoryPage({ onReadArticle }) {
                   </div>
                   <div className="space-y-1">
                     {g.items.map((h) => (
-                      <ArticleCard key={h.id || h.article_id} article={{ ...h.articles, _imp: h.articles?.importance || '' }} onSelect={onReadArticle} variant="detailed" />
+                      <ArticleCard key={h.id || h.article_id} article={{ ...h.articles, _imp: h.articles?.importance || '' }} onSelect={goToArticle} variant="detailed" />
                     ))}
                   </div>
                 </div>
