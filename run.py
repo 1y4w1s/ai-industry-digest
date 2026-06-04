@@ -124,7 +124,7 @@ def main():
 
     # 5. 日报生成
     reporter = DailyReportGenerator(db_manager=db, ai_processor=ai)
-    report = reporter.generate(articles)
+    reports = reporter.generate_grouped_by_date(articles)
 
     # 6. 写入数据库
     if articles:
@@ -150,13 +150,13 @@ def main():
 
     # 7. 日报摘要输出
     print("\n" + "=" * 60)
-    print(f"📋 日报摘要 - {report['report_date']}")
-    print(f"   文章数: {report['total_articles']}")
-    print(f"   信息源: {report['source_count']} 个")
-    print(f"   关键词: {', '.join(report['trending_keywords'][:5])}")
-    if report['summary_insight']:
-        print(f"\n   💡 {report['summary_insight'][:200]}")
-    print("=" * 60)
+    for day in sorted(reports.keys()):
+        r = reports[day]
+        print(f"📋 {r['report_date']} 日报摘要")
+        print(f"   文章数: {r['total_articles']}")
+        print(f"   信息源: {r['source_count']} 个")
+        print(f"   关键词: {', '.join(r['trending_keywords'][:5])}")
+        print()
 
     # 8. 耗时统计
     elapsed = (datetime.utcnow() - start_time).total_seconds()

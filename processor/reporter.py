@@ -25,7 +25,7 @@ class DailyReportGenerator:
         self.ai = ai_processor
 
     def generate(self, articles: List[Article], report_date: date = None) -> dict:
-        """生成日报数据
+        """生成单日日报数据
         Returns:
             dict: 日报数据，包含概览、分组文章、关键词等
         """
@@ -33,24 +33,24 @@ class DailyReportGenerator:
             return self._empty_report(report_date)
 
         report_date = report_date or date.today()
-        print(f"\n📰 生成日报: {report_date}")
+        print(f"   📰 生成日报: {report_date}")
 
         # 1. 按重要性分组
         grouped = self._group_by_importance(articles)
-        print(f"   高: {len(grouped['high'])} | 中: {len(grouped['medium'])} | 低: {len(grouped['low'])}")
+        print(f"      高: {len(grouped['high'])} | 中: {len(grouped['medium'])} | 低: {len(grouped['low'])}")
 
         # 2. 提取热点关键词
         keywords = self._extract_keywords(articles)
-        print(f"   热点关键词: {', '.join(keywords[:5])}")
+        print(f"      热点关键词: {', '.join(keywords[:5])}")
 
         # 3. 生成概览
         insight = ""
         if self.ai:
             try:
                 insight = self.ai.generate_summary_insight(articles)
-                print(f"   概览已生成")
+                print(f"      概览已生成")
             except Exception as e:
-                print(f"   [WARN] 概览生成失败: {e}")
+                print(f"       [WARN] 概览生成失败: {e}")
                 insight = self._generate_fallback_insight(articles)
 
         # 4. 构建日报数据
@@ -71,11 +71,42 @@ class DailyReportGenerator:
         if self.db:
             try:
                 self._save_to_db(report, articles)
-                print(f"   💾 日报已写入数据库")
+                print(f"      💾 日报已写入数据库")
             except Exception as e:
-                print(f"   [ERROR] 写入数据库失败: {e}")
+                print(f"       [ERROR] 写入数据库失败: {e}")
 
         return report
+
+    def generate_grouped_by_date(self, articles: List[Article]) -> Dict[str, dict]:
+        """按文章实际发布日期分组，每组生成一个独立日报
+
+        Args:
+            articles: 采集到的文章列表（可能跨多个日期）
+
+        Returns:
+            dict: {date_str: report_dict, ...}
+        """
+        if not articles:
+            today = date.today().isoformat()
+            return {today: self._empty_report(date.today())}
+
+        # 1. 按 published_at 分组
+        date_groups: Dict[str, List[Article]] = {}
+        for a in articles:
+            key = a.published_at.date().isoformat() if a.published_at else date.today().isoformat()
+            date_groups.setdefault(key, []).append(a)
+
+        print(f"\n📅 按发布日期分组，共 {len(date_groups)} 个日期:")
+        for d in sorted(date_groups.keys()):
+            print(f"   {d}: {len(date_groups[d])} 篇")
+
+        # 2. 每组独立生成日报
+        reports = {}
+        for day in sorted(date_groups.keys()):
+            day_date = datetime.strptime(day, "%Y-%m-%d").date()
+            reports[day] = self.generate(date_groups[day], report_date=day_date)
+
+        return reports
 
     # ── 按重要性分组 ──────────────────────────
 

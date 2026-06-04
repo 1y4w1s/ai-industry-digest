@@ -16,6 +16,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from api.models.database import DatabaseManager
 from processor.ai_processor import AIProcessor
+from processor.reporter import DailyReportGenerator
 from collector.base import Article
 
 
@@ -161,6 +162,7 @@ def main():
     print("=" * 50)
 
     db = DatabaseManager()
+    ai = AIProcessor()
 
     if args.date:
         # 只重建指定日期
@@ -177,36 +179,39 @@ def main():
     else:
         groups = regroup_published_at(db)
 
+    # 将所有文章按日期合并为 Article 对象列表
+    all_articles = []
     for day in sorted(groups.keys()):
-        articles = groups[day]
-        print(f"\n  📅 {day}: {len(articles)} 篇", end="")
+        for a in groups[day]:
+            pub_at = None
+            if a.get("published_at"):
+                try:
+                    pub_at = datetime.fromisoformat(a["published_at"].replace("Z", "+00:00"))
+                except Exception:
+                    pass
+            article = Article(
+                title=a.get("title", ""),
+                url=a.get("url", ""),
+                source_name=a.get("source_name", ""),
+                raw_content=a.get("raw_content", "") or "",
+                published_at=pub_at,
+                summary=a.get("summary", ""),
+                tags=a.get("tags", []) or [],
+                importance=a.get("importance", "low"),
+                importance_reason=a.get("importance_reason", ""),
+                source_refs=a.get("source_refs", []) or [],
+            )
+            all_articles.append(article)
 
-        # 获取文章 UUID
-        article_uuids = []
-        for a in articles:
-            result = db.client.table("articles") \
-                .select("id") \
-                .eq("url", a["url"]) \
-                .execute()
-            if result.data:
-                article_uuids.append(result.data[0]["id"])
-
-        report_data = {
-            "report_date": day,
-            "article_ids": article_uuids if article_uuids else None,
-            "summary_insight": "",
-            "trending_keywords": [],
-            "trend_analysis": "",
-        }
-
-        db.client.table("daily_reports").upsert(
-            report_data,
-            on_conflict="report_date"
-        ).execute()
-        print(f" ✅ {len(article_uuids)} 个 ID 已入库")
+    # 用 DailyReportGenerator 按日期分组生成日报（含 AI 摘要）
+    reporter = DailyReportGenerator(db_manager=db, ai_processor=ai)
+    reports = reporter.generate_grouped_by_date(all_articles)
 
     print("\n" + "=" * 50)
-    print("  重建完成！")
+    print(f"  重建完成！共 {len(reports)} 期日报")
+    for day in sorted(reports.keys()):
+        r = reports[day]
+        print(f"    📅 {day}: {r['total_articles']} 篇")
     print("=" * 50)
 
 
