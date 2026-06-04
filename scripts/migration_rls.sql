@@ -1,5 +1,5 @@
 -- =============================================
--- AI Industry Digest - Supabase RLS 策略
+-- Signal - Supabase RLS 策略
 -- 在 Supabase SQL Editor 中执行
 -- =============================================
 

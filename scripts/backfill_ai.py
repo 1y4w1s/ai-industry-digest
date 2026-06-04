@@ -1,5 +1,5 @@
 """
-AI Industry Digest - 回填脚本
+Signal - 回填脚本
 扫描数据库中无摘要的文章，调用 AI 补上摘要/标签/重要性
 
 用法:
@@ -78,7 +78,7 @@ def main():
     args = parser.parse_args()
 
     print("=" * 50)
-    print("  AI Industry Digest - 回填脚本")
+    print("  Signal - 回填脚本")
     print("  为数据库中无摘要的文章补上 AI 处理结果")
     print("=" * 50)
 

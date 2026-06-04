@@ -1,5 +1,5 @@
 """
-AI Industry Digest - 重建日报
+Signal - 重建日报
 扫描所有文章按 published_at 分组，更新或创建日报记录
 
 用法:
@@ -157,7 +157,7 @@ def main():
     args = parser.parse_args()
 
     print("=" * 50)
-    print("  AI Industry Digest - 重建日报")
+    print("  Signal - 重建日报")
     print("=" * 50)
 
     db = DatabaseManager()

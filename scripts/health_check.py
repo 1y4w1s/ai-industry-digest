@@ -1,5 +1,5 @@
 """
-AI Industry Digest - 信息源健康检查
+Signal - 信息源健康检查
 健康注册表 + 连通性检查 + 自动降级 + 告警触发
 
 用法:
@@ -193,7 +193,7 @@ def load_sources() -> list:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="AI Industry Digest - 信息源健康检查")
+    parser = argparse.ArgumentParser(description="Signal - 信息源健康检查")
     parser.add_argument("--status", action="store_true", help="仅查看当前健康状态，不执行检查")
     args = parser.parse_args()
 

@@ -1,5 +1,5 @@
 """
-AI Industry Digest - 数据采集基类
+Signal - 数据采集基类
 定义 Article 数据模型和采集器抽象基类
 """
 

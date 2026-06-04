@@ -1,5 +1,5 @@
 """
-AI Industry Digest - 内容接口路由
+Signal - 内容接口路由
 日报 + 文章查询 + 文章代理
 """
 

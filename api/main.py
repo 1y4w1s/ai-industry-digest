@@ -1,5 +1,5 @@
 """
-AI Industry Digest - FastAPI 入口
+Signal - FastAPI 入口
 """
 
 import time
@@ -16,7 +16,7 @@ from api.routes.auth import router as auth_router
 from api.routes.chat import router as chat_router
 
 app = FastAPI(
-    title="AI Industry Digest API",
+    title="Signal API",
     description="AI 行业日报系统后端接口",
     version="2.0.0",
 )
@@ -76,7 +76,7 @@ if test_dir.exists():
 @app.get("/")
 async def root():
     return {
-        "name": "AI Industry Digest",
+        "name": "Signal",
         "version": "2.0.0",
         "docs": "/docs",
         "test_frontend": "/test/",

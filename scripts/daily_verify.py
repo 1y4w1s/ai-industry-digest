@@ -1,5 +1,5 @@
 """
-AI Industry Digest - 每日数据完整性校验
+Signal - 每日数据完整性校验
 检查 articles 数和 daily_reports 数是否匹配
 
 用法:
@@ -17,7 +17,7 @@ from api.models.database import DatabaseManager
 
 def main():
     print("=" * 50)
-    print("  AI Industry Digest - 数据完整性校验")
+    print("  Signal - 数据完整性校验")
     print(f"  时间: {date.today().isoformat()}")
     print("=" * 50)
 

@@ -1,5 +1,5 @@
 """
-AI Industry Digest - 去重管道
+Signal - 去重管道
 三层去重：URL 精确去重 → 标题相似度去重 → AI 辅助去重
 """
 

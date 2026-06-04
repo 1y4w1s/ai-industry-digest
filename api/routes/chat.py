@@ -1,5 +1,5 @@
 """
-AI Industry Digest - AI 对话接口
+Signal - AI 对话接口
 支持文章级对话（带上下文）和全局对话
 """
 

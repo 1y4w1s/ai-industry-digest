@@ -1,5 +1,5 @@
 """
-AI Industry Digest - 用户认证与个人数据接口
+Signal - 用户认证与个人数据接口
 依赖 Supabase Auth，通过 Authorization Header 鉴权
 """
 

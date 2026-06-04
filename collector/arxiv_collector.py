@@ -1,5 +1,5 @@
 """
-AI Industry Digest - arXiv API 采集器
+Signal - arXiv API 采集器
 通过 arXiv API 获取最新论文
 """
 

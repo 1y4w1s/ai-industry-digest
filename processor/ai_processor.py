@@ -1,5 +1,5 @@
 """
-AI Industry Digest - AI 处理器
+Signal - AI 处理器
 调用 DeepSeek API 实现：摘要生成、标签分类、重要性判断
 支持批处理优化
 """

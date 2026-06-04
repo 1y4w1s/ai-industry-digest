@@ -1,5 +1,5 @@
 """
-AI Industry Digest - 飞书 Webhook 通知模块
+Signal - 飞书 Webhook 通知模块
 用于发送运行状态报告和告警到飞书群机器人
 """
 
@@ -62,7 +62,7 @@ class FeishuNotifier:
             "content": {
                 "post": {
                     "zh_cn": {
-                        "title": f"{status_emoji} AI Industry Digest 运行报告",
+                        "title": f"{status_emoji} Signal 运行报告",
                         "content": [
                             [{"tag": "text", "text": f"时间: {stats.get('time', 'N/A')}"}],
                             [{"tag": "text", "text": f"采集源: {stats.get('sources_success', 0)} 成功, {stats.get('sources_failed', 0)} 失败"}],

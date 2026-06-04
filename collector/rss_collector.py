@@ -1,5 +1,5 @@
 """
-AI Industry Digest - RSS 采集器
+Signal - RSS 采集器
 通过 RSS/Atom Feed 订阅获取文章
 """
 

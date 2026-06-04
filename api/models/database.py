@@ -1,5 +1,5 @@
 """
-AI Industry Digest - 数据库管理
+Signal - 数据库管理
 Supabase 写入、查询、分页、搜索
 """
 

@@ -1,5 +1,5 @@
 """
-AI Industry Digest - 全流程运行入口
+Signal - 全流程运行入口
 采集 → 去重 → AI 处理 → 日报生成 → 入库
 """
 
@@ -90,7 +90,7 @@ def main():
     """全流程主入口"""
     start_time = datetime.utcnow()
     print("=" * 60)
-    print(f"  AI Industry Digest - 全流程运行")
+    print(f"  Signal - 全流程运行")
     print(f"  时间: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
     print("=" * 60)
 
