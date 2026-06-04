@@ -1,9 +1,14 @@
 import { useTheme } from '../context/ThemeContext';
 
 const THEME_OPTIONS = [
-  { value: 'light', label: '浅色模式', icon: '☀️' },
-  { value: 'dark', label: '深色模式', icon: '🌙' },
-  { value: 'system', label: '跟随系统', icon: '💻' },
+  {
+    value: 'light', label: '浅色模式',
+    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>,
+  },
+  {
+    value: 'dark', label: '深色模式',
+    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>,
+  },
 ];
 
 const FONT_OPTIONS = [
@@ -29,9 +34,9 @@ function RadioGroup({ label, options, value, onChange }) {
                 padding: '10px 16px',
                 fontSize: '13px',
                 fontWeight: isSelected ? 500 : 400,
-                background: isSelected ? 'var(--color-text-title)' : 'var(--color-bg-off)',
+                background: isSelected ? 'var(--color-text-title)' : 'transparent',
                 color: isSelected ? 'var(--color-bg-white)' : 'var(--color-text-body)',
-                border: isSelected ? '1px solid var(--color-text-title)' : '1px solid var(--color-border-light)',
+                border: isSelected ? '1px solid var(--color-text-title)' : '1px solid var(--color-border)',
                 borderRadius: '6px',
                 cursor: 'pointer',
                 transition: 'all 0.15s',
@@ -40,7 +45,9 @@ function RadioGroup({ label, options, value, onChange }) {
                 gap: '6px',
               }}
             >
-              {opt.icon && <span>{opt.icon}</span>}
+              <span style={{ width: '16px', height: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: isSelected ? 1 : 0.6 }}>
+                {opt.icon}
+              </span>
               <span>{opt.label}</span>
               {opt.desc && <span style={{ fontSize: '11px', opacity: 0.7 }}>({opt.desc})</span>}
             </button>
@@ -53,6 +60,9 @@ function RadioGroup({ label, options, value, onChange }) {
 
 export default function SettingsPage() {
   const { themeMode, updateThemeMode, fontSize, updateFontSize } = useTheme();
+
+  // If current themeMode is 'system', auto-convert to resolved on first visit
+  const displayTheme = themeMode === 'system' ? 'light' : themeMode;
 
   return (
     <div className="h-full animate-fade-in" style={{ background: 'var(--color-bg-white)' }}>
@@ -68,7 +78,7 @@ export default function SettingsPage() {
           <RadioGroup
             label="显示主题"
             options={THEME_OPTIONS}
-            value={themeMode}
+            value={displayTheme}
             onChange={updateThemeMode}
           />
 

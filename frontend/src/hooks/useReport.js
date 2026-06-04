@@ -16,10 +16,14 @@ export function useReport() {
   const [fromCache, setFromCache] = useState(false);
   const [cacheAge, setCacheAge] = useState(null);
 
-  // Load sources + tags once
+  // Load sources + tags once (cached to avoid 429)
   useEffect(() => {
-    api.getSources().then((d) => setSources(d.sources || [])).catch(() => {});
-    api.getTags().then((d) => setTags(d.tags || [])).catch(() => {});
+    const cachedSources = localStorage.getItem('signal_sources');
+    const cachedTags = localStorage.getItem('signal_tags');
+    if (cachedSources) try { setSources(JSON.parse(cachedSources)); } catch {}
+    if (cachedTags) try { setTags(JSON.parse(cachedTags)); } catch {}
+    api.getSources().then((d) => { const s = d.sources || []; setSources(s); localStorage.setItem('signal_sources', JSON.stringify(s)); }).catch(() => {});
+    api.getTags().then((d) => { const t = d.tags || []; setTags(t); localStorage.setItem('signal_tags', JSON.stringify(t)); }).catch(() => {});
   }, []);
 
   // Load reports list
