@@ -104,7 +104,7 @@ export default function ArticleReader({ articleId, onBack }) {
             <div className="p-5 lg:p-8 max-w-3xl mx-auto">
               {/* AI 精读 — moved from right panel to here */}
               {article.summary && (
-                <div style={{ background: '#F6F7F8', borderRadius: '4px', padding: '16px', marginBottom: '24px' }}>
+                <div className="no-print" style={{ background: '#F6F7F8', borderRadius: '4px', padding: '16px', marginBottom: '24px' }}>
                   <h3 className="font-semibold text-xs uppercase tracking-wider mb-3" style={{ color: '#8C9096' }}>AI 精读</h3>
                   <div className="text-sm leading-relaxed" style={{ color: '#2C2E32' }}>
                     {article.summary}
@@ -122,12 +122,12 @@ export default function ArticleReader({ articleId, onBack }) {
                 </div>
               )}
 
-              <h2 style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '22px', fontWeight: 700, color: '#1A1C1E', lineHeight: 1.35, marginBottom: '12px' }}>
+              <h2 className="print-only" style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '22px', fontWeight: 700, color: '#1A1C1E', lineHeight: 1.35, marginBottom: '12px' }}>
                 {article.title}
               </h2>
               <div className="flex items-center gap-3 mb-6" style={{ color: '#686C72', fontSize: '13px' }}>
-                <span>{article.source_name}</span><span>·</span><span>{article.published_at?.slice(0, 10)}</span>
-                <div className="ml-auto flex items-center gap-3">
+                <span className="print-only">{article.source_name}</span><span className="print-only">·</span><span className="print-only">{article.published_at?.slice(0, 10)}</span>
+                <div className="ml-auto flex items-center gap-3 no-print">
                   <button onClick={toggleBookmark} title={isBookmarked ? '取消收藏' : '收藏'}
                     style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px', color: isBookmarked ? '#C8960A' : '#8C9096', transition: 'color 0.15s' }}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill={isBookmarked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
