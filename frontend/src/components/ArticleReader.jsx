@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { api } from '../api/client';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 export default function ArticleReader({ articleId, onBack }) {
   const [article, setArticle] = useState(null);
@@ -11,6 +13,7 @@ export default function ArticleReader({ articleId, onBack }) {
   const [bookmarkId, setBookmarkId] = useState(null);
   const chatEndRef = useRef(null);
   const chatInputRef = useRef(null);
+  const pdfContentRef = useRef(null);
 
   const isBookmarked = !!bookmarkId;
 
@@ -50,35 +53,45 @@ export default function ArticleReader({ articleId, onBack }) {
 
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
-  const downloadPDF = () => {
+  const downloadPDF = async () => {
     if (!article) return;
-    const win = window.open('', '_blank');
-    if (!win) return;
-    win.document.write(`<!DOCTYPE html>
-<html>
-<head><meta charset="UTF-8"><title>${article.title}</title>
-<style>
-  @page { margin: 2.5cm 2cm; }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    font-family: 'Source Serif 4', 'Noto Serif CJK SC', 'STSong', Georgia, serif;
-    color: #1a1a1a; line-height: 1.8; font-size: 12pt; padding: 0;
-  }
-  h1 { font-size: 22pt; font-weight: 700; margin-bottom: 10pt; line-height: 1.35; }
-  .meta { font-size: 10pt; color: #666; margin-bottom: 28pt; }
-  .content { font-size: 11pt; line-height: 1.9; white-space: pre-wrap; }
-</style>
-</head>
-<body>
-  <h1>${article.title}</h1>
-  <p class="meta">${article.source_name}${article.published_at ? ` · ${article.published_at.slice(0, 10)}` : ''}</p>
-  <div class="content">${stripHtml(article.raw_content) || '暂无原文内容'}</div>
-</body>
-</html>`);
-    win.document.close();
-    win.focus();
-    win.onafterprint = () => win.close();
-    setTimeout(() => { win.print(); }, 300);
+    const el = pdfContentRef.current;
+    if (!el) return;
+
+    try {
+      // 1. Capture the hidden content div as a canvas image
+      const canvas = await html2canvas(el, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+      });
+
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+
+      // 2. Create A4 PDF
+      const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+      const pdfW = pdf.internal.pageSize.getWidth();
+      const pdfH = pdf.internal.pageSize.getHeight();
+
+      // 3. Calculate dimensions
+      const ratio = pdfW / canvas.width;
+      const totalHeight = canvas.height * ratio;
+
+      // 4. Slice into pages
+      let pos = 0;
+      let page = 0;
+      while (pos < totalHeight) {
+        if (page > 0) pdf.addPage();
+        pdf.addImage(imgData, 'JPEG', 0, -pos, pdfW, totalHeight);
+        pos += pdfH;
+        page++;
+      }
+
+      // 5. Download
+      pdf.save(`${article.title.slice(0, 20).replace(/[\/\\?%*:|"<>]/g, '')}.pdf`);
+    } catch (err) {
+      console.error('PDF 生成失败:', err);
+    }
   };
 
   const handleChat = async (e) => {
@@ -177,7 +190,7 @@ export default function ArticleReader({ articleId, onBack }) {
 
               {/* PDF export */}
               <div className="mt-8 pt-6 text-center no-print" style={{ borderTop: '1px solid #E8EAED' }}>
-                <button onClick={downloadPDF}
+                <button onClick={downloadPDF} disabled={loading}
                   style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 16px', fontSize: '12px', color: '#686C72', background: 'transparent', border: '1px solid #D8DCE0', borderRadius: '4px', cursor: 'pointer', transition: 'all 0.15s' }}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M6 9V2h12v7" />
@@ -259,6 +272,15 @@ export default function ArticleReader({ articleId, onBack }) {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Hidden PDF source — rendered offscreen for html2canvas capture */}
+      {article && (
+        <div ref={pdfContentRef} style={{ position: 'fixed', top: '-9999px', left: '-9999px', width: '794px', padding: '60px 50px', fontFamily: "'Source Serif 4', 'Noto Serif CJK SC', 'STSong', Georgia, serif", lineHeight: 1.9, color: '#1a1a1a', background: '#ffffff', fontSize: '14px' }}>
+          <h1 style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '24px', fontWeight: 700, marginBottom: '10px', lineHeight: 1.35 }}>{article.title}</h1>
+          <p style={{ fontSize: '11px', color: '#666', marginBottom: '24px' }}>{article.source_name}{article.published_at ? ` · ${article.published_at.slice(0, 10)}` : ''}</p>
+          <div style={{ fontSize: '12px', lineHeight: 1.9, whiteSpace: 'pre-wrap' }}>{stripHtml(article.raw_content) || '暂无原文内容'}</div>
         </div>
       )}
     </div>
