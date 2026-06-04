@@ -57,18 +57,15 @@ body {
 @media print {
   body { background: white !important; color: #1a1a1a !important; }
   .no-print { display: none !important; }
-  .print-only { display: block !important; }
-  span.print-only { display: inline !important; }
-  h2.print-only { display: block !important; }
   * { box-shadow: none !important; }
   .whitespace-pre-wrap { white-space: pre-wrap !important; }
 
-  /* Article-specific print layout */
-  .print-only[style*="font-size: 22px"] {
+  /* Article print: optimize font sizes */
+  h2[style*="font-size: 22px"] {
     font-size: 18pt !important;
     margin-bottom: 8pt !important;
   }
-  [style*="font-size: 15px"] {
+  div.text-sm.leading-relaxed[style*="font-size: 15px"] {
     font-size: 11pt !important;
     line-height: 1.6 !important;
   }

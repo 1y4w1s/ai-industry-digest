@@ -122,11 +122,11 @@ export default function ArticleReader({ articleId, onBack }) {
                 </div>
               )}
 
-              <h2 className="print-only" style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '22px', fontWeight: 700, color: '#1A1C1E', lineHeight: 1.35, marginBottom: '12px' }}>
+              <h2 style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '22px', fontWeight: 700, color: '#1A1C1E', lineHeight: 1.35, marginBottom: '12px' }}>
                 {article.title}
               </h2>
               <div className="flex items-center gap-3 mb-6" style={{ color: '#686C72', fontSize: '13px' }}>
-                <span className="print-only">{article.source_name}</span><span className="print-only">·</span><span className="print-only">{article.published_at?.slice(0, 10)}</span>
+                <span>{article.source_name}</span><span>·</span><span>{article.published_at?.slice(0, 10)}</span>
                 <div className="ml-auto flex items-center gap-3 no-print">
                   <button onClick={toggleBookmark} title={isBookmarked ? '取消收藏' : '收藏'}
                     style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px', color: isBookmarked ? '#C8960A' : '#8C9096', transition: 'color 0.15s' }}>
