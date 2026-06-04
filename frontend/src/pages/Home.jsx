@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { api } from '../api/client';
 import ArticleReader from '../components/ArticleReader';
 import SidePanel from '../components/SidePanel';
+import DateNav from '../components/DateNav';
 
 export default function Home({ onReadArticle, readerArticle }) {
   const [searchParams] = useSearchParams();
@@ -14,7 +15,6 @@ export default function Home({ onReadArticle, readerArticle }) {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [sidePanelOpen, setSidePanelOpen] = useState(true);
-  const [dateExpanded, setDateExpanded] = useState(false);
 
   const [importance, setImportance] = useState('');
   const [source, setSource] = useState('');
@@ -150,48 +150,17 @@ export default function Home({ onReadArticle, readerArticle }) {
         {/* Main content */}
         <div className="flex-1 min-w-0 overflow-y-auto">
           <div className="px-5 lg:px-6" style={{ paddingTop: '20px', paddingBottom: '32px' }}>
-            {/* Date nav + inline stats */}
+            {/* Date nav — DateNav component */}
             {!searching && reports.length > 0 && (
-              <div className="mb-5">
-                <h1 style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '20px', fontWeight: 700, color: '#1A1C1E', marginBottom: '12px' }}>
-                  每日简报
-                </h1>
-                <div className="flex items-center gap-1 flex-wrap">
-                  {/* Date chips — natural language */}
-                  {reports.slice(0, dateExpanded ? reports.length : 3).map((r) => {
-                    const dateLabel = getDateLabel(r.report_date);
-                    return (
-                      <button key={r.report_date} onClick={() => { setSelectedDate(r.report_date); setPage(1); }}
-                        style={{
-                          padding: '6px 14px',
-                          borderBottom: selectedDate === r.report_date ? '2px solid #1A1C1E' : '2px solid transparent',
-                          color: selectedDate === r.report_date ? '#1A1C1E' : '#686C72',
-                          fontWeight: selectedDate === r.report_date ? 500 : 400,
-                          fontSize: '12px',
-                          transition: 'all 0.15s ease',
-                        }}
-                        className="flex-shrink-0 cursor-pointer">
-                        <span>{dateLabel}</span>
-                        {dateLabel !== r.report_date.slice(5) && (
-                          <span style={{ fontSize: '10px', color: '#8C9096', marginLeft: '4px' }}>{r.report_date.slice(5)}</span>
-                        )}
-                      </button>
-                    );
-                  })}
-                  {/* Expand / collapse */}
-                  {reports.length > 3 && (
-                    <button onClick={() => setDateExpanded(!dateExpanded)}
-                      style={{ padding: '6px 8px', fontSize: '11px', color: '#686C72', cursor: 'pointer', background: 'none', border: 'none' }}>
-                      {dateExpanded ? '收起 ▴' : `展开所有日期 ▾`}
-                    </button>
-                  )}
-                </div>
-                {/* Inline stats — no emoji */}
-                {displayReporting && (
-                  <div style={{ fontSize: '12px', color: '#686C72', marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #E8EAED' }}>
-                    {articles.length} 篇文章 · {Object.keys(groups).length} 个来源 · {highArticles.length} 篇高重要性
-                  </div>
-                )}
+              <DateNav
+                reports={reports}
+                selectedDate={selectedDate}
+                onSelect={(date) => { setSelectedDate(date); setPage(1); }}
+              />
+            )}
+            {displayReporting && (
+              <div style={{ fontSize: '12px', color: '#686C72', marginTop: '8px', marginBottom: '20px', paddingTop: '8px', borderTop: '1px solid #E8EAED' }}>
+                {articles.length} 篇文章 · {Object.keys(groups).length} 个来源 · {highArticles.length} 篇高重要性
               </div>
             )}
 
@@ -326,18 +295,4 @@ export default function Home({ onReadArticle, readerArticle }) {
   );
 }
 
-function getDateLabel(dateStr) {
-  const d = new Date(dateStr);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const target = new Date(d);
-  target.setHours(0, 0, 0, 0);
-  const diff = (today - target) / (1000 * 60 * 60 * 24);
 
-  if (diff === 0) return '今天';
-  if (diff === 1) return '昨天';
-  if (diff === 2) return '前天';
-
-  const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
-  return `${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getDate().toString().padStart(2, '0')} 周${weekdays[d.getDay()]}`;
-}
