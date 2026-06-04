@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import Layout from './components/Layout';
 import Home from './pages/Home';
 import SearchPage from './pages/SearchPage';
 import BookmarksPage from './pages/BookmarksPage';
 import HistoryPage from './pages/HistoryPage';
 import ProfilePage from './pages/ProfilePage';
+import SettingsPage from './pages/SettingsPage';
 import LoginPage from './pages/LoginPage';
 
 function PrivateRoute({ children }) {
@@ -67,6 +69,10 @@ function AppContent() {
             </PrivateRoute>
           }
         />
+        <Route
+          path="settings"
+          element={<SettingsPage />}
+        />
       </Route>
     </Routes>
   );
@@ -75,7 +81,9 @@ function AppContent() {
 export default function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <ThemeProvider>
+        <AppContent />
+      </ThemeProvider>
     </AuthProvider>
   );
 }

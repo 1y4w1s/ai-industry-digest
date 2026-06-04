@@ -7,6 +7,7 @@ const NAV_ITEMS = [
   { path: '/', label: '今日日报' },
   { path: '/bookmarks', label: '收藏' },
   { path: '/history', label: '浏览历史' },
+  { path: '/settings', label: '设置' },
 ];
 
 export default function Layout({ isReading }) {

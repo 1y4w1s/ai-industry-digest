@@ -53,6 +53,35 @@ body {
 .animate-slide-right { animation: slideInRight 0.25s ease-out; }
 .animate-slide-up { animation: slideInUp 0.3s ease-out; }
 
+/* ── Font size variants ───────────── */
+[data-font-size="small"] { --font-size-base: 13px; }
+[data-font-size="medium"] { --font-size-base: 15px; }
+[data-font-size="large"] { --font-size-base: 17px; }
+
+/* ── Dark theme ───────────── */
+[data-theme="dark"] {
+  --color-bg-white: #121314;
+  --color-bg-off: #1A1C1E;
+  --color-bg-hover: #2C2E32;
+  --color-bg-toolbar: #1F2124;
+  --color-bg-sidebar: #161719;
+  --color-border-light: #2C2E32;
+  --color-border: #3C3E42;
+  --color-border-bold: #5C5E62;
+  --color-text-title: #E8EAED;
+  --color-text-body: #D0D2D6;
+  --color-text-muted: #9CA0A6;
+  --color-text-label: #6C7076;
+  --color-blue-link: #4A90D9;
+  --color-success: #2ECC71;
+}
+[data-theme="dark"] body {
+  background: var(--color-bg-white);
+  color: var(--color-text-body);
+}
+[data-theme="dark"] ::-webkit-scrollbar-thumb { background: #3C3E42; }
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: #5C5E62; }
+
 /* ── Sidebar ───────────── */
 .sidebar-link {
   position: relative;
