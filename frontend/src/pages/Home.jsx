@@ -6,6 +6,8 @@ import SidePanel from '../components/SidePanel';
 import DateNav from '../components/DateNav';
 import FilterBar from '../components/FilterBar';
 import ArticleCard from '../components/ArticleCard';
+import ArticleGroup from '../components/ArticleGroup';
+import HeroArticle from '../components/HeroArticle';
 
 export default function Home({ onReadArticle, readerArticle }) {
   const [searchParams] = useSearchParams();
@@ -163,38 +165,12 @@ export default function Home({ onReadArticle, readerArticle }) {
 
                 {/* Hero article */}
                 {heroArticle && (
-                  <div className="hero-card mb-5" onClick={() => onReadArticle(heroArticle.id)}>
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: '#D4322E' }}>头条</span>
-                      <span className="text-[10px]" style={{ color: '#8C9096' }}>{heroArticle.source_name} · {heroArticle.published_at?.slice(0, 10)}</span>
-                    </div>
-                    <h2 style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '18px', fontWeight: 700, color: '#1A1C1E', lineHeight: 1.35, marginBottom: '8px' }}>
-                      {heroArticle.title}
-                    </h2>
-                    {heroArticle.summary && (
-                      <p className="text-sm leading-relaxed line-clamp-2" style={{ color: '#2C2E32' }}>{heroArticle.summary}</p>
-                    )}
-                    {heroArticle.tags?.length > 0 && (
-                      <div className="flex gap-1.5 mt-2">
-                        {heroArticle.tags.map((t) => (
-                          <span key={t} className="px-2 py-0.5 text-[10px] rounded" style={{ background: '#E8EAED', color: '#686C72' }}>{t}</span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                  <HeroArticle article={heroArticle} onSelect={onReadArticle} />
                 )}
 
                 {/* Source groups */}
                 {Object.entries(filteredGroups).sort(([,a],[,b]) => b.filter(x=>x._imp==='high').length - a.filter(x=>x._imp==='high').length).map(([src, arts]) => (
-                  <div key={src} style={{ marginTop: '24px' }}>
-                    <div className="flex items-center pb-1.5 mb-1" style={{ borderBottom: '1px solid #E8EAED' }}>
-                      <span style={{ fontSize: '13px', fontWeight: 600, color: '#1A1C1E' }}>{src}</span>
-                      <span className="text-xs ml-auto" style={{ color: '#8C9096' }}>{arts.length} 篇</span>
-                    </div>
-                    {arts.sort((a, b) => ({high:0,medium:1,low:2}[a._imp]||2) - ({high:0,medium:1,low:2}[b._imp]||2)).map((a) => (
-                      <ArticleCard key={a.id || a.url} article={a} onSelect={onReadArticle} variant="compact" />
-                    ))}
-                  </div>
+                  <ArticleGroup key={src} sourceName={src} articles={arts} onSelectArticle={onReadArticle} />
                 ))}
                 {articles.length === 0 && <div className="text-center py-16 text-sm" style={{ color: '#8C9096' }}>暂无内容</div>}
               </>
