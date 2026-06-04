@@ -5,6 +5,8 @@ import AIChatBubble from './AIChatBubble';
 
 const NAV_ITEMS = [
   { path: '/', label: '今日日报' },
+  { path: '/bookmarks', label: '收藏' },
+  { path: '/history', label: '浏览历史' },
 ];
 
 export default function Layout({ isReading }) {
@@ -44,7 +46,7 @@ export default function Layout({ isReading }) {
   };
 
   const handleLogin = () => {
-    login({ id: 'demo-user', nickname: 'Demo User', avatar_url: null });
+    login();
   };
 
   return (
@@ -63,7 +65,7 @@ export default function Layout({ isReading }) {
         {/* Nav */}
         <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
           {NAV_ITEMS.map((item) => {
-            const isActive = item.path === '/' && window.location.pathname === '/';
+            const isActive = window.location.pathname === item.path;
             return (
               <button
                 key={item.path}
@@ -91,7 +93,7 @@ export default function Layout({ isReading }) {
 
           {/* User / Login */}
           {isLoggedIn ? (
-            <div className="flex items-center gap-2 px-2 py-1.5 rounded transition-all hover:bg-[#F0F1F2]" style={{ cursor: 'pointer' }}>
+            <div onClick={() => navigate('/profile')} className="flex items-center gap-2 px-2 py-1.5 rounded transition-all hover:bg-[#F0F1F2]" style={{ cursor: 'pointer' }}>
               <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-semibold flex-shrink-0" style={{ background: '#E8EAED', color: '#686C72' }}>
                 {(user?.nickname || 'U')[0].toUpperCase()}
               </div>

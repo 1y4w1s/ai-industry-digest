@@ -8,19 +8,45 @@ export default function ArticleReader({ articleId, onBack }) {
   const [chatInput, setChatInput] = useState('');
   const [sessionId, setSessionId] = useState(null);
   const [chatLoading, setChatLoading] = useState(false);
+  const [bookmarkId, setBookmarkId] = useState(null);
   const chatEndRef = useRef(null);
   const chatInputRef = useRef(null);
+
+  const isBookmarked = !!bookmarkId;
 
   useEffect(() => {
     if (!articleId) return;
     setLoading(true);
     setMessages([]);
     setSessionId(null);
+    setBookmarkId(null);
     api.getArticle(articleId).then((data) => {
       setArticle(data);
       api.addHistory(articleId).catch(() => {});
+      // Check if article is bookmarked
+      api.getBookmarks(1).then((bks) => {
+        const found = (bks.items || []).find((b) => b.article_id === articleId);
+        if (found) setBookmarkId(found.id);
+      }).catch(() => {});
     }).catch(() => {}).finally(() => setLoading(false));
   }, [articleId]);
+
+  const toggleBookmark = async () => {
+    if (isBookmarked) {
+      try {
+        await api.removeBookmark(bookmarkId);
+        setBookmarkId(null);
+      } catch {}
+    } else {
+      try {
+        await api.addBookmark(articleId);
+        // Refetch to get the new bookmark id
+        const bks = await api.getBookmarks(1);
+        const found = (bks.items || []).find((b) => b.article_id === articleId);
+        if (found) setBookmarkId(found.id);
+      } catch {}
+    }
+  };
 
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
@@ -58,6 +84,12 @@ export default function ArticleReader({ articleId, onBack }) {
         <span className="text-sm font-medium truncate flex-1" style={{ color: '#1A1C1E' }}>
           {loading ? '加载中...' : article?.title}
         </span>
+        {!loading && article && (
+          <button onClick={toggleBookmark} title={isBookmarked ? '取消收藏' : '收藏'}
+            style={{ fontSize: '14px', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px', color: isBookmarked ? '#1A1C1E' : '#8C9096', transition: 'color 0.15s' }}>
+            {isBookmarked ? '♥' : '♡'}
+          </button>
+        )}
         <span className="text-xs flex-shrink-0" style={{ color: '#8C9096' }}>
           {article?.source_name}{article?.published_at ? ` · ${article.published_at.slice(0, 10)}` : ''}
         </span>

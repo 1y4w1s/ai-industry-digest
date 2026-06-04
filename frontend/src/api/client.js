@@ -1,10 +1,17 @@
 const API_BASE = '/api';
+const TOKEN_KEY = 'signal_auth_token';
+
+function getToken() {
+  try { return localStorage.getItem(TOKEN_KEY); } catch { return null; }
+}
 
 async function request(path, options = {}) {
-  const res = await fetch(`${API_BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...options.headers },
-    ...options,
-  });
+  const token = getToken();
+  const headers = { 'Content-Type': 'application/json', ...options.headers };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  const res = await fetch(`${API_BASE}${path}`, { headers, ...options });
   if (res.status === 429) {
     throw new Error('请求过于频繁，请稍后再试');
   }
@@ -42,6 +49,9 @@ export const api = {
   getStats: () => request('/stats'),
   getSources: () => request('/sources'),
   getTags: () => request('/tags'),
+
+  // 用户
+  getMe: () => request('/auth/me'),
 
   // 收藏
   getBookmarks: (page = 1) => request(`/auth/bookmarks?page=${page}&page_size=20`),

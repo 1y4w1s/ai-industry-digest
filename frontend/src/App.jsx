@@ -4,6 +4,9 @@ import { AuthProvider } from './context/AuthContext';
 import Layout from './components/Layout';
 import Home from './pages/Home';
 import SearchPage from './pages/SearchPage';
+import BookmarksPage from './pages/BookmarksPage';
+import HistoryPage from './pages/HistoryPage';
+import ProfilePage from './pages/ProfilePage';
 
 export default function App() {
   const [readerArticle, setReaderArticle] = useState(null);
@@ -19,6 +22,18 @@ export default function App() {
           <Route
             path="search"
             element={<SearchPage onReadArticle={setReaderArticle} />}
+          />
+          <Route
+            path="bookmarks"
+            element={<BookmarksPage onReadArticle={setReaderArticle} />}
+          />
+          <Route
+            path="history"
+            element={<HistoryPage onReadArticle={setReaderArticle} />}
+          />
+          <Route
+            path="profile"
+            element={<ProfilePage onReadArticle={setReaderArticle} />}
           />
         </Route>
       </Routes>
