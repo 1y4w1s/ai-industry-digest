@@ -73,6 +73,7 @@ if test_dir.exists():
     app.mount("/test", StaticFiles(directory=str(test_dir), html=True), name="test")
 
 
+
 @app.get("/")
 async def root():
     return {
