@@ -24,6 +24,7 @@ export default function Home({ onReadArticle, readerArticle }) {
     report, loading, detailLoading,
     page, setPage, sources, tags,
     articles, highArticles,
+    fromCache, cacheAge,
   } = useReport();
 
   const {
@@ -68,6 +69,24 @@ export default function Home({ onReadArticle, readerArticle }) {
   const heroArticle = highArticles[0];
   const displayReporting = !searching && report;
 
+  // Loading state
+  if (loading && !fromCache) {
+    return (
+      <div className="h-full flex flex-col overflow-hidden" style={{ background: '#FBFCFD' }}>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="flex gap-1.5 justify-center mb-3">
+              <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: '#8C9096', animationDelay: '0ms' }} />
+              <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: '#8C9096', animationDelay: '150ms' }} />
+              <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: '#8C9096', animationDelay: '300ms' }} />
+            </div>
+            <span style={{ fontSize: '13px', color: '#686C72' }}>加载中...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-full flex flex-col overflow-hidden" style={{ background: '#FBFCFD' }}>
       <FilterBar
@@ -81,17 +100,26 @@ export default function Home({ onReadArticle, readerArticle }) {
         onSourceChange={setSource}
         onTagChange={setTag}
         onClear={handleClearSearch}
+        onToggleSidePanel={() => setSidePanelOpen(!sidePanelOpen)}
+        sidePanelOpen={sidePanelOpen}
       />
 
       <div className="flex-1 flex overflow-hidden">
         <div className="flex-1 min-w-0 overflow-y-auto">
           <div className="px-5 lg:px-6" style={{ paddingTop: '20px', paddingBottom: '32px' }}>
             {!searching && reports.length > 0 && (
-              <DateNav
-                reports={reports}
-                selectedDate={selectedDate}
-                onSelect={(date) => { setSelectedDate(date); setPage(1); }}
-              />
+              <>
+                {fromCache && (
+                  <div style={{ fontSize: '11px', color: '#C8960A', marginBottom: '12px', padding: '6px 12px', background: 'rgba(200,150,10,0.06)', borderRadius: '4px', border: '1px solid rgba(200,150,10,0.15)' }}>
+                    ⚠ 数据加载失败 · 显示{cacheAge !== null ? `${cacheAge} 分钟前` : ''}的缓存
+                  </div>
+                )}
+                <DateNav
+                  reports={reports}
+                  selectedDate={selectedDate}
+                  onSelect={(date) => { setSelectedDate(date); setPage(1); }}
+                />
+              </>
             )}
             {displayReporting && (
               <DataStats

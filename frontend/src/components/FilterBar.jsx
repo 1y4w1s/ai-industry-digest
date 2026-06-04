@@ -12,6 +12,7 @@ export default function FilterBar({
   sources, tags,
   activeFilterCount,
   onImportanceChange, onSourceChange, onTagChange, onClear,
+  onToggleSidePanel, sidePanelOpen,
 }) {
   const isActive = activeFilterCount > 0;
   const sourceOptions = [{ value: '', label: '全部来源' }, ...sources.map((s) => ({ value: s, label: s }))];
@@ -68,6 +69,15 @@ export default function FilterBar({
               清除
             </button>
           </div>
+        )}
+        
+        {/* Side panel toggle (tablet) */}
+        {onToggleSidePanel && (
+          <button onClick={onToggleSidePanel}
+            className="hidden lg:flex xl:hidden ml-auto items-center gap-1 px-2 py-1 text-[11px] rounded cursor-pointer"
+            style={{ background: '#EDEEF0', border: '1px solid #E8EAED', color: '#686C72' }}>
+            <span style={{ display: 'inline-block', transition: 'transform 0.2s', transform: sidePanelOpen ? 'rotate(180deg)' : 'none' }}>◀</span>
+          </button>
         )}
       </div>
     </div>

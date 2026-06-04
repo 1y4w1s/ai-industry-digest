@@ -13,6 +13,8 @@ export function useReport() {
   const [total, setTotal] = useState(0);
   const [sources, setSources] = useState([]);
   const [tags, setTags] = useState([]);
+  const [fromCache, setFromCache] = useState(false);
+  const [cacheAge, setCacheAge] = useState(null);
 
   // Load sources + tags once
   useEffect(() => {
@@ -23,6 +25,8 @@ export function useReport() {
   // Load reports list
   useEffect(() => {
     setLoading(true);
+    setFromCache(false);
+    setCacheAge(null);
     const fetchReports = async () => {
       try {
         const data = await api.getReports(page);
@@ -41,10 +45,12 @@ export function useReport() {
         const cached = localStorage.getItem(CACHE_KEY);
         if (cached) {
           try {
-            const { reports: cachedReports } = JSON.parse(cached);
+            const { reports: cachedReports, timestamp } = JSON.parse(cached);
             if (cachedReports.length > 0) {
               setReports(cachedReports);
               if (!selectedDate) setSelectedDate(cachedReports[0].report_date);
+              setFromCache(true);
+              setCacheAge(Math.floor((Date.now() - (timestamp || 0)) / 60000));
             }
           } catch {}
         }
@@ -77,5 +83,6 @@ export function useReport() {
     page, setPage, total,
     sources, tags,
     articles, highArticles,
+    fromCache, cacheAge,
   };
 }
