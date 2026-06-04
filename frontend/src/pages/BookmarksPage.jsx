@@ -15,9 +15,16 @@ export default function BookmarksPage() {
 
   const fetchBookmarks = (pg) => {
     setLoading(true);
+    const cached = localStorage.getItem('signal_bookmarks');
+    if (cached && pg === 1) {
+      try { setBookmarks(JSON.parse(cached)); } catch {}
+    }
     api.getBookmarks(pg)
-      .then((data) => setBookmarks(data))
-      .catch(() => setBookmarks({ items: [], total: 0, pages: 0 }))
+      .then((data) => {
+        setBookmarks(data);
+        if (pg === 1) localStorage.setItem('signal_bookmarks', JSON.stringify(data));
+      })
+      .catch(() => { if (!cached || pg > 1) setBookmarks({ items: [], total: 0, pages: 0 }); })
       .finally(() => setLoading(false));
   };
 

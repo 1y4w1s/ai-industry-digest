@@ -12,9 +12,9 @@ const THEME_OPTIONS = [
 ];
 
 const FONT_OPTIONS = [
-  { value: 'small', label: '小', desc: '13px' },
+  { value: 'small', label: '小', desc: '12px' },
   { value: 'medium', label: '中', desc: '15px' },
-  { value: 'large', label: '大', desc: '17px' },
+  { value: 'large', label: '大', desc: '18px' },
 ];
 
 function RadioGroup({ label, options, value, onChange }) {
