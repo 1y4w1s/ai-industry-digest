@@ -1,6 +1,8 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { api } from '../api/client';
+import { useReport } from '../hooks/useReport';
+import { useFilter } from '../hooks/useFilter';
 import ArticleReader from '../components/ArticleReader';
 import SidePanel from '../components/SidePanel';
 import DateNav from '../components/DateNav';
@@ -13,58 +15,49 @@ import Pagination from '../components/Pagination';
 
 export default function Home({ onReadArticle, readerArticle }) {
   const [searchParams] = useSearchParams();
-  const [reports, setReports] = useState([]);
-  const [selectedDate, setSelectedDate] = useState(null);
-  const [report, setReport] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [detailLoading, setDetailLoading] = useState(false);
-  const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0);
   const [sidePanelOpen, setSidePanelOpen] = useState(true);
-
-  const [importance, setImportance] = useState('');
-  const [source, setSource] = useState('');
-  const [tag, setTag] = useState([]);
-  const [sources, setSources] = useState([]);
-  const [tags, setTags] = useState([]);
   const [searchResults, setSearchResults] = useState(null);
   const [searching, setSearching] = useState(false);
 
-  useEffect(() => {
-    api.getSources().then((d) => setSources(d.sources || [])).catch(() => {});
-    api.getTags().then((d) => setTags(d.tags || [])).catch(() => {});
-  }, []);
+  const {
+    reports, selectedDate, setSelectedDate,
+    report, loading, detailLoading,
+    page, setPage, sources, tags,
+    articles, highArticles,
+  } = useReport();
 
-  useEffect(() => {
-    if (searching) return;
-    setLoading(true);
-    api.getReports(page).then((data) => {
-      setReports(data.items || []);
-      setTotal(data.total || 0);
-      if (!selectedDate && data.items?.length > 0) setSelectedDate(data.items[0].report_date);
-    }).finally(() => setLoading(false));
-  }, [page, searching]);
-
-  useEffect(() => {
-    if (!selectedDate || searching) return;
-    setDetailLoading(true);
-    api.getReport(selectedDate).then((data) => setReport(data)).finally(() => setDetailLoading(false));
-  }, [selectedDate, searching]);
+  const {
+    importance, setImportance,
+    source, setSource,
+    tag, setTag,
+    filteredArticles, filteredGroups,
+    activeFilterCount, clearFilters, toggleTag,
+  } = useFilter(articles);
 
   const doSearch = async (kw, imp, src, tg, pg) => {
-    setSearching(true); setDetailLoading(true);
+    setSearching(true);
     try {
-      const data = await api.getArticles({ page: pg, page_size: 50, keyword: kw || undefined, importance: imp || undefined, source: src || undefined, tag: tg || undefined });
-      setSearchResults(data); setPage(pg);
-    } catch { setSearchResults({ items: [], total: 0, pages: 0 }); }
-    finally { setDetailLoading(false); }
+      const data = await api.getArticles({
+        page: pg, page_size: 50,
+        keyword: kw || undefined,
+        importance: imp || undefined,
+        source: src || undefined,
+        tag: tg || undefined,
+      });
+      setSearchResults(data);
+      setPage(pg);
+    } catch {
+      setSearchResults({ items: [], total: 0, pages: 0 });
+    } finally {
+      setSearching(false);
+    }
   };
 
   const handleClearSearch = () => {
-    setImportance(''); setSource(''); setTag([]);
+    clearFilters();
+    setSearching(false);
+    setSearchResults(null);
   };
-
-  const activeFilterCount = [importance, source].filter(Boolean).length + tag.length;
 
   const handleAskAI = (question) => {
     window.dispatchEvent(new CustomEvent('ai-ask', { detail: { question } }));
@@ -72,39 +65,11 @@ export default function Home({ onReadArticle, readerArticle }) {
 
   if (readerArticle) return <ArticleReader articleId={readerArticle} onBack={() => onReadArticle(null)} />;
 
-  const articles = [];
-  if (report && !searching) {
-    for (const level of ['high', 'medium', 'low'])
-      for (const a of (report.articles?.[level] || [])) articles.push({ ...a, _imp: level });
-  }
-
-  const highArticles = articles.filter((a) => a._imp === 'high');
   const heroArticle = highArticles[0];
   const displayReporting = !searching && report;
 
-  // Front-end filtering
-  const filteredArticles = useMemo(() => {
-    if (searching) return searchResults?.items || [];
-    return articles.filter((a) => {
-      if (importance && a._imp !== importance) return false;
-      if (source && a.source_name !== source) return false;
-      if (tag.length > 0 && !(a.tags || []).some((t) => tag.includes(t))) return false;
-      return true;
-    });
-  }, [articles, importance, source, tag, searching, searchResults]);
-
-  const filteredGroups = {};
-  for (const a of filteredArticles) {
-    const src = a.source_name || '其他';
-    if (!filteredGroups[src]) filteredGroups[src] = [];
-    filteredGroups[src].push(a);
-  }
-
-  const hasFilteredResults = filteredArticles.length > 0;
-
   return (
     <div className="h-full flex flex-col overflow-hidden" style={{ background: '#FBFCFD' }}>
-      {/* ═══ Filter Bar ═══ */}
       <FilterBar
         importance={importance}
         source={source}
@@ -112,18 +77,15 @@ export default function Home({ onReadArticle, readerArticle }) {
         sources={sources}
         tags={tags}
         activeFilterCount={activeFilterCount}
-        onImportanceChange={(val) => setImportance(val)}
-        onSourceChange={(val) => setSource(val)}
-        onTagChange={(val) => setTag(val)}
+        onImportanceChange={setImportance}
+        onSourceChange={setSource}
+        onTagChange={setTag}
         onClear={handleClearSearch}
       />
 
-      {/* ═══ Three-column Content ═══ */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Main content */}
         <div className="flex-1 min-w-0 overflow-y-auto">
           <div className="px-5 lg:px-6" style={{ paddingTop: '20px', paddingBottom: '32px' }}>
-            {/* Date nav — DateNav component */}
             {!searching && reports.length > 0 && (
               <DateNav
                 reports={reports}
@@ -150,16 +112,13 @@ export default function Home({ onReadArticle, readerArticle }) {
             {detailLoading ? (
               <div className="text-center py-16 text-sm" style={{ color: '#8C9096' }}>加载中...</div>
             ) : displayReporting ? (
-              <>                
-                {/* Hero article */}
-                {heroArticle && (
-                  <HeroArticle article={heroArticle} onSelect={onReadArticle} />
-                )}
-
-                {/* Source groups */}
-                {Object.entries(filteredGroups).sort(([,a],[,b]) => b.filter(x=>x._imp==='high').length - a.filter(x=>x._imp==='high').length).map(([src, arts]) => (
-                  <ArticleGroup key={src} sourceName={src} articles={arts} onSelectArticle={onReadArticle} />
-                ))}
+              <>
+                {heroArticle && <HeroArticle article={heroArticle} onSelect={onReadArticle} />}
+                {Object.entries(filteredGroups)
+                  .sort(([, a], [, b]) => b.filter((x) => x._imp === 'high').length - a.filter((x) => x._imp === 'high').length)
+                  .map(([src, arts]) => (
+                    <ArticleGroup key={src} sourceName={src} articles={arts} onSelectArticle={onReadArticle} />
+                  ))}
                 {articles.length === 0 && <div className="text-center py-16 text-sm" style={{ color: '#8C9096' }}>暂无内容</div>}
               </>
             ) : searching && searchResults ? (
@@ -173,7 +132,6 @@ export default function Home({ onReadArticle, readerArticle }) {
               <div className="text-center py-16 text-sm" style={{ color: '#8C9096' }}>暂无数据</div>
             )}
 
-            {/* Pagination */}
             {searching && searchResults?.pages > 1 && (
               <Pagination
                 page={page}
@@ -184,7 +142,6 @@ export default function Home({ onReadArticle, readerArticle }) {
           </div>
         </div>
 
-        {/* ═══ Right Side Panel ═══ */}
         <div className={`flex-shrink-0 overflow-y-auto transition-all duration-300 ${sidePanelOpen ? 'w-[280px] opacity-100' : 'w-0 opacity-0 overflow-hidden'} ${searching ? 'hidden' : ''}`}
           style={{ borderLeft: '1px solid #E8EAED', padding: '20px 16px', background: '#FBFCFD' }}>
           <SidePanel
@@ -193,13 +150,7 @@ export default function Home({ onReadArticle, readerArticle }) {
             topArticles={highArticles}
             onArticleClick={(id) => onReadArticle(id)}
             onAskAI={handleAskAI}
-            onTagFilter={(keyword) => {
-              setTag((prev) => {
-                const idx = prev.indexOf(keyword);
-                if (idx >= 0) return prev.filter((_, i) => i !== idx);
-                return [...prev, keyword];
-              });
-            }}
+            onTagFilter={toggleTag}
             activeTags={tag}
           />
         </div>
@@ -207,5 +158,3 @@ export default function Home({ onReadArticle, readerArticle }) {
     </div>
   );
 }
-
-
