@@ -234,15 +234,29 @@
 
 ### 已修复问题
 1. **Supabase Auth API 错误**：`supabase.auth.session()` 方法在 SDK v2 中已废弃，改为 `supabase.auth.getSession()`
+2. **API 500 UUID 错误**：`invalid input syntax for type uuid: "demo-user"` — 后端 `get_user_id()` 添加 Demo 用户转换逻辑，将 `demo-user` 转为有效 UUID `00000000-0000-0000-0000-000000000001`
+3. **Nginx 配置错误**：`root` 指向 `/var/www/html` 修复为 `frontend/dist`；`proxy_pass` 从 `localhost:3000` 修复为 `localhost:8000/api/`
+4. **前端 JS MIME 类型错误**：Nginx 配置添加 `include /etc/nginx/mime.types;`
 
 ### 待解决问题
-1. **环境变量未加载**：服务器前端构建使用了默认配置，需重新构建
+1. **前端功能验证**：需验证登录、注册、收藏、历史等前端页面功能
 
 ---
 
 ## 测试结论
 
-待所有测试用例执行完成后填写。
+| 测试项 | 状态 | 备注 |
+|--------|------|------|
+| 用户认证 API | ✅ 通过 | 注册/登录/注销接口正常 |
+| 收藏 API | ✅ 通过 | GET/POST/DELETE `/auth/bookmarks` 正常 |
+| 浏览历史 API | ✅ 通过 | GET/POST `/auth/history` 正常 |
+| 内容 API | ✅ 通过 | `/sources`、`/tags`、`/reports` 正常 |
+| 首页展示 | ⏳ 待验证 | 前端页面需在浏览器中验证 |
+| 搜索功能 | ⏳ 待验证 | 前端页面需在浏览器中验证 |
+| 文章详情 | ⏳ 待验证 | 前端页面需在浏览器中验证 |
+| 响应式布局 | ⏳ 待验证 | 前端页面需在浏览器中验证 |
 
-**测试负责人**：-
+**结论**：后端 API 已全部修复并验证通过，下一步需在浏览器中验证前端页面功能。
+
+**测试负责人**：开发团队
 **测试日期**：2026-06-04
