@@ -138,7 +138,7 @@ def main():
 
             # 重新生成日报并写入 DB（带有 db 实例）
             reporter.db = db
-            reporter.generate(articles)
+            reports = reporter.generate_grouped_by_date(articles)
 
             count = db.get_article_count()
             print(f"\n📦 数据库文章总数: {count}")
