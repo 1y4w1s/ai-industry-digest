@@ -28,6 +28,7 @@ body {
   background: var(--color-bg-white);
   color: var(--color-text-body);
   font-family: var(--font-body);
+  font-size: var(--font-size-base, 14px);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -82,11 +83,19 @@ body {
 [data-theme="dark"] ::-webkit-scrollbar-thumb { background: #3C3E42; }
 [data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: #5C5E62; }
 
-/* Dark mode overrides for common patterns */
-[data-theme="dark"] .bg-white,
-[data-theme="dark"] [class*="bg-white"] { background: var(--color-bg-white) !important; }
+/* Dark mode: comprehensive overrides for hardcoded colors */
 [data-theme="dark"] .sidebar-link:hover { background: var(--color-bg-hover) !important; }
-[data-theme="dark"] [class*="hover:bg-\\[#F0F1F2\\]"]:hover { background: var(--color-bg-hover) !important; }
+[data-theme="dark"] .logo { color: var(--color-text-title) !important; }
+[data-theme="dark"] .logo::after { background: var(--color-text-title) !important; }
+[data-theme="dark"] .article-item:hover { background: var(--color-bg-off) !important; }
+[data-theme="dark"] .hero-card { background: var(--color-bg-off) !important; }
+[data-theme="dark"] .hero-card:hover { background: var(--color-bg-hover) !important; }
+[data-theme="dark"] .imp-high { border-left-color: var(--color-high) !important; }
+[data-theme="dark"] .imp-medium { border-left-color: var(--color-medium) !important; }
+[data-theme="dark"] [style*="borderBottom"] { border-color: var(--color-border-light) !important; }
+[data-theme="dark"] [style*="borderLeft"] { border-color: var(--color-border-light) !important; }
+[data-theme="dark"] [style*="borderRight"] { border-color: var(--color-border-light) !important; }
+[data-theme="dark"] [style*="borderTop"] { border-color: var(--color-border-light) !important; }
 
 /* ── Sidebar ───────────── */
 .sidebar-link {

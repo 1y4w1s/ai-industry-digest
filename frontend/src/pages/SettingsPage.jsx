@@ -12,12 +12,6 @@ const FONT_OPTIONS = [
   { value: 'large', label: '大', desc: '17px' },
 ];
 
-const LANG_OPTIONS = [
-  { value: 'all', label: '全部语言' },
-  { value: 'zh', label: '仅中文' },
-  { value: 'en', label: '仅英文' },
-];
-
 function RadioGroup({ label, options, value, onChange }) {
   return (
     <div className="mb-6">
@@ -58,7 +52,7 @@ function RadioGroup({ label, options, value, onChange }) {
 }
 
 export default function SettingsPage() {
-  const { themeMode, updateThemeMode, fontSize, updateFontSize, langPref, updateLangPref } = useTheme();
+  const { themeMode, updateThemeMode, fontSize, updateFontSize } = useTheme();
 
   return (
     <div className="h-full animate-fade-in" style={{ background: 'var(--color-bg-white)' }}>
@@ -85,15 +79,6 @@ export default function SettingsPage() {
             options={FONT_OPTIONS}
             value={fontSize}
             onChange={updateFontSize}
-          />
-
-          <div style={{ height: '1px', background: 'var(--color-border-light)', marginBottom: '24px' }} />
-
-          <RadioGroup
-            label="文章语言"
-            options={LANG_OPTIONS}
-            value={langPref}
-            onChange={updateLangPref}
           />
         </div>
 
