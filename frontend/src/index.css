@@ -69,10 +69,15 @@ body {
 [data-font-size] [style*="font-size:14"] { font-size: var(--fs-base) !important; }
 [data-font-size] [style*="font-size:15"] { font-size: var(--fs-md) !important; }
 [data-font-size] [style*="font-size:17"] { font-size: var(--fs-lg) !important; }
+[data-font-size] [style*="font-size:18"] { font-size: var(--fs-lg) !important; }
 [data-font-size] [style*="font-size:20"] { font-size: var(--fs-lg) !important; }
 [data-font-size] [style*="font-size:22"] { font-size: var(--fs-xl) !important; }
 [data-font-size] [style*="font-size:24"] { font-size: var(--fs-2xl) !important; }
 [data-font-size] [style*="font-size:26"] { font-size: var(--fs-2xl) !important; }
+
+/* Override Tailwind text-* utility classes */
+[data-font-size] .text-xs { font-size: var(--fs-sm) !important; }
+[data-font-size] .text-sm { font-size: var(--fs-base) !important; }
 
 /* ── Dark theme ───────────── */
 [data-theme="dark"] {
