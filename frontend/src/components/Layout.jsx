@@ -52,10 +52,10 @@ export default function Layout({ isReading }) {
   return (
     <div className="h-screen flex overflow-hidden" style={{ background: '#FBFCFD' }}>
       {/* Mobile overlay */}
-      <div className={`sidebar-overlay ${mobileSidebarOpen ? 'open' : ''}`} onClick={() => setMobileSidebarOpen(false)} />
+      <div className={`sidebar-overlay no-print ${mobileSidebarOpen ? 'open' : ''}`} onClick={() => setMobileSidebarOpen(false)} />
 
       {/* ── Sidebar (200px, fixed, light) ─────────────── */}
-      <aside className={`fixed lg:static z-50 inset-y-0 left-0 flex flex-col flex-shrink-0 transition-all duration-300 ${mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}
+      <aside className={`fixed lg:static z-50 inset-y-0 left-0 flex flex-col flex-shrink-0 transition-all duration-300 no-print ${mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}
         style={{ width: '200px', background: '#FAFBFC', borderRight: '1px solid #E8EAED' }}>
         {/* Logo */}
         <div className="h-12 flex items-center px-5 border-b border-[#E8EAED] flex-shrink-0">
@@ -114,7 +114,7 @@ export default function Layout({ isReading }) {
       {/* ── Main area ─────────────── */}
       <div className="flex flex-col flex-1 min-w-0">
         {/* Header (48px) — clean */}
-        <header className="h-12 flex items-center gap-4 px-4 lg:px-6 border-b border-[#E8EAED] bg-white flex-shrink-0">
+        <header className="h-12 flex items-center gap-4 px-4 lg:px-6 border-b border-[#E8EAED] bg-white flex-shrink-0 no-print">
           {/* Mobile hamburger */}
           <button onClick={() => setMobileSidebarOpen(true)} className="lg:hidden p-1.5 -ml-1" style={{ color: '#686C72' }} aria-label="打开菜单">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -182,7 +182,9 @@ export default function Layout({ isReading }) {
         </main>
       </div>
 
-      <AIChatBubble visible={!isReading} />
+      <div className="no-print">
+        <AIChatBubble visible={!isReading} />
+      </div>
     </div>
   );
 }

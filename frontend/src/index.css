@@ -53,6 +53,14 @@ body {
 .animate-slide-right { animation: slideInRight 0.25s ease-out; }
 .animate-slide-up { animation: slideInUp 0.3s ease-out; }
 
+/* ── Print styles ───────────── */
+@media print {
+  body { background: white !important; color: #1a1a1a !important; }
+  .no-print { display: none !important; }
+  * { box-shadow: none !important; }
+  .whitespace-pre-wrap { white-space: pre-wrap !important; }
+}
+
 /* ── Sidebar ───────────── */
 .sidebar-link {
   position: relative;

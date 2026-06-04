@@ -76,7 +76,7 @@ export default function ArticleReader({ articleId, onBack }) {
   return (
     <div className="h-full flex flex-col animate-fade-in" style={{ background: '#FBFCFD' }}>
       {/* Top bar */}
-      <div className="flex items-center gap-3 px-4 lg:px-5 py-2.5 flex-shrink-0" style={{ borderBottom: '1px solid #E8EAED', background: '#FFFFFF' }}>
+      <div className="flex items-center gap-3 px-4 lg:px-5 py-2.5 flex-shrink-0 no-print" style={{ borderBottom: '1px solid #E8EAED', background: '#FFFFFF' }}>
         <button onClick={onBack}
           style={{ fontSize: '12px', color: '#2864A8', background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px', padding: 0 }}>
           ← 返回
@@ -143,11 +143,25 @@ export default function ArticleReader({ articleId, onBack }) {
               <div className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: '#2C2E32', lineHeight: '1.8', fontSize: '15px' }}>
                 {stripHtml(article.raw_content) || '暂无原文内容'}
               </div>
+
+              {/* PDF export */}
+              <div className="mt-8 pt-6 text-center no-print" style={{ borderTop: '1px solid #E8EAED' }}>
+                <button onClick={() => window.print()}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 16px', fontSize: '12px', color: '#686C72', background: 'transparent', border: '1px solid #D8DCE0', borderRadius: '4px', cursor: 'pointer', transition: 'all 0.15s' }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M6 9V2h12v7" />
+                    <path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2" />
+                    <path d="M6 14h12v8H6z" />
+                    <circle cx="18" cy="11.5" r="1" />
+                  </svg>
+                  导出 PDF
+                </button>
+              </div>
             </div>
           </div>
 
           {/* Right: only 深入对话 */}
-          <div className="w-[380px] xl:w-[420px] flex-shrink-0 flex flex-col" style={{ background: '#F6F7F8' }}>
+          <div className="w-[380px] xl:w-[420px] flex-shrink-0 flex flex-col no-print" style={{ background: '#F6F7F8' }}>
             <div className="flex flex-col flex-1 min-h-0">
               <div className="px-5 pt-4 pb-1">
                 <h3 className="font-semibold text-xs uppercase tracking-wider" style={{ color: '#8C9096' }}>深入对话</h3>
