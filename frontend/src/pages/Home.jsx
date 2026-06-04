@@ -8,6 +8,8 @@ import FilterBar from '../components/FilterBar';
 import ArticleCard from '../components/ArticleCard';
 import ArticleGroup from '../components/ArticleGroup';
 import HeroArticle from '../components/HeroArticle';
+import DataStats from '../components/DataStats';
+import Pagination from '../components/Pagination';
 
 export default function Home({ onReadArticle, readerArticle }) {
   const [searchParams] = useSearchParams();
@@ -130,9 +132,11 @@ export default function Home({ onReadArticle, readerArticle }) {
               />
             )}
             {displayReporting && (
-              <div style={{ fontSize: '12px', color: '#686C72', marginTop: '8px', marginBottom: '20px', paddingTop: '8px', borderTop: '1px solid #E8EAED' }}>
-                {articles.length} 篇文章 · {Object.keys(filteredGroups).length} 个来源 · {highArticles.length} 篇高重要性
-              </div>
+              <DataStats
+                totalArticles={articles.length}
+                sourceCount={Object.keys(filteredGroups).length}
+                highCount={highArticles.length}
+              />
             )}
 
             {searching && (
@@ -187,18 +191,11 @@ export default function Home({ onReadArticle, readerArticle }) {
 
             {/* Pagination */}
             {searching && searchResults?.pages > 1 && (
-              <div className="flex justify-center gap-1 mt-6">
-                <button disabled={page <= 1} onClick={() => doSearch('', importance, source, tag, page - 1)}
-                  className="px-2.5 py-1 text-xs rounded disabled:opacity-40" style={{ background: '#F0F1F2', color: '#686C72' }}>←</button>
-                {Array.from({ length: Math.min(searchResults.pages, 5) }, (_, i) => {
-                  const p = Math.max(1, page - 2) + i;
-                  if (p > searchResults.pages) return null;
-                  return <button key={p} onClick={() => doSearch('', importance, source, tag, p)}
-                    className="px-2.5 py-1 text-xs rounded" style={p === page ? { background: '#1A1C1E', color: '#fff' } : { background: '#F0F1F2', color: '#686C72' }}>{p}</button>;
-                })}
-                <button disabled={page >= searchResults.pages} onClick={() => doSearch('', importance, source, tag, page + 1)}
-                  className="px-2.5 py-1 text-xs rounded disabled:opacity-40" style={{ background: '#F0F1F2', color: '#686C72' }}>→</button>
-              </div>
+              <Pagination
+                page={page}
+                totalPages={searchResults.pages}
+                onPageChange={(pg) => doSearch('', importance, source, tag, pg)}
+              />
             )}
           </div>
         </div>
