@@ -109,13 +109,15 @@ function MonthlyHeatmap({ heatmap }) {
                   ))}
                 </div>
                 {/* Grid */}
-                <div className="flex gap-1 flex-wrap" style={{ maxWidth: '14px * 7 + 6px * 6' }}>
+                <div className="flex gap-1 flex-wrap">
                   {/* Leading empty cells */}
                   {Array.from({ length: firstDay }).map((_, i) => (
                     <div key={`empty-${i}`} style={{ width: '14px', height: '14px' }} />
                   ))}
-                  {/* Day cells */}
-                  {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((day) => {
+                  {/* Day cells — only up to today */}
+                  {Array.from({ length: daysInMonth }, (_, i) => i + 1)
+                    .filter((day) => day <= now.getDate())
+                    .map((day) => {
                     const count = byMonth[monthKey]?.[day];
                     return (
                       <div key={day}
