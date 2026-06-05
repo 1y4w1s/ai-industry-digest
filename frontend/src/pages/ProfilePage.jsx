@@ -80,8 +80,10 @@ function MonthlyHeatmap({ heatmap }) {
     return '#2d7d2d';
   };
 
-  // Sort months descending
-  const sortedMonths = Object.keys(byMonth).sort().reverse().slice(0, 12);
+  // Only show current month
+  const now = new Date();
+  const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const sortedMonths = byMonth[currentMonthKey] ? [currentMonthKey] : [];
 
   return (
     <div className="mb-6">
