@@ -1,17 +1,75 @@
 """
 Signal - RSS 采集器
 通过 RSS/Atom Feed 订阅获取文章
+RSS 仅提供摘要时，自动尝试从原文 URL 抓取完整内容
 """
 
 from datetime import datetime
 from typing import List, Optional
 import feedparser
+import requests
+from bs4 import BeautifulSoup
 
 from collector.base import BaseCollector, Article
 
 
 class RSSCollector(BaseCollector):
     """RSS/Atom Feed 采集器"""
+
+    MIN_CONTENT_LENGTH = 100  # RSS 内容 < 100 字符时，视为摘要而非全文
+
+    def _fetch_full_content(self, url: str) -> Optional[str]:
+        """尝试从原文 URL 抓取完整正文"""
+        if not url:
+            return None
+        try:
+            resp = requests.get(
+                url,
+                timeout=15,
+                headers={
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                                  "AppleWebKit/537.36 (KHTML, like Gecko) "
+                                  "Chrome/125.0.0.0 Safari/537.36"
+                }
+            )
+            resp.raise_for_status()
+            soup = BeautifulSoup(resp.text, 'html.parser')
+
+            # 尝试常见正文选择器（按优先级）
+            selectors = [
+                'article',
+                '.entry-content',
+                '.post-content',
+                '.article-content',
+                '.rich_media_content',
+                '.content',
+                '#article-content',
+                '.article-detail',
+                '.post',
+                'main',
+            ]
+            for sel in selectors:
+                el = soup.select_one(sel)
+                if el:
+                    # 移除无用元素
+                    for tag in el.select('script, style, nav, footer, .ads, .ad, .comments, .share'):
+                        tag.decompose()
+                    text = el.get_text(separator='\n', strip=True)
+                    if len(text) > self.MIN_CONTENT_LENGTH:
+                        return text
+
+            # 降级：取 body 内所有文本
+            body = soup.find('body')
+            if body:
+                for tag in body.select('script, style, nav, footer, header'):
+                    tag.decompose()
+                text = body.get_text(separator='\n', strip=True)
+                if len(text) > self.MIN_CONTENT_LENGTH:
+                    return text
+
+        except Exception as e:
+            print(f"    [WARN] 抓取全文失败 {url[:50]}: {e}")
+        return None
 
     def collect(self) -> List[Article]:
         """解析 RSS Feed 并返回文章列表
@@ -101,6 +159,12 @@ class RSSCollector(BaseCollector):
                 if not content:
                     content = self._extract_tag(item_xml, 'description')
 
+                # RSS 只提供摘要时，从原文 URL 抓取完整正文
+                if len(content.strip()) < self.MIN_CONTENT_LENGTH:
+                    fetched = self._fetch_full_content(url)
+                    if fetched:
+                        content = fetched
+
                 # 提取发布时间
                 pub_date = self._extract_tag(item_xml, 'pubDate')
                 published_at = None
@@ -159,6 +223,13 @@ class RSSCollector(BaseCollector):
             content = entry.get("summary", "")
         elif entry.get("description"):
             content = entry.get("description", "")
+
+        # RSS 只提供摘要时，从原文 URL 抓取完整正文
+        if len(content.strip()) < self.MIN_CONTENT_LENGTH:
+            fetched = self._fetch_full_content(url)
+            if fetched:
+                print(f"    [FETCH] 从原文抓取全文成功: {title[:40]} ({len(fetched)} chars)")
+                content = fetched
 
         # 发布时间
         published_at = None
