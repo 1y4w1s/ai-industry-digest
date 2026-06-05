@@ -13,7 +13,7 @@ const THEME_OPTIONS = [
 
 const FONT_OPTIONS = [
   { value: 'small', label: '小', desc: '12px' },
-  { value: 'medium', label: '中', desc: '15px' },
+  { value: 'medium', label: '中', desc: '15px（默认）' },
   { value: 'large', label: '大', desc: '18px' },
 ];
 
