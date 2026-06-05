@@ -105,9 +105,11 @@ async def chat(req: ChatRequest):
             if report_detail:
                 article_list = report_detail.get("articles", [])
                 if article_list:
+                    # Ensure it's a plain list (Supabase may return special type)
+                    article_items = list(article_list)[:10]
                     articles_text = "\n".join([
-                        f"- [{a.get('importance','')}] {a.get('title','')}（来源: {a.get('source_name','')}）\n  {a.get('summary','')[:200]}"
-                        for a in article_list[:10]
+                        f"- [{','.join(a.get('importance','')) if isinstance(a.get('importance',''), list) else a.get('importance','')}] {a.get('title','')}（来源: {a.get('source_name','')}）\n  {str(a.get('summary',''))[:200]}"
+                        for a in article_items
                     ])
                     daily_context = DAILY_CONTEXT_PROMPT.format(
                         report_date=report_date,
