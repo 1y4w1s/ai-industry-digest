@@ -53,7 +53,7 @@ export default function Select({ value, onChange, options, placeholder, multi })
             border: '1px solid var(--color-border)',
             borderRadius: '4px',
             boxShadow: '0 4px 12px rgba(0,0,0,0.06)',
-            zIndex: 20,
+            zIndex: 1000,
             minWidth: '140px',
             maxHeight: '200px',
             overflowY: 'auto',

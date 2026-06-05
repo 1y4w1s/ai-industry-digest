@@ -184,14 +184,16 @@ export default function ArticleReader({ articleId, onBack }) {
       </div>
 
       {loading ? (
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <div className="flex gap-1.5 justify-center mb-3">
-              <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: 'var(--color-text-label)', animationDelay: '0ms' }} />
-              <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: 'var(--color-text-label)', animationDelay: '150ms' }} />
-              <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: 'var(--color-text-label)', animationDelay: '300ms' }} />
-            </div>
-            <span style={{ fontSize: '13px', color: 'var(--color-text-muted)' }}>加载中...</span>
+        <div className="flex-1 flex flex-col items-center justify-center p-8" style={{ background: 'var(--color-bg-off)' }}>
+          <div className="w-full max-w-2xl space-y-6">
+            {/* Skeleton title */}
+            <div style={{ height: '24px', width: '60%', background: 'var(--color-border-light)', borderRadius: '4px', marginBottom: '8px' }} />
+            {/* Skeleton meta */}
+            <div style={{ height: '14px', width: '30%', background: 'var(--color-border-light)', borderRadius: '4px', marginBottom: '24px' }} />
+            {/* Skeleton lines */}
+            {[1,2,3,4,5].map((i) => (
+              <div key={i} style={{ height: '14px', width: `${70 + (i % 3) * 10}%`, background: 'var(--color-border-light)', borderRadius: '4px', marginBottom: '10px' }} />
+            ))}
           </div>
         </div>
       ) : article ? (
@@ -301,17 +303,22 @@ export default function ArticleReader({ articleId, onBack }) {
           </div>
         </div>
       ) : (
-        <div className="flex-1 flex items-center justify-center">
+        <div className="flex-1 flex items-center justify-center p-8" style={{ background: 'var(--color-bg-off)' }}>
           <div className="text-center">
-            <div style={{ width: '48px', height: '48px', margin: '0 auto 16px', borderRadius: '50%', background: 'var(--color-bg-hover)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-label)" strokeWidth={1.5}>
+            <div style={{ width: '48px', height: '48px', margin: '0 auto 16px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-label)" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
               </svg>
             </div>
-            <p style={{ fontSize: '14px', color: 'var(--color-text-title)', marginBottom: '8px' }}>文章加载失败</p>
+            <p style={{ fontSize: '15px', fontWeight: 500, color: 'var(--color-text-title)', marginBottom: '4px' }}>文章加载失败</p>
+            <p style={{ fontSize: '13px', color: 'var(--color-text-muted)', marginBottom: '16px' }}>请检查网络连接后重试</p>
             <div className="flex gap-3 justify-center">
-              <button onClick={() => window.location.reload()} style={{ fontSize: '12px', color: 'var(--color-blue-link)', background: 'none', border: 'none', cursor: 'pointer' }}>重试</button>
-              <button onClick={onBack} style={{ fontSize: '12px', color: 'var(--color-blue-link)', background: 'none', border: 'none', cursor: 'pointer' }}>返回</button>
+              <button onClick={() => window.location.reload()} style={{ fontSize: '13px', padding: '8px 20px', color: 'white', background: 'var(--color-blue-link)', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>
+                重试
+              </button>
+              <button onClick={onBack} style={{ fontSize: '13px', padding: '8px 20px', color: 'var(--color-blue-link)', background: 'none', border: '1px solid var(--color-blue-link)', borderRadius: '6px', cursor: 'pointer' }}>
+                返回
+              </button>
             </div>
           </div>
         </div>

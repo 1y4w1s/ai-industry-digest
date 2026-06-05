@@ -24,7 +24,7 @@ export default function FilterBar({
 
   return (
     <div style={{ background: 'var(--color-bg-off)', borderBottom: '1px solid var(--color-border-light)', padding: '6px 16px' }}>
-      <div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap pb-1 scrollbar-none">
+      <div className="flex items-center gap-2 flex-wrap">
         <Select
           value={importance}
           onChange={onImportanceChange}
