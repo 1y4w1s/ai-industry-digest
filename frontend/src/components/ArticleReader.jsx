@@ -220,9 +220,11 @@ export default function ArticleReader({ articleId, onBack }) {
               )}
 
               <h2 style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '22px', fontWeight: 700, color: 'var(--color-text-title)', lineHeight: 1.35, marginBottom: '12px' }}>{article.title}</h2>
-              <div className="flex flex-wrap items-center gap-3 mb-6" style={{ color: 'var(--color-text-muted)', fontSize: '13px' }}>
-                <span>{article.source_name}</span><span>·</span><span>{article.published_at?.slice(0, 10)}</span>
-                <div className="ml-auto flex items-center gap-3 no-print">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-6" style={{ color: 'var(--color-text-muted)', fontSize: '13px' }}>
+                <div className="flex items-center gap-2">
+                  <span>{article.source_name}</span><span>·</span><span>{article.published_at?.slice(0, 10)}</span>
+                </div>
+                <div className="flex items-center gap-2 flex-wrap sm:ml-auto no-print">
                   {/* TTS button */}
                   <button onClick={() => ttsToggle(articleText)}
                     title={ttsState === 'idle' ? '朗读' : ttsState === 'playing' ? '暂停' : '继续'}
