@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { api } from '../api/client';
+import { renderMd } from '../utils/markdown';
 
 export default function AIRecommendPanel({ keyword }) {
   const [recommendations, setRecommendations] = useState([]);
@@ -106,7 +107,7 @@ export default function AIRecommendPanel({ keyword }) {
           <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div className={`max-w-[90%] px-3 py-2 rounded text-xs leading-relaxed ${msg.role === 'user' ? 'text-white' : ''}`}
               style={msg.role === 'user' ? { background: 'var(--color-text-title)' } : { background: 'var(--color-bg-hover)', color: 'var(--color-text-body)' }}>
-              {msg.content}
+              <span dangerouslySetInnerHTML={{ __html: renderMd(msg.content) }} />
             </div>
           </div>
         ))}

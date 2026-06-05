@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { api } from '../api/client';
+import { renderMd } from '../utils/markdown';
 
 export default function AIChatBubble({ visible = true }) {
   const [open, setOpen] = useState(false);
@@ -87,7 +88,7 @@ export default function AIChatBubble({ visible = true }) {
             <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               <div className={`max-w-[85%] px-3 py-2 rounded text-xs leading-relaxed ${msg.role === 'user' ? 'text-white' : ''}`}
                 style={msg.role === 'user' ? { background: 'var(--color-text-title)' } : { background: 'var(--color-bg-hover)', color: 'var(--color-text-body)' }}>
-                {msg.content}
+                <span dangerouslySetInnerHTML={{ __html: renderMd(msg.content) }} />
               </div>
             </div>
           ))}
