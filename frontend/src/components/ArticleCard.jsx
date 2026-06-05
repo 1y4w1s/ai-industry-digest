@@ -1,6 +1,22 @@
 import { memo, useMemo } from 'react';
 
-function ArticleCard({ article, onSelect, variant = 'compact' }) {
+/* Highlight keyword in text, wrapping matches in <mark> tags */
+function highlightText(text, keyword) {
+  if (!keyword || !text) return text;
+  try {
+    const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const parts = text.split(new RegExp(`(${escaped})`, 'gi'));
+    return parts.map((part, i) =>
+      part.toLowerCase() === keyword.toLowerCase()
+        ? `<mark>${part}</mark>`
+        : part
+    ).join('');
+  } catch {
+    return text;
+  }
+}
+
+function ArticleCard({ article, onSelect, variant = 'compact', keyword }) {
   const imp = article._imp || article.importance || '';
 
   const impClass = imp === 'high' ? 'imp-high'
@@ -21,6 +37,9 @@ function ArticleCard({ article, onSelect, variant = 'compact' }) {
     return article.summary || '';
   }, [article.raw_content, article.summary, variant]);
 
+  const titleHtml = useMemo(() => highlightText(article.title, keyword), [article.title, keyword]);
+  const textHtml = useMemo(() => highlightText(text, keyword), [text, keyword]);
+
   return (
     <div
       className="article-item"
@@ -33,17 +52,17 @@ function ArticleCard({ article, onSelect, variant = 'compact' }) {
           fontWeight: imp === 'high' ? 500 : 400,
           display: 'block',
           lineHeight: '1.4',
-        }}>
-          {article.title}
-        </span>
+        }}
+          dangerouslySetInnerHTML={{ __html: titleHtml }}
+        />
         <div className="flex items-center gap-2 mt-0.5" style={{ color: 'var(--color-text-label)', fontSize: '11px' }}>
           <span>{article.source_name}</span>
           {article.published_at && <span>· {article.published_at.slice(0, 10)}</span>}
         </div>
-        {text && (
-          <p className="text-xs mt-1 leading-relaxed line-clamp-2" style={{ color: 'var(--color-text-muted)', lineHeight: '1.6' }}>
-            {text}
-          </p>
+        {textHtml && (
+          <p className="text-xs mt-1 leading-relaxed line-clamp-2" style={{ color: 'var(--color-text-muted)', lineHeight: '1.6' }}
+            dangerouslySetInnerHTML={{ __html: textHtml }}
+          />
         )}
       </div>
     </div>

@@ -185,6 +185,18 @@ body {
   box-shadow: 0 0 0 1px rgba(26, 28, 30, 0.2);
 }
 
+/* ── Search keyword highlight ───────────── */
+mark {
+  background: #C8960A;
+  color: #FFFFFF;
+  padding: 0 2px;
+  border-radius: 2px;
+}
+[data-theme="dark"] mark {
+  background: #E8A817;
+  color: #1A1C1E;
+}
+
 /* ── Logo ───────────── */
 .logo {
   font-family: 'Source Serif 4', Georgia, 'Times New Roman', serif;

@@ -81,7 +81,7 @@ export default function SearchPage() {
               {!loading && results && results.items.length > 0 && (
                 <div className="space-y-1">
                   {results.items.map((a) => (
-                    <ArticleCard key={a.id || a.url} article={a} onSelect={goToArticle} variant="detailed" />
+                    <ArticleCard key={a.id || a.url} article={a} onSelect={goToArticle} variant="detailed" keyword={query} />
                   ))}
                 </div>
               )}
