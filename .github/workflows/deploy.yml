@@ -7,10 +7,25 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
 
     steps:
-      - name: 部署到服务器
+      - uses: actions/checkout@v4
+
+      - name: 同步代码到服务器
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: 43.139.133.245
+          username: ubuntu
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          source: "."
+          target: "/opt/ai-industry-digest"
+          strip_components: 0
+          rm: false
+          exclude: "node_modules,frontend/node_modules,.git,.venv,__pycache__"
+
+      - name: 在服务器上执行部署
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: 43.139.133.245
