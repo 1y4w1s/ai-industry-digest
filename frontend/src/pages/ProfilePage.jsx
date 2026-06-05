@@ -167,9 +167,11 @@ export default function ProfilePage() {
   const initial = nickname[0].toUpperCase();
 
   useEffect(() => {
+    const cached = localStorage.getItem('signal_stats');
+    if (cached) { try { setStats(JSON.parse(cached)); setStatsLoading(false); } catch {} }
     api.getStats()
-      .then((data) => { setStats(data); setStatsLoading(false); })
-      .catch(() => { setStats(null); setStatsLoading(false); });
+      .then((data) => { setStats(data); setStatsLoading(false); localStorage.setItem('signal_stats', JSON.stringify(data)); })
+      .catch(() => { if (!cached) setStats(null); setStatsLoading(false); });
   }, []);
 
   const sourceEntries = stats?.source_distribution

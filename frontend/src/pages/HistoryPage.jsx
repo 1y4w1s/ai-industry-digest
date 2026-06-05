@@ -15,9 +15,13 @@ export default function HistoryPage() {
 
   useEffect(() => {
     setLoading(true);
+    const cached = localStorage.getItem('signal_history');
+    if (cached && page === 1) {
+      try { setHistory(JSON.parse(cached)); } catch {}
+    }
     api.getHistory(page)
-      .then((data) => setHistory(data))
-      .catch(() => setHistory({ items: [], total: 0, pages: 0 }))
+      .then((data) => { setHistory(data); if (page === 1) localStorage.setItem('signal_history', JSON.stringify(data)); })
+      .catch(() => { if (!cached || page > 1) setHistory({ items: [], total: 0, pages: 0 }); })
       .finally(() => setLoading(false));
   }, [page]);
 

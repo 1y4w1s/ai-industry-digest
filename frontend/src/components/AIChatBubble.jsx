@@ -48,7 +48,7 @@ export default function AIChatBubble({ visible = true }) {
       <button
         onClick={toggle}
         className="fixed z-50 bottom-6 right-6 w-[42px] h-[42px] flex items-center justify-center transition-all duration-200 hover:scale-110 select-none shadow-md"
-        style={{ background: 'var(--color-text-title)', border: 'none', borderRadius: '50%', color: '#FFFFFF', boxShadow: '0 2px 12px rgba(0,0,0,0.15)' }}
+        style={{ background: 'var(--color-text-title)', border: 'none', borderRadius: '50%', color: 'var(--color-bg-white)', boxShadow: '0 2px 12px rgba(0,0,0,0.15)' }}
       >
         {open ? (
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -110,7 +110,7 @@ export default function AIChatBubble({ visible = true }) {
             style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border-light)', color: 'var(--color-text-body)' }} />
           <button type="submit" disabled={loading || !input.trim()}
             className="px-3 py-1.5 text-xs rounded disabled:opacity-40 transition-all"
-            style={{ background: 'var(--color-text-title)', color: '#fff' }}>
+            style={{ background: 'var(--color-text-title)', color: 'var(--color-bg-white)' }}>
             发送
           </button>
         </form>
