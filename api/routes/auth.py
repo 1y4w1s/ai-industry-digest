@@ -154,3 +154,9 @@ async def submit_feedback(
         return db.submit_feedback(user_id, req.article_id, req.feedback)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/stats", tags=["用户"])
+async def get_user_stats(user_id: str = Depends(get_user_id)):
+    """获取用户统计数据（阅读数、收藏数、连续天数、热力图、来源分布）"""
+    return db.get_user_stats(user_id)

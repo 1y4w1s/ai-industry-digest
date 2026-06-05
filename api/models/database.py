@@ -6,7 +6,7 @@ Supabase 写入、查询、分页、搜索
 import os
 import time
 from typing import List, Optional, Dict, Any
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 
 from supabase import create_client, Client
 from dotenv import load_dotenv
@@ -372,3 +372,77 @@ class DatabaseManager:
             .upsert(data, on_conflict="user_id,article_id") \
             .execute()
         return result.data[0] if result.data else {}
+
+    def get_user_stats(self, user_id: str) -> dict:
+        """获取用户统计信息"""
+        # 收藏总数
+        bookmark_count = self.client.table("bookmarks") \
+            .select("id", count="exact") \
+            .eq("user_id", user_id) \
+            .execute()
+        total_bookmarks = bookmark_count.count or 0
+
+        # 阅读总数
+        history_count = self.client.table("reading_history") \
+            .select("id", count="exact") \
+            .eq("user_id", user_id) \
+            .execute()
+        total_read = history_count.count or 0
+
+        # 连续阅读天数
+        streak = 0
+        history_dates = self.client.table("reading_history") \
+            .select("read_at") \
+            .eq("user_id", user_id) \
+            .order("read_at", desc=True) \
+            .execute()
+        if history_dates.data:
+            seen = set()
+            for row in history_dates.data:
+                d = row.get("read_at", "")[:10]
+                if d:
+                    seen.add(d)
+            sorted_dates = sorted(seen, reverse=True)
+            streak = 0
+            today = date.today()
+            check = today
+            for d_str in sorted_dates:
+                d = datetime.strptime(d_str, "%Y-%m-%d").date()
+                if d == check:
+                    streak += 1
+                    check -= timedelta(days=1)
+                elif d < check:
+                    break
+
+        # 月度阅读热力图（最近 365 天）
+        heatmap = {}
+        today = date.today()
+        for i in range(365):
+            d = today - timedelta(days=i)
+            heatmap[d.isoformat()] = 0
+        if history_dates.data:
+            for row in history_dates.data:
+                d = row.get("read_at", "")[:10]
+                if d in heatmap:
+                    heatmap[d] += 1
+
+        # 来源分布
+        source_dist = {}
+        history_articles = self.client.table("reading_history") \
+            .select("articles(source_name)") \
+            .eq("user_id", user_id) \
+            .execute()
+        if history_articles.data:
+            for row in history_articles.data:
+                article = row.get("articles") or {}
+                src = article.get("source_name")
+                if src:
+                    source_dist[src] = source_dist.get(src, 0) + 1
+
+        return {
+            "total_bookmarks": total_bookmarks,
+            "total_read": total_read,
+            "streak_days": streak,
+            "heatmap": heatmap,
+            "source_distribution": source_dist,
+        }
