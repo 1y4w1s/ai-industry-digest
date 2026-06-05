@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { api } from '../api/client';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-import { renderMd } from '../utils/markdown';
+import { renderMd, formatArticleContent } from '../utils/markdown';
 
 /* ── TTS hook (guarded for mobile browsers without SpeechSynthesis) ───── */
 function getSS() {
@@ -82,9 +82,25 @@ function useTTS() {
 
 function stripHtml(html) {
   if (!html) return '';
-  return html.replace(/<br\s*\/?>/gi, '\n').replace(/<\/p>/gi, '\n\n').replace(/<\/div>/gi, '\n').replace(/<\/li>/gi, '\n')
-    .replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/\n{3,}/g, '\n\n').trim();
+  return html
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n\n')
+    .replace(/<\/h[1-6]>/gi, '\n\n')
+    .replace(/<\/div>/gi, '\n')
+    .replace(/<\/li>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&#821[12];/g, "'")    // smart quotes
+    .replace(/&#8220;|&#8221;/g, '"')
+    .replace(/&#8211;/g, '—')        // em dash
+    .replace(/&#8212;/g, '—')
+    .replace(/\n{4,}/g, '\n\n\n')
+    .trim();
 }
 
 /* ── SVG icons ───────────── */
@@ -252,8 +268,8 @@ export default function ArticleReader({ articleId, onBack }) {
                   {article.url && (<a href={article.url} target="_blank" rel="noreferrer" style={{ color: 'var(--color-blue-link)' }}>在新窗口阅读 ↗</a>)}
                 </div>
               </div>
-              <div className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: 'var(--color-text-body)', lineHeight: '1.8', fontSize: '15px' }}>
-                {articleText || '暂无原文内容'}
+              <div className="text-sm leading-relaxed" style={{ color: 'var(--color-text-body)', lineHeight: '1.8', fontSize: '15px' }}>
+                <span dangerouslySetInnerHTML={{ __html: formatArticleContent(articleText) || '暂无原文内容' }} />
               </div>
 
               {/* PDF export */}
@@ -342,7 +358,7 @@ export default function ArticleReader({ articleId, onBack }) {
         <div ref={pdfContentRef} style={{ position: 'fixed', top: '-9999px', left: '-9999px', width: '794px', padding: '60px 50px', fontFamily: "'Source Serif 4', 'Noto Serif CJK SC', 'STSong', Georgia, serif", lineHeight: 1.9, color: '#1a1a1a', background: '#ffffff', fontSize: '14px' }}>
           <h1 style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '24px', fontWeight: 700, marginBottom: '10px', lineHeight: 1.35 }}>{article.title}</h1>
           <p style={{ fontSize: '11px', color: '#666', marginBottom: '24px' }}>{article.source_name}{article.published_at ? ` · ${article.published_at.slice(0, 10)}` : ''}</p>
-          <div style={{ fontSize: '12px', lineHeight: 1.9, whiteSpace: 'pre-wrap' }}>{articleText}</div>
+          <div style={{ fontSize: '12px', lineHeight: 1.9, whiteSpace: 'pre-wrap' }} dangerouslySetInnerHTML={{ __html: formatArticleContent(articleText) }} />
         </div>
       )}
     </div>
