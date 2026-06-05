@@ -19,7 +19,7 @@ class RSSCollector(BaseCollector):
     MIN_CONTENT_LENGTH = 100  # RSS 内容 < 100 字符时，视为摘要而非全文
 
     def _fetch_full_content(self, url: str) -> Optional[str]:
-        """尝试从原文 URL 抓取完整正文"""
+        """尝试从原文 URL 抓取完整正文，保留 HTML 结构"""
         if not url:
             return None
         try:
@@ -52,24 +52,59 @@ class RSSCollector(BaseCollector):
                 el = soup.select_one(sel)
                 if el:
                     # 移除无用元素
-                    for tag in el.select('script, style, nav, footer, .ads, .ad, .comments, .share'):
+                    for tag in el.select('script, style, nav, footer, .ads, .ad, .comments, .share, .related, .recommend'):
                         tag.decompose()
-                    text = el.get_text(separator='\n', strip=True)
-                    if len(text) > self.MIN_CONTENT_LENGTH:
-                        return text
+                    # 保留结构化 HTML：p, h2, h3, h4, ul, ol, li, strong, em, blockquote, br
+                    inner = el.encode_contents().decode('utf-8')
+                    if len(inner) > self.MIN_CONTENT_LENGTH:
+                        return self._clean_html(inner)
 
-            # 降级：取 body 内所有文本
+            # 降级：取 body 内所有内容
             body = soup.find('body')
             if body:
                 for tag in body.select('script, style, nav, footer, header'):
                     tag.decompose()
-                text = body.get_text(separator='\n', strip=True)
-                if len(text) > self.MIN_CONTENT_LENGTH:
-                    return text
+                inner = body.encode_contents().decode('utf-8')
+                if len(inner) > self.MIN_CONTENT_LENGTH:
+                    return self._clean_html(inner)
 
         except Exception as e:
             print(f"    [WARN] 抓取全文失败 {url[:50]}: {e}")
         return None
+
+    @staticmethod
+    def _clean_html(html: str) -> str:
+        """清理 HTML：只保留安全的排版标签，移除属性"""
+        import re
+
+        # 移除不安全的标签和内容
+        html = re.sub(r'<(script|style|iframe|object|embed|form|input|button|select|textarea)[^>]*>.*?</\1>', '', html, flags=re.DOTALL | re.IGNORECASE)
+
+        # 允许的安全标签列表
+        allowed = {
+            'p': True, 'br': True,
+            'h1': True, 'h2': True, 'h3': True, 'h4': True,
+            'ul': True, 'ol': True, 'li': True,
+            'strong': True, 'b': True,
+            'em': True, 'i': True,
+            'blockquote': True,
+            'pre': True, 'code': True,
+        }
+
+        # 移除所有不在允许列表中的标签（保留内容）
+        def strip_tag(m):
+            tag = m.group(1).lower().split()[0].rstrip('>').rstrip('/')
+            if tag in allowed:
+                return m.group(0)  # 保留
+            return ''  # 移除标签但保留内容
+
+        html = re.sub(r'<[^>]+>', strip_tag, html)
+
+        # 清理多余的空白行
+        html = re.sub(r'\n{3,}', '\n\n', html)
+        html = re.sub(r'<br\s*/?>\s*<br\s*/?>', '</p><p>', html)
+
+        return html.strip()
 
     def collect(self) -> List[Article]:
         """解析 RSS Feed 并返回文章列表

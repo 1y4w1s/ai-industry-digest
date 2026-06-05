@@ -63,11 +63,13 @@ class BaseCollector(ABC):
         )
 
     def _clean_text(self, text: str) -> str:
-        """清理文本：去除多余空白"""
+        """清理文本：去除多余空白（保留段落间距）"""
         if not text:
             return ""
         import re
-        text = re.sub(r'\s+', ' ', text)
+        # 保留换行，只压缩连续空白
+        text = re.sub(r'[ \t]+', ' ', text)
+        text = re.sub(r'\n{3,}', '\n\n', text)
         return text.strip()
 
     def __repr__(self) -> str:
