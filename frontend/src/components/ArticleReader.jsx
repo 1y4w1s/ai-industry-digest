@@ -109,6 +109,7 @@ export default function ArticleReader({ articleId, onBack }) {
   const isBookmarked = !!bookmarkId;
   const { state: ttsState, toggle: ttsToggle, stop: ttsStop } = useTTS();
   const articleText = article ? stripHtml(article.raw_content) : '';
+  const ttsSupported = typeof window !== 'undefined' && window.speechSynthesis && typeof SpeechSynthesisUtterance !== 'undefined';
 
   useEffect(() => {
     if (!articleId) return;
@@ -225,11 +226,12 @@ export default function ArticleReader({ articleId, onBack }) {
                   <span>{article.source_name}</span><span>·</span><span>{article.published_at?.slice(0, 10)}</span>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap sm:ml-auto no-print">
-                  {/* TTS button */}
+                  {/* TTS button — hidden on devices without SpeechSynthesis */}
+                  {ttsSupported && (<>
                   <button onClick={() => ttsToggle(articleText)}
                     title={ttsState === 'idle' ? '朗读' : ttsState === 'playing' ? '暂停' : '继续'}
                     style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px', color: ttsState !== 'idle' ? 'var(--color-blue-link)' : 'var(--color-text-muted)', transition: 'color 0.15s' }}>
-                    {ttsState === 'playing' ? <IconPause /> : ttsState === 'paused' ? <IconPlay /> : <IconPlay />}
+                    {ttsState === 'playing' ? <IconPause /> : <IconPlay />}
                     <span>{ttsState === 'idle' ? '朗读' : ttsState === 'playing' ? '暂停' : '继续'}</span>
                   </button>
                   {ttsState !== 'idle' && (
@@ -238,6 +240,8 @@ export default function ArticleReader({ articleId, onBack }) {
                       <IconStop />
                     </button>
                   )}
+                  </>)}
+
                   {/* Bookmark button */}
                   <button onClick={toggleBookmark} title={isBookmarked ? '取消收藏' : '收藏'}
                     style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px', color: isBookmarked ? '#C8960A' : 'var(--color-text-muted)', transition: 'color 0.15s' }}>
