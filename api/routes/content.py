@@ -23,6 +23,12 @@ async def list_reports(
     return db.get_reports(page=page, page_size=page_size)
 
 
+@router.get("/reports/dates", tags=["日报"])
+async def list_report_dates():
+    """获取所有已有日报的日期列表（用于归档日历）"""
+    return {"dates": db.get_report_dates()}
+
+
 @router.get("/reports/{report_date}", tags=["日报"])
 async def get_report(report_date: str):
     """单日报详情（包含文章列表）"""

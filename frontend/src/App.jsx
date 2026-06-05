@@ -8,6 +8,7 @@ import BookmarksPage from './pages/BookmarksPage';
 import HistoryPage from './pages/HistoryPage';
 import ProfilePage from './pages/ProfilePage';
 import SettingsPage from './pages/SettingsPage';
+import ArchivePage from './pages/ArchivePage';
 import LoginPage from './pages/LoginPage';
 
 function PrivateRoute({ children }) {
@@ -37,6 +38,7 @@ function AppContent() {
         <Route path="history" element={<PrivateRoute><HistoryPage /></PrivateRoute>} />
         <Route path="profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
         <Route path="settings" element={<SettingsPage />} />
+         <Route path="archive" element={<ArchivePage />} />
       </Route>
     </Routes>
   );

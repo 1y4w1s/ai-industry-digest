@@ -31,6 +31,8 @@ export const api = {
 
   getReport: (date) => request(`/reports/${date}`),
 
+  getReportDates: () => request('/reports/dates'),
+
   // 文章
   getArticles: (params = {}) => {
     const q = new URLSearchParams();

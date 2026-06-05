@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useReport } from '../hooks/useReport';
 import { useFilter } from '../hooks/useFilter';
@@ -25,6 +25,16 @@ export default function Home() {
     articles, highArticles,
     fromCache, cacheAge,
   } = useReport();
+
+  // Handle ?date= param from Archive navigation
+  useEffect(() => {
+    const dateParam = searchParams.get('date');
+    if (dateParam && reports.some((r) => r.report_date === dateParam)) {
+      setSelectedDate(dateParam);
+      // Clear the param so it doesn't re-trigger
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, reports, setSelectedDate, setSearchParams]);
 
   const {
     importance, setImportance,

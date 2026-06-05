@@ -188,6 +188,14 @@ class DatabaseManager:
             "pages": (total + page_size - 1) // page_size if page_size > 0 else 0,
         }
 
+    def get_report_dates(self) -> list:
+        """获取所有已有日报的日期列表（用于归档日历）"""
+        result = self.client.table("daily_reports") \
+            .select("report_date") \
+            .order("report_date", desc=True) \
+            .execute()
+        return [row["report_date"] for row in (result.data or []) if row.get("report_date")]
+
     def get_report_by_date(self, report_date: str) -> Optional[dict]:
         """按日期获取单日报详情"""
         result = self.client.table("daily_reports") \
