@@ -160,3 +160,9 @@ async def submit_feedback(
 async def get_user_stats(user_id: str = Depends(get_user_id)):
     """获取用户统计数据（阅读数、收藏数、连续天数、热力图、来源分布）"""
     return db.get_user_stats(user_id)
+
+
+@router.get("/reading-trends", tags=["用户"])
+async def get_reading_trends(user_id: str = Depends(get_user_id)):
+    """获取阅读趋势（月度趋势、高峰时段、平均阅读字数）"""
+    return db.get_reading_trends(user_id)

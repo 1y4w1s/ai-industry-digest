@@ -154,11 +154,75 @@ function CalendarHeatmap({ heatmap }) {
   );
 }
 
+/* ── Reading Trends ───────────── */
+function ReadingTrends({ trends }) {
+  if (!trends || !trends.monthly_trend || trends.monthly_trend.length === 0) return null;
+
+  const { monthly_trend, peak_hour, avg_read_length } = trends;
+  const maxCount = Math.max(...monthly_trend.map((m) => m.count), 1);
+  const chartW = 280;
+  const chartH = 100;
+  const pad = { top: 10, right: 10, bottom: 20, left: 10 };
+  const innerW = chartW - pad.left - pad.right;
+  const innerH = chartH - pad.top - pad.bottom;
+
+  const points = monthly_trend.map((m, i) => ({
+    x: pad.left + (i / (monthly_trend.length - 1 || 1)) * innerW,
+    y: pad.top + innerH - (m.count / maxCount) * innerH,
+    label: m.month.slice(5),
+    count: m.count,
+  }));
+
+  const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+
+  return (
+    <div className="mb-6">
+      <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--color-text-muted)', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+        阅读趋势
+      </div>
+      <div style={{ border: '1px solid var(--color-border-light)', borderRadius: '6px', padding: '16px', background: 'var(--color-bg-white)' }}>
+        {/* Mini stats */}
+        <div className="flex gap-4 mb-3">
+          {peak_hour !== null && peak_hour !== undefined && (
+            <div style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>
+              阅读高峰 <span style={{ fontWeight: 600, color: 'var(--color-text-title)' }}>{peak_hour}:00</span>
+            </div>
+          )}
+          {avg_read_length > 0 && (
+            <div style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>
+              均篇 <span style={{ fontWeight: 600, color: 'var(--color-text-title)' }}>{(avg_read_length / 1000).toFixed(1)}k</span> 字
+            </div>
+          )}
+        </div>
+        {/* SVG line chart */}
+        <svg width="100%" height={chartH} viewBox={`0 0 ${chartW} ${chartH}`} style={{ overflow: 'visible' }}>
+          {/* Grid lines */}
+          {[0, 0.25, 0.5, 0.75, 1].map((r) => (
+            <line key={r} x1={pad.left} y1={pad.top + innerH * (1 - r)} x2={chartW - pad.right} y2={pad.top + innerH * (1 - r)}
+              stroke="var(--color-border-light)" strokeWidth="0.5" />
+          ))}
+          {/* Line */}
+          <path d={linePath} fill="none" stroke="var(--color-blue-link)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          {/* Dots */}
+          {points.map((p, i) => (
+            <circle key={i} cx={p.x} cy={p.y} r="3" fill="var(--color-blue-link)" stroke="var(--color-bg-white)" strokeWidth="1.5" />
+          ))}
+          {/* Labels */}
+          {points.filter((_, i) => i % 2 === 0 || i === points.length - 1).map((p, i) => (
+            <text key={i} x={p.x} y={chartH - 2} textAnchor="middle" fontSize="8" fill="var(--color-text-label)">{p.label}</text>
+          ))}
+        </svg>
+      </div>
+    </div>
+  );
+}
+
 /* ── ProfilePage ───────────── */
 export default function ProfilePage() {
   const { user, logout } = useAuth();
   const [stats, setStats] = useState(null);
   const [statsLoading, setStatsLoading] = useState(true);
+  const [trends, setTrends] = useState(null);
   const [editing, setEditing] = useState(false);
   const [nickInput, setNickInput] = useState('');
   const [saving, setSaving] = useState(false);
@@ -172,6 +236,9 @@ export default function ProfilePage() {
     api.getStats()
       .then((data) => { setStats(data); setStatsLoading(false); localStorage.setItem('signal_stats', JSON.stringify(data)); })
       .catch(() => { if (!cached) setStats(null); setStatsLoading(false); });
+    api.getReadingTrends()
+      .then((data) => setTrends(data))
+      .catch(() => {});
   }, []);
 
   const sourceEntries = stats?.source_distribution
@@ -270,6 +337,9 @@ export default function ProfilePage() {
 
           {/* Calendar Heatmap */}
           {stats?.heatmap && <CalendarHeatmap heatmap={stats.heatmap} />}
+
+          {/* Reading Trends */}
+          {trends && <ReadingTrends trends={trends} />}
 
           {/* Source distribution */}
           {sourceEntries.length > 0 && (

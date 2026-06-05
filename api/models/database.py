@@ -454,3 +454,63 @@ class DatabaseManager:
             "heatmap": heatmap,
             "source_distribution": source_dist,
         }
+
+    def get_reading_trends(self, user_id: str) -> dict:
+        """获取阅读趋势统计"""
+        history = self.client.table("reading_history") \
+            .select("read_at, articles(raw_content)") \
+            .eq("user_id", user_id) \
+            .order("read_at", desc=True) \
+            .execute()
+
+        records = history.data or []
+
+        # Monthly trend (last 6 months)
+        monthly = {}
+        # Hour distribution
+        hourly = {h: 0 for h in range(24)}
+        total_chars = 0
+        total_read_with_content = 0
+
+        for row in records:
+            read_at = row.get("read_at", "")
+            if read_at:
+                month_key = read_at[:7]
+                monthly[month_key] = monthly.get(month_key, 0) + 1
+
+                try:
+                    hour = int(read_at[11:13])
+                    hourly[hour] = hourly.get(hour, 0) + 1
+                except (ValueError, IndexError):
+                    pass
+
+                article = row.get("articles") or {}
+                raw = article.get("raw_content") or ""
+                if raw:
+                    total_chars += len(raw)
+                    total_read_with_content += 1
+
+        # Build monthly trend array (last 6 months, sorted)
+        today = date.today()
+        monthly_trend = []
+        for i in range(5, -1, -1):
+            y = today.year
+            m = today.month - i
+            if m <= 0:
+                y -= 1
+                m += 12
+            key = f"{y}-{str(m).zfill(2)}"
+            monthly_trend.append({"month": key, "count": monthly.get(key, 0)})
+
+        # Peak reading hour
+        peak_hour = max(hourly, key=hourly.get) if any(hourly.values()) else None
+
+        # Avg read length
+        avg_read_length = round(total_chars / total_read_with_content) if total_read_with_content > 0 else 0
+
+        return {
+            "monthly_trend": monthly_trend,
+            "hourly_distribution": hourly,
+            "peak_hour": peak_hour,
+            "avg_read_length": avg_read_length,
+        }
