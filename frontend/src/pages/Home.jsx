@@ -131,7 +131,7 @@ export default function Home() {
           </div>
         </div>
 
-        <div className={`flex-shrink-0 overflow-y-auto transition-all duration-300 ${sidePanelOpen ? 'w-[280px] opacity-100' : 'w-0 opacity-0 overflow-hidden'}`}
+        <div className={`hidden lg:block flex-shrink-0 overflow-y-auto transition-all duration-300 ${sidePanelOpen ? 'w-[280px] opacity-100' : 'w-0 opacity-0 overflow-hidden'}`}
           style={{ borderLeft: '1px solid var(--color-border-light)', padding: '20px 16px', background: 'var(--color-bg-sidebar)' }}>
           <SidePanel
             keywords={report?.trending_keywords || []}

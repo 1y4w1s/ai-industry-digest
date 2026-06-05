@@ -37,7 +37,7 @@ export default function DateNav({ reports, selectedDate, onSelect }) {
       <h1 style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: 'var(--fs-xl)', fontWeight: 700, color: 'var(--color-text-title)', marginBottom: '12px' }}>
         每日简报
       </h1>
-      <div className="flex items-center gap-1 flex-wrap">
+      <div className="flex items-center gap-1 overflow-x-auto whitespace-nowrap pb-1 scrollbar-none lg:flex-wrap lg:overflow-visible">
         {visibleReports.map((r) => {
           const label = getDateLabel(r.report_date);
           const isSelected = selectedDate === r.report_date;

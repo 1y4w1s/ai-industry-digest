@@ -307,7 +307,7 @@ export default function ProfilePage() {
 
           {/* Stats cards */}
           {statsLoading ? (
-            <div className="flex gap-3 mb-6">
+            <div className="flex gap-2 sm:gap-3 mb-6">
               {[1, 2, 3].map((i) => (
                 <div key={i} className="flex-1 rounded p-4" style={{ background: 'var(--color-bg-off)' }}>
                   <div style={{ height: '12px', width: '60%', background: 'var(--color-border-light)', borderRadius: '2px', marginBottom: '8px' }} />
@@ -316,20 +316,20 @@ export default function ProfilePage() {
               ))}
             </div>
           ) : stats ? (
-            <div className="flex gap-3 mb-6">
-              <div className="flex-1 rounded p-4 text-center" style={{ background: 'var(--color-bg-off)' }}>
+            <div className="flex gap-2 sm:gap-3 mb-6">
+              <div className="flex-1 rounded p-3 sm:p-4 text-center" style={{ background: 'var(--color-bg-off)' }}>
                 <div className="flex justify-center mb-2" style={{ color: 'var(--color-text-muted)' }}><IconRead /></div>
-                <div style={{ fontSize: '22px', fontWeight: 700, color: 'var(--color-text-title)' }}>{stats.total_read}</div>
+                <div style={{ fontSize: 'var(--fs-xl)', fontWeight: 700, color: 'var(--color-text-title)' }}>{stats.total_read}</div>
                 <div style={{ fontSize: '10px', color: 'var(--color-text-label)', marginTop: '2px' }}>已读文章</div>
               </div>
-              <div className="flex-1 rounded p-4 text-center" style={{ background: 'var(--color-bg-off)' }}>
+              <div className="flex-1 rounded p-3 sm:p-4 text-center" style={{ background: 'var(--color-bg-off)' }}>
                 <div className="flex justify-center mb-2" style={{ color: 'var(--color-text-muted)' }}><IconStar /></div>
-                <div style={{ fontSize: '22px', fontWeight: 700, color: 'var(--color-text-title)' }}>{stats.total_bookmarks}</div>
-                <div style={{ fontSize: '10px', color: 'var(--color-text-label)', marginTop: '2px' }}>收藏</div>
-              </div>
-              <div className="flex-1 rounded p-4 text-center" style={{ background: 'var(--color-bg-off)' }}>
-                <div className="flex justify-center mb-2" style={{ color: 'var(--color-text-muted)' }}><IconStreak /></div>
-                <div style={{ fontSize: '22px', fontWeight: 700, color: 'var(--color-text-title)' }}>{stats.streak_days}</div>
+                <div style={{ fontSize: 'var(--fs-xl)', fontWeight: 700, color: 'var(--color-text-title)' }}>{stats.total_bookmarks}</div>
+                 <div style={{ fontSize: '10px', color: 'var(--color-text-label)', marginTop: '2px' }}>收藏</div>
+               </div>
+               <div className="flex-1 rounded p-3 sm:p-4 text-center" style={{ background: 'var(--color-bg-off)' }}>
+                 <div className="flex justify-center mb-2" style={{ color: 'var(--color-text-muted)' }}><IconStreak /></div>
+                 <div style={{ fontSize: 'var(--fs-xl)', fontWeight: 700, color: 'var(--color-text-title)' }}>{stats.streak_days}</div>
                 <div style={{ fontSize: '10px', color: 'var(--color-text-label)', marginTop: '2px' }}>连续天数</div>
               </div>
             </div>
