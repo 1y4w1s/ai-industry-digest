@@ -30,7 +30,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 速率限制中间件（每 IP 每分钟最多 30 次）
+# 速率限制中间件（每 IP 每分钟最多 120 次）
 rate_limit_store = {}
 
 @app.middleware("http")
@@ -44,7 +44,7 @@ async def rate_limit_middleware(request: Request, call_next):
 
     now = time.time()
     window = 60  # 1 分钟窗口
-    max_requests = 30  # 每分钟最多 30 次
+    max_requests = 120  # 每分钟最多 120 次（首页加载约 5-6 请求，支持 ~20 次刷新）
 
     # 清理过期记录
     rate_limit_store[client_ip] = [
