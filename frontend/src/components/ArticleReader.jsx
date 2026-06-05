@@ -3,7 +3,11 @@ import { api } from '../api/client';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
-/* ── TTS hook ───────────── */
+/* ── TTS hook (guarded for mobile browsers without SpeechSynthesis) ───── */
+function getSS() {
+  return typeof window !== 'undefined' && window.speechSynthesis ? window.speechSynthesis : null;
+}
+
 function useTTS() {
   const [state, setState] = useState('idle');
   const utteranceRef = useRef(null);
@@ -11,7 +15,8 @@ function useTTS() {
   const chunkIdxRef = useRef(0);
 
   const stop = useCallback(() => {
-    window.speechSynthesis.cancel();
+    const ss = getSS();
+    if (ss) ss.cancel();
     utteranceRef.current = null;
     textChunksRef.current = [];
     chunkIdxRef.current = 0;
@@ -19,12 +24,13 @@ function useTTS() {
   }, []);
 
   useEffect(() => {
-    return () => { window.speechSynthesis.cancel(); };
+    return () => { const ss = getSS(); if (ss) ss.cancel(); };
   }, []);
 
   const speak = useCallback((text) => {
-    if (!text) return;
-    window.speechSynthesis.cancel();
+    const ss = getSS();
+    if (!ss || !text) return;
+    ss.cancel();
     const chunks = [];
     let current = '';
     for (const char of text) {
@@ -44,25 +50,25 @@ function useTTS() {
       utt.lang = 'zh-CN';
       utt.rate = 1.0;
       utt.pitch = 1.0;
-      const voices = window.speechSynthesis.getVoices();
+      const voices = ss.getVoices();
       const zhVoice = voices.find((v) => v.lang.startsWith('zh'));
       if (zhVoice) utt.voice = zhVoice;
       utt.onend = () => { chunkIdxRef.current = idx + 1; speakChunk(idx + 1); };
       utt.onerror = () => setState('idle');
       utteranceRef.current = utt;
-      window.speechSynthesis.speak(utt);
+      ss.speak(utt);
       setState('playing');
     };
 
-    if (window.speechSynthesis.getVoices().length === 0) {
-      window.speechSynthesis.onvoiceschanged = () => speakChunk(0);
+    if (ss.getVoices().length === 0) {
+      ss.onvoiceschanged = () => speakChunk(0);
     } else {
       speakChunk(0);
     }
   }, []);
 
-  const pause = useCallback(() => { window.speechSynthesis.pause(); setState('paused'); }, []);
-  const resume = useCallback(() => { window.speechSynthesis.resume(); setState('playing'); }, []);
+  const pause = useCallback(() => { const ss = getSS(); if (ss) ss.pause(); setState('paused'); }, []);
+  const resume = useCallback(() => { const ss = getSS(); if (ss) ss.resume(); setState('playing'); }, []);
 
   const toggle = useCallback((text) => {
     if (state === 'idle') { speak(text); }
