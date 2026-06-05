@@ -60,6 +60,13 @@ ARTICLE_CONTEXT_PROMPT = """以下是用户当前正在阅读的一篇文章：
 
 请基于这篇文章回答用户的问题。"""
 
+DAILY_CONTEXT_PROMPT = """以下为今天的 AI 行业日报内容（{report_date}）：
+{articles}
+
+请基于以上今日日报中的文章回答用户的问题。
+如果用户问"有什么新闻"、"今天有什么"这类问题，直接引用上面日报中的文章来回答。
+不要说你没有最新的文章内容——上面就是最新的。"""
+
 
 @router.post("/chat", response_model=ChatResponse, tags=["AI 对话"])
 async def chat(req: ChatRequest):
@@ -87,6 +94,29 @@ async def chat(req: ChatRequest):
                 content=(article.get("raw_content", "") or "")[:2000],
             )
             messages.append({"role": "system", "content": context})
+    else:
+        # 首页对话：自动注入今日日报文章作为上下文
+        reports = db.get_reports(page=1, page_size=1)
+        if reports.get("items"):
+            latest = reports["items"][0]
+            report_date = latest.get("report_date", "")
+            # 获取日报详情（含文章列表）
+            report_detail = db.get_report_by_date(report_date)
+            if report_detail:
+                article_list = report_detail.get("articles", [])
+                if article_list:
+                    articles_text = "\n".join([
+                        f"- [{a.get('importance','')}] {a.get('title','')}（来源: {a.get('source_name','')}）\n  {a.get('summary','')[:200]}"
+                        for a in article_list[:10]
+                    ])
+                    daily_context = DAILY_CONTEXT_PROMPT.format(
+                        report_date=report_date,
+                        articles=articles_text,
+                    )
+                    messages.append({"role": "system", "content": daily_context})
+                else:
+                    # 有日报但无文章列表，至少告诉 AI 日期
+                    messages.append({"role": "system", "content": f"今日日期（日报日期）: {report_date}"})
 
     # 添加历史上下文
     history = chat_contexts.get(session_id, [])
