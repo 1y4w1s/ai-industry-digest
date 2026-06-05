@@ -10,8 +10,8 @@ export default function ArticleGroup({ sourceName, articles, onSelectArticle }) 
   return (
     <div style={{ marginTop: '24px' }}>
       <div className="flex items-center pb-1.5 mb-1" style={{ borderBottom: '1px solid var(--color-border-light)' }}>
-        <span style={{ fontSize: 'var(--fs-sm)', fontWeight: 600, color: 'var(--color-text-title)' }}>{sourceName}</span>
-        <span className="text-xs ml-auto" style={{ color: 'var(--color-text-label)' }}>{articles.length} 篇</span>
+        <span style={{ fontSize: 'var(--fs-sm)', fontWeight: 600, color: 'var(--color-text-title)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, minWidth: 0 }}>{sourceName}</span>
+        <span className="text-xs flex-shrink-0 ml-2" style={{ color: 'var(--color-text-label)' }}>{articles.length} 篇</span>
       </div>
       {sorted.map((a) => (
         <ArticleCard key={a.id || a.url} article={a} onSelect={onSelectArticle} variant="compact" />

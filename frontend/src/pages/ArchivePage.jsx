@@ -57,12 +57,12 @@ function Calendar({ dates, loading, onSelectDate }) {
             {rows.map((week, wi) => (
               <tr key={wi}>
                 {week.map((cell, di) => (
-                  <td key={di} style={{ padding: '4px', textAlign: 'center', border: '1px solid var(--color-border-light)', width: `${100 / 7}%`, height: '60px', verticalAlign: 'top' }}>
+                  <td key={di} style={{ padding: '2px', textAlign: 'center', border: '1px solid var(--color-border-light)', width: `${100 / 7}%`, height: '50px', verticalAlign: 'top' }}>
                     {cell ? (
                       <button onClick={() => onSelectDate(cell.dateStr)}
                         disabled={!cell.hasReport}
                         style={{
-                          width: '100%', height: '100%', minHeight: '50px',
+                          width: '100%', height: '100%', minHeight: '40px',
                           border: 'none', borderRadius: '4px', cursor: cell.hasReport ? 'pointer' : 'default',
                           background: cell.hasReport ? 'rgba(40,100,168,0.08)' : 'transparent',
                           color: cell.hasReport ? 'var(--color-blue-link)' : 'var(--color-text-label)',
