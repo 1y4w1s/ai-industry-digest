@@ -70,6 +70,8 @@ export const api = {
   getHistory: (page = 1) => request(`/auth/history?page=${page}&page_size=20`),
   addHistory: (articleId) =>
     request('/auth/history', { method: 'POST', body: JSON.stringify({ article_id: articleId }) }),
+  clearHistory: () =>
+    request('/auth/history', { method: 'DELETE' }),
 
   // 反馈
   submitFeedback: (articleId, feedback) =>

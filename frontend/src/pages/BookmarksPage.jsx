@@ -91,8 +91,7 @@ export default function BookmarksPage() {
                     <ArticleCard article={{ ...b.articles, _imp: b.articles?.importance || '' }} onSelect={goToArticle} variant="detailed" />
                   </div>
                   <button onClick={(e) => handleRemove(e, b.id)}
-                    style={{ fontSize: 'var(--fs-sm)', color: 'var(--color-text-label)', background: 'none', border: 'none', cursor: 'pointer', padding: '8px 4px', opacity: 0, transition: 'opacity 0.15s' }}
-                    className="group-hover:opacity-100 flex-shrink-0">
+                    style={{ fontSize: 'var(--fs-sm)', color: 'var(--color-text-label)', background: 'none', border: 'none', cursor: 'pointer', padding: '8px 4px', flexShrink: 0 }}>
                     取消收藏
                   </button>
                 </div>

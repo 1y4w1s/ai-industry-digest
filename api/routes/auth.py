@@ -141,6 +141,13 @@ async def list_history(
     return db.get_reading_history(user_id, page=page, page_size=page_size)
 
 
+@router.delete("/history", tags=["历史"])
+async def clear_history(user_id: str = Depends(get_user_id)):
+    """清除所有浏览历史"""
+    db.clear_reading_history(user_id)
+    return {"success": True}
+
+
 # ── 文章反馈 ─────────────────────────────────
 
 

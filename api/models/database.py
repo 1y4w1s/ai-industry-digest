@@ -345,6 +345,14 @@ class DatabaseManager:
             .execute()
         return True
 
+    def clear_reading_history(self, user_id: str) -> bool:
+        """清除用户所有浏览历史"""
+        self.client.table("reading_history") \
+            .delete() \
+            .eq("user_id", user_id) \
+            .execute()
+        return True
+
     def get_reading_history(self, user_id: str, page: int = 1, page_size: int = 20) -> Dict[str, Any]:
         """获取用户浏览历史"""
         query = self.client.table("reading_history") \

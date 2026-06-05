@@ -9,6 +9,8 @@ export default function HistoryPage() {
   const { isLoggedIn, login } = useAuth();
   const [history, setHistory] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [clearing, setClearing] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [page, setPage] = useState(1);
   const navigate = useNavigate();
   const goToArticle = (id) => navigate(`/?article=${encodeURIComponent(id)}`);
@@ -24,6 +26,17 @@ export default function HistoryPage() {
       .catch(() => { if (!cached || page > 1) setHistory({ items: [], total: 0, pages: 0 }); })
       .finally(() => setLoading(false));
   }, [page]);
+
+  const handleClear = async () => {
+    setClearing(true);
+    try {
+      await api.clearHistory();
+      setHistory({ items: [], total: 0, pages: 0 });
+      localStorage.setItem('signal_history', JSON.stringify({ items: [], total: 0, pages: 0 }));
+    } catch {}
+    setClearing(false);
+    setShowConfirm(false);
+  };
 
   const grouped = [];
   if (history?.items) {
@@ -65,14 +78,22 @@ export default function HistoryPage() {
               </button>
             </div>
           ) : (<>
-          <div className="mb-6" style={{ borderBottom: '1px solid var(--color-border-light)', paddingBottom: '16px' }}>
-            <h1 style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: 'var(--fs-xl)', fontWeight: 700, color: 'var(--color-text-title)' }}>
-              浏览历史
-            </h1>
-            {history && (
-              <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--color-text-muted)', marginTop: '4px' }}>
-                共 {history.total} 条记录
-              </div>
+          <div className="flex items-center justify-between mb-6" style={{ borderBottom: '1px solid var(--color-border-light)', paddingBottom: '16px' }}>
+            <div>
+              <h1 style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: 'var(--fs-xl)', fontWeight: 700, color: 'var(--color-text-title)' }}>
+                浏览历史
+              </h1>
+              {history && (
+                <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--color-text-muted)', marginTop: '4px' }}>
+                  共 {history.total} 条记录
+                </div>
+              )}
+            </div>
+            {history?.total > 0 && (
+              <button onClick={() => setShowConfirm(true)}
+                style={{ fontSize: '12px', color: 'var(--color-high)', background: 'none', border: '1px solid var(--color-high)', borderRadius: '4px', padding: '6px 12px', cursor: 'pointer', transition: 'all 0.15s' }}>
+                清除全部
+              </button>
             )}
           </div>
 
@@ -90,7 +111,7 @@ export default function HistoryPage() {
               {grouped.map((g) => (
                 <div key={g.label}>
                   <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 500, color: 'var(--color-text-title)', marginBottom: '4px', paddingBottom: '8px', borderBottom: '1px solid var(--color-border-light)' }}>
-                    {g.label}
+                    {g.label}（{g.items.length} 篇）
                   </div>
                   <div className="space-y-1">
                     {g.items.map((h) => (
@@ -118,6 +139,26 @@ export default function HistoryPage() {
           )}
         </div>
       </div>
+
+      {/* Confirm dialog */}
+      {showConfirm && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
+          <div style={{ background: 'var(--color-bg-white)', borderRadius: '8px', padding: '24px', maxWidth: '340px', width: '90%', textAlign: 'center' }}>
+            <p style={{ fontSize: '14px', color: 'var(--color-text-title)', marginBottom: '16px' }}>确定清除所有浏览历史？</p>
+            <p style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginBottom: '20px' }}>此操作不可撤销</p>
+            <div className="flex gap-3 justify-center">
+              <button onClick={() => setShowConfirm(false)} disabled={clearing}
+                style={{ padding: '8px 20px', fontSize: '13px', background: 'none', border: '1px solid var(--color-border)', borderRadius: '4px', cursor: 'pointer', color: 'var(--color-text-body)' }}>
+                取消
+              </button>
+              <button onClick={handleClear} disabled={clearing}
+                style={{ padding: '8px 20px', fontSize: '13px', background: 'var(--color-high)', border: 'none', borderRadius: '4px', cursor: 'pointer', color: 'white' }}>
+                {clearing ? '清除中...' : '确认清除'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
