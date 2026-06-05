@@ -28,7 +28,6 @@ body {
   background: var(--color-bg-white);
   color: var(--color-text-body);
   font-family: var(--font-body);
-  font-size: var(--font-size-base, 14px);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

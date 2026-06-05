@@ -46,7 +46,9 @@ export function ThemeProvider({ children }) {
 
   useEffect(() => {
     document.documentElement.setAttribute('data-font-size', fontSize);
-    console.log('[ThemeContext] mount: set data-font-size=', fontSize, '| DOM attr=', document.documentElement.getAttribute('data-font-size'));
+    const sizeMap = { small: '12px', medium: '15px', large: '18px' };
+    document.documentElement.style.fontSize = sizeMap[fontSize] || '15px';
+    console.log('[ThemeContext] mount: set data-font-size=', fontSize, '| html.style.fontSize=', document.documentElement.style.fontSize);
   }, []); // only on mount, sync in callbacks handles changes
 
   useEffect(() => {
@@ -70,20 +72,21 @@ export function ThemeProvider({ children }) {
   }, [persist, fontSize]);
 
   const updateFontSize = useCallback((size) => {
-    console.log('[ThemeContext] updateFontSize | STEP 1: called with', size, '| React state fontSize=', fontSize, '| current DOM attr=', document.documentElement.getAttribute('data-font-size'));
+    console.log('[ThemeContext] updateFontSize | STEP 1: called with', size, '| current DOM attr=', document.documentElement.getAttribute('data-font-size'));
     setFontSize(size);
     persist('fontSize', size);
+    // 同步写入 DOM 属性
     document.documentElement.setAttribute('data-font-size', size);
     console.log('[ThemeContext] updateFontSize | STEP 2: DOM set data-font-size=', size, '| verify getAttribute=', document.documentElement.getAttribute('data-font-size'));
-    // STEP 3: Check if CSS actually applied to a sample element
-    const sample = document.querySelector('[style*="font-size:13"]') || document.querySelector('[style*="font-size:15"]') || document.querySelector('.text-sm');
-    if (sample) {
-      const computed = window.getComputedStyle(sample).fontSize;
-      console.log('[ThemeContext] updateFontSize | STEP 3: sample element font-size from CSS:', computed);
-    } else {
-      console.log('[ThemeContext] updateFontSize | STEP 3: no sample element found to check computed style');
-    }
-  }, [persist, fontSize]);
+    // STEP 3: 直接写 style.fontSize 确保最高优先级
+    const sizeMap = { small: '12px', medium: '15px', large: '18px' };
+    document.documentElement.style.fontSize = sizeMap[size] || '15px';
+    console.log('[ThemeContext] updateFontSize | STEP 3: html.style.fontSize =', document.documentElement.style.fontSize);
+    // STEP 4: 验证实际 computed 值
+    const check = document.body || document.documentElement;
+    const computed = window.getComputedStyle(check).fontSize;
+    console.log('[ThemeContext] updateFontSize | STEP 4: body computed font-size:', computed);
+  }, [persist]);
 
   const updateLangPref = useCallback((lang) => {
     setLangPref(lang);
