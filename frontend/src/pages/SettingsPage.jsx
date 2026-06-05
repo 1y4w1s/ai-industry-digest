@@ -30,8 +30,9 @@ function RadioGroup({ label, options, value, onChange }) {
             <button
               key={opt.value}
               onClick={() => {
-                console.log(`[SettingsPage] RadioGroup "${label}" | clicked: ${opt.value} | current selected: ${value}`);
+                console.log(`[SettingsPage] RadioGroup "${label}" | clicked: ${opt.value} | current selected: ${value} | DOM data-font-size before: ${document.documentElement.getAttribute('data-font-size')}`);
                 onChange(opt.value);
+                console.log(`[SettingsPage] RadioGroup "${label}" | after onChange | DOM data-font-size: ${document.documentElement.getAttribute('data-font-size')}`);
               }}
               style={{
                 padding: '10px 16px',
@@ -63,7 +64,7 @@ function RadioGroup({ label, options, value, onChange }) {
 
 export default function SettingsPage() {
   const { themeMode, updateThemeMode, fontSize, updateFontSize } = useTheme();
-  console.log(`[SettingsPage] render | themeMode="${themeMode}" fontSize="${fontSize}"`);
+  console.log(`[SettingsPage] render | themeMode="${themeMode}" fontSize="${fontSize}" | DOM data-font-size="${document.documentElement.getAttribute('data-font-size')}"`);
 
   // If current themeMode is 'system', auto-convert to resolved on first visit
   const displayTheme = themeMode === 'system' ? 'light' : themeMode;

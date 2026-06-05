@@ -23,11 +23,13 @@ function getSystemTheme() {
 
 export function ThemeProvider({ children }) {
   const stored = loadPrefs();
-  console.log('[ThemeContext] init | localStorage prefs:', stored);
+  console.log('[ThemeContext] === INIT === | localStorage prefs:', stored);
 
   const [themeMode, setThemeMode] = useState(stored.themeMode || 'system');
   const [fontSize, setFontSize] = useState(stored.fontSize || 'medium');
   const [langPref, setLangPref] = useState(stored.langPref || 'all');
+
+  console.log(`[ThemeContext] === INIT STATE === | themeMode="${themeMode}" fontSize="${fontSize}"`);
 
   const resolvedTheme = themeMode === 'system' ? getSystemTheme() : themeMode;
 
@@ -35,26 +37,23 @@ export function ThemeProvider({ children }) {
     const prefs = loadPrefs();
     prefs[key] = value;
     savePrefs(prefs);
-    console.log(`[ThemeContext] persist | ${key} = ${value} | full prefs:`, prefs);
   }, []);
 
   useEffect(() => {
-    console.log(`[ThemeContext] apply data-theme="${resolvedTheme}" to <html>`);
     document.documentElement.setAttribute('data-theme', resolvedTheme);
-  }, [resolvedTheme]);
+    console.log('[ThemeContext] mount: set data-theme=', resolvedTheme, '| DOM attr=', document.documentElement.getAttribute('data-theme'));
+  }, []); // only on mount, sync in callbacks handles changes
 
-  // 初始挂载时同步一次 data-font-size
   useEffect(() => {
     document.documentElement.setAttribute('data-font-size', fontSize);
-    console.log(`[ThemeContext] mount: set data-font-size="${fontSize}"`);
-  }, []);
+    console.log('[ThemeContext] mount: set data-font-size=', fontSize, '| DOM attr=', document.documentElement.getAttribute('data-font-size'));
+  }, []); // only on mount, sync in callbacks handles changes
 
   useEffect(() => {
     if (themeMode !== 'system') return;
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
     const handler = () => {
       const t = getSystemTheme();
-      console.log(`[ThemeContext] system theme changed → ${t}`);
       document.documentElement.setAttribute('data-theme', t);
     };
     mq.addEventListener('change', handler);
@@ -62,23 +61,29 @@ export function ThemeProvider({ children }) {
   }, [themeMode]);
 
   const updateThemeMode = useCallback((mode) => {
-    console.log(`[ThemeContext] updateThemeMode called with "${mode}"`);
+    console.log('[ThemeContext] updateThemeMode | STEP 1: called with', mode, '| React state fontSize=', fontSize);
     setThemeMode(mode);
     persist('themeMode', mode);
-    // 同步写入 DOM
     const resolved = mode === 'system' ? getSystemTheme() : mode;
     document.documentElement.setAttribute('data-theme', resolved);
-    console.log(`[ThemeContext] sync DOM: data-theme="${resolved}"`);
-  }, [persist]);
+    console.log('[ThemeContext] updateThemeMode | STEP 2: DOM set data-theme=', resolved, '| verify getAttribute=', document.documentElement.getAttribute('data-theme'));
+  }, [persist, fontSize]);
 
   const updateFontSize = useCallback((size) => {
-    console.log(`[ThemeContext] updateFontSize called with "${size}"`);
+    console.log('[ThemeContext] updateFontSize | STEP 1: called with', size, '| React state fontSize=', fontSize, '| current DOM attr=', document.documentElement.getAttribute('data-font-size'));
     setFontSize(size);
     persist('fontSize', size);
-    // 同步写入 DOM，绕过 React 调度延迟
     document.documentElement.setAttribute('data-font-size', size);
-    console.log(`[ThemeContext] sync DOM: data-font-size="${document.documentElement.getAttribute('data-font-size')}"`);
-  }, [persist]);
+    console.log('[ThemeContext] updateFontSize | STEP 2: DOM set data-font-size=', size, '| verify getAttribute=', document.documentElement.getAttribute('data-font-size'));
+    // STEP 3: Check if CSS actually applied to a sample element
+    const sample = document.querySelector('[style*="font-size:13"]') || document.querySelector('[style*="font-size:15"]') || document.querySelector('.text-sm');
+    if (sample) {
+      const computed = window.getComputedStyle(sample).fontSize;
+      console.log('[ThemeContext] updateFontSize | STEP 3: sample element font-size from CSS:', computed);
+    } else {
+      console.log('[ThemeContext] updateFontSize | STEP 3: no sample element found to check computed style');
+    }
+  }, [persist, fontSize]);
 
   const updateLangPref = useCallback((lang) => {
     setLangPref(lang);
