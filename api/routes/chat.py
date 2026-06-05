@@ -103,21 +103,26 @@ async def chat(req: ChatRequest):
             # 获取日报详情（含文章列表）
             report_detail = db.get_report_by_date(report_date)
             if report_detail:
-                article_list = report_detail.get("articles", [])
-                if article_list:
-                    # Ensure it's a plain list (Supabase may return special type)
-                    article_items = list(article_list)[:10]
-                    articles_text = "\n".join([
-                        f"- [{','.join(a.get('importance','')) if isinstance(a.get('importance',''), list) else a.get('importance','')}] {a.get('title','')}（来源: {a.get('source_name','')}）\n  {str(a.get('summary',''))[:200]}"
-                        for a in article_items
-                    ])
-                    daily_context = DAILY_CONTEXT_PROMPT.format(
-                        report_date=report_date,
-                        articles=articles_text,
-                    )
-                    messages.append({"role": "system", "content": daily_context})
+                article_groups = report_detail.get("articles", {})
+                if isinstance(article_groups, dict):
+                    # Flatten grouped articles into a single list, high first
+                    flat = []
+                    for priority in ("high", "medium", "low"):
+                        flat.extend(article_groups.get(priority, []))
+                    article_items = flat[:10]
+                    if article_items:
+                        articles_text = "\n".join([
+                            f"- [{a.get('importance','')}] {a.get('title','')}（来源: {a.get('source_name','')}）\n  {str(a.get('summary',''))[:200]}"
+                            for a in article_items
+                        ])
+                        daily_context = DAILY_CONTEXT_PROMPT.format(
+                            report_date=report_date,
+                            articles=articles_text,
+                        )
+                        messages.append({"role": "system", "content": daily_context})
+                    else:
+                        messages.append({"role": "system", "content": f"今日日期（日报日期）: {report_date}"})
                 else:
-                    # 有日报但无文章列表，至少告诉 AI 日期
                     messages.append({"role": "system", "content": f"今日日期（日报日期）: {report_date}"})
 
     # 添加历史上下文
