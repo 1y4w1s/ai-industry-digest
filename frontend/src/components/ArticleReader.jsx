@@ -176,7 +176,7 @@ export default function ArticleReader({ articleId, onBack }) {
   };
 
   return (
-    <div className="h-full flex flex-col animate-fade-in" style={{ background: 'var(--color-bg-white)' }}>
+    <div className="flex-1 flex flex-col min-h-0 animate-fade-in" style={{ background: 'var(--color-bg-white)' }}>
       {/* Top bar */}
       <div className="flex items-center gap-3 px-4 lg:px-5 py-2.5 flex-shrink-0 no-print" style={{ borderBottom: '1px solid var(--color-border-light)', background: 'var(--color-bg-white)' }}>
         <button onClick={onBack} style={{ fontSize: '12px', color: '#2864A8', background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px', padding: 0 }}>← 返回</button>
@@ -214,7 +214,7 @@ export default function ArticleReader({ articleId, onBack }) {
               )}
 
               <h2 style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '22px', fontWeight: 700, color: 'var(--color-text-title)', lineHeight: 1.35, marginBottom: '12px' }}>{article.title}</h2>
-              <div className="flex items-center gap-3 mb-6" style={{ color: 'var(--color-text-muted)', fontSize: '13px' }}>
+              <div className="flex flex-wrap items-center gap-3 mb-6" style={{ color: 'var(--color-text-muted)', fontSize: '13px' }}>
                 <span>{article.source_name}</span><span>·</span><span>{article.published_at?.slice(0, 10)}</span>
                 <div className="ml-auto flex items-center gap-3 no-print">
                   {/* TTS button */}

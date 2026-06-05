@@ -106,7 +106,7 @@ export default function ArchivePage() {
   };
 
   return (
-    <div className="h-full flex flex-col" style={{ background: 'var(--color-bg-white)' }}>
+    <div className="flex-1 flex flex-col min-h-0" style={{ background: 'var(--color-bg-white)' }}>
       <div className="flex-1 overflow-y-auto">
         <div className="px-5 lg:px-8 py-6" style={{ maxWidth: '700px', margin: '0 auto' }}>
           <button onClick={() => navigate('/')} style={{ fontSize: '12px', color: 'var(--color-blue-link)', background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px', padding: 0, marginBottom: '20px' }}>

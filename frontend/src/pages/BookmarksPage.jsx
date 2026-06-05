@@ -39,7 +39,7 @@ export default function BookmarksPage() {
   };
 
   return (
-    <div className="h-full flex flex-col" style={{ background: 'var(--color-bg-white)' }}>
+    <div className="flex-1 flex flex-col min-h-0" style={{ background: 'var(--color-bg-white)' }}>
       <div className="flex-1 overflow-y-auto">
         <div className="px-5 lg:px-6" style={{ paddingTop: '20px', paddingBottom: '32px', maxWidth: '800px' }}>
           <div className="mb-5">

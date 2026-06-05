@@ -56,7 +56,7 @@ export default function Home() {
   // Loading state
   if (loading && !fromCache) {
     return (
-      <div className="h-full flex flex-col overflow-hidden" style={{ background: 'var(--color-bg-white)' }}>
+      <div className="flex-1 flex flex-col overflow-hidden min-h-0" style={{ background: 'var(--color-bg-white)' }}>
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <div className="flex gap-1.5 justify-center mb-3">
@@ -72,7 +72,7 @@ export default function Home() {
   }
 
   return (
-    <div className="h-full flex flex-col overflow-hidden" style={{ background: 'var(--color-bg-white)' }}>
+    <div className="flex-1 flex flex-col overflow-hidden min-h-0" style={{ background: 'var(--color-bg-white)' }}>
       <FilterBar
         importance={importance}
         source={source}

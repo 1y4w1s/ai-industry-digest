@@ -45,7 +45,7 @@ export default function SearchPage() {
   };
 
   return (
-    <div className="h-full flex flex-col" style={{ background: 'var(--color-bg-white)' }}>
+    <div className="flex-1 flex flex-col min-h-0" style={{ background: 'var(--color-bg-white)' }}>
       <div className="flex-1 overflow-y-auto">
         <div className="px-5 lg:px-6 py-5" style={{ maxWidth: '1200px', margin: '0 auto' }}>
           <div className="mb-5">
