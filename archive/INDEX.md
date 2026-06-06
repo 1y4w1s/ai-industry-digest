@@ -56,16 +56,23 @@
 | [优化任务书.md](./优化任务书.md) | 优化任务书（待定/未开始） | 第 1 批 |
 | [优化任务书_20260606_归档.md](./优化任务书_20260606_归档.md) | 优化任务书归档备份 | 第 1 批 |
 
-### 2.3 设计文档
+### 2.2 设计文档
 
 | 文件 | 说明 |
 |------|------|
-| [DESIGN_SPEC.md](..docs/design/DESIGN_SPEC.md) | 设计规范文档 |
-| [KB_FRONTEND_DESIGN.md](..docs/design/KB_FRONTEND_DESIGN.md) | 知识库前端设计文档 v1.1 |
-| [AI_PERSONALIZATION_ARCH.md](..docs/design/AI_PERSONALIZATION_ARCH.md) | AI 个性化与安全增强架构设计 v1.0（待实施） |
+| [DESIGN_SPEC.md](..docs/design/DESIGN_SPEC.md) | 设计规范文档（颜色/字体/间距/组件） |
+| [KB_FRONTEND_DESIGN.md](..docs/design/KB_FRONTEND_DESIGN.md) | 知识库前端设计文档 |
+| [AI_PERSONALIZATION_ARCH.md](..docs/design/AI_PERSONALIZATION_ARCH.md) | AI 个性化与安全增强架构设计 |
 | [design.md](./design.md) | 原始设计方案（归档） |
 | [proposal.md](./proposal.md) | 原始技术提案（归档） |
-| [design-system/](./design-system/) | 设计系统细节（模块架构、主页设计、重设计稿等） |
+| [design-system/](./design-system/) | 设计系统细节（模块架构等） |
+
+### 2.3 技术栈
+
+| 文件 | 说明 |
+|------|------|
+| [TECH_STACK.md](..docs/TECH_STACK.md) | **技术栈单一真相源**（版本/用途/安全体系/文件结构） |
+| [README.md](..README.md) | **项目根目录概览**（快速上手/核心功能/文档索引） |
 
 ### 2.4 部署与运维
 
@@ -217,19 +224,23 @@ Supabase 数据库 (articles / daily_reports)
 
 ## 五、技术栈摘要
 
+> 完整技术栈详见 [docs/TECH_STACK.md](../docs/TECH_STACK.md)（版本/用途/安全体系/文件结构）
+
 | 层 | 技术 |
 |----|------|
-| 前端框架 | React 18 + Vite |
-| 样式 | Tailwind CSS v4 + CSS 变量 |
-| 构建工具 | Vite |
-| 后端框架 | FastAPI (Python) |
-| 数据库 | Supabase (PostgreSQL) |
-| 认证 | Supabase Auth (JWT) |
-| AI | DeepSeek API（摘要/标签/实体识别/关系抽取） |
+| 前端框架 | React 18 + Vite 8 |
+| 样式 | Tailwind CSS v4 + CSS 变量主题系统（亮/暗/系统） |
+| 构建工具 | Vite（代码分割：React.lazy） |
+| 后端框架 | FastAPI (Python 3.9+) |
+| 数据库 | Supabase (PostgreSQL 12+) |
+| 认证 | Supabase Auth (JWT) + GitHub OAuth |
+| JWT 验证 | JWKS 公钥 RS256（非跳过签名） |
+| AI | DeepSeek API（摘要/标签/重要性/实体/关系） |
+| 本地标签 | TagExtractor（零 API 成本字符串匹配） |
 | 采集 | feedparser + httpx + BeautifulSoup |
-| 部署 | GitHub Actions + SCP + uvicorn |
-| CI | pytest (31 tests: 20 后端 + 11 知识库) |
-| 定时任务 | cron（每天 3:00 全流程 + KB 导入） |
+| 部署 | GitHub Actions + Nginx + uvicorn |
+| 测试 | pytest 42 项（41 passed, 1 skipped） |
+| 定时任务 | cron（每天 3:00） + GitHub Actions（6:00/12:00/18:00） |
 
 ---
 
