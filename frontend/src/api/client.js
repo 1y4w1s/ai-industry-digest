@@ -70,6 +70,8 @@ export const api = {
   getHistory: (page = 1) => request(`/auth/history?page=${page}&page_size=20`),
   addHistory: (articleId) =>
     request('/auth/history', { method: 'POST', body: JSON.stringify({ article_id: articleId }) }),
+  addHistoryWithDepth: (articleId, readPercent, durationSec) =>
+    request('/auth/history', { method: 'POST', body: JSON.stringify({ article_id: articleId, read_percent: readPercent, duration_sec: durationSec }) }),
   clearHistory: () =>
     request('/auth/history', { method: 'DELETE' }),
 
@@ -86,6 +88,9 @@ export const api = {
 
   // 首页聚合
   getHome: () => request('/home'),
+
+  // 个性化推荐
+  getRecommend: (limit = 5) => request(`/recommend?limit=${limit}`),
 
   // 知识库
   kb: {

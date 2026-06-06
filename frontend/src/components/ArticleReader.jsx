@@ -3,6 +3,7 @@ import { api } from '../api/client';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { renderMd, renderArticleContent } from '../utils/markdown';
+import DOMPurify from 'dompurify';
 import { Cache, CACHE_TTL } from '../utils/cache';
 import { useToast } from './Toast';
 import ErrorBoundary from './ErrorBoundary';
@@ -117,6 +118,9 @@ export default function ArticleReader({ articleId, onBack }) {
   const chatEndRef = useRef(null);
   const chatInputRef = useRef(null);
   const pdfContentRef = useRef(null);
+  const contentScrollRef = useRef(null);  // 用于追踪滚动
+  const startTimeRef = useRef(Date.now()); // 开始阅读时间
+  const readPercentRef = useRef(0);        // 最新阅读百分比
   const toast = useToast();
 
   const isBookmarked = !!bookmarkId;
@@ -150,6 +154,41 @@ export default function ArticleReader({ articleId, onBack }) {
       }
     }).catch(() => {}).finally(() => setLoading(false));
   }, [articleId, ttsStop]);
+
+  // ── 阅读深度追踪 ──
+  useEffect(() => {
+    if (!articleId) return;
+    startTimeRef.current = Date.now();
+    readPercentRef.current = 0;
+
+    const el = contentScrollRef.current;
+    if (!el) return;
+
+    let ticking = false;
+    const onScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          const { scrollTop, scrollHeight, clientHeight } = el;
+          const maxScroll = scrollHeight - clientHeight;
+          const pct = maxScroll > 0 ? Math.min(100, Math.round((scrollTop / maxScroll) * 100)) : 100;
+          readPercentRef.current = pct;
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    el.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      el.removeEventListener('scroll', onScroll);
+      // 组件卸载时上报阅读深度
+      const finalPct = readPercentRef.current;
+      const duration = Math.round((Date.now() - startTimeRef.current) / 1000);
+      if (finalPct >= 15) {
+        api.addHistoryWithDepth(articleId, finalPct, duration).catch(() => {});
+      }
+    };
+  }, [articleId]);
 
   const toggleBookmark = async () => {
     if (isBookmarked) {
@@ -232,7 +271,7 @@ export default function ArticleReader({ articleId, onBack }) {
         </div>
       ) : article ? (
         <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
-          <div className="flex-1 min-w-0 overflow-y-auto" style={{ borderRight: '1px solid var(--color-border-light)', background: 'var(--color-bg-white)' }}>
+          <div ref={contentScrollRef} className="flex-1 min-w-0 overflow-y-auto" style={{ borderRight: '1px solid var(--color-border-light)', background: 'var(--color-bg-white)' }}>
             <div className="p-5 lg:p-8 max-w-3xl mx-auto">
               {article.summary && (
                 <div className="no-print" style={{ background: 'var(--color-bg-off)', borderRadius: '4px', padding: '16px', marginBottom: '24px' }}>
@@ -316,7 +355,7 @@ export default function ArticleReader({ articleId, onBack }) {
                       style={msg.role === 'user'
                         ? { background: 'var(--color-text-title)', color: 'var(--color-bg-white)' }
                         : { background: 'var(--color-bg-white)', color: 'var(--color-text-body)' }}>
-                      <span dangerouslySetInnerHTML={{ __html: renderMd(msg.content) }} />
+                      <span dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(renderMd(msg.content)) }} />
                     </div>
                   </div>
                 ))}

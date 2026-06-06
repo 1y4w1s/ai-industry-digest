@@ -86,3 +86,21 @@ CREATE TABLE IF NOT EXISTS article_feedback (
     created_at TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE(user_id, article_id)
 );
+
+-- =============================================
+-- 用户画像表
+-- =============================================
+
+-- 表 7: user_tags（用户标签画像）
+-- 记录用户兴趣标签及其权重，用于个性化推荐
+-- tag 值对齐 articles.tags 中的标签
+CREATE TABLE IF NOT EXISTS user_tags (
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    tag VARCHAR(50) NOT NULL,
+    weight INTEGER DEFAULT 1,
+    source VARCHAR(20) DEFAULT 'chat',  -- 'chat' | 'reading' | 'bookmark'
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    PRIMARY KEY (user_id, tag, source)
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_tags_user ON user_tags(user_id);

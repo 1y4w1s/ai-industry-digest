@@ -327,21 +327,39 @@ class DatabaseManager:
             "pages": (total + page_size - 1) // page_size if page_size > 0 else 0,
         }
 
-    def add_reading_history(self, user_id: str, article_id: str) -> bool:
-        """记录浏览历史（同一天同一篇只记一次）"""
+    def add_reading_history(self, user_id: str, article_id: str,
+                            read_percent: Optional[float] = None,
+                            duration_sec: Optional[int] = None) -> bool:
+        """记录浏览历史（同天同篇取 max read_percent）"""
         today = date.today().isoformat()
         existing = self.client.table("reading_history") \
-            .select("id") \
+            .select("id, read_percent") \
             .eq("user_id", user_id) \
             .eq("article_id", article_id) \
             .gte("read_at", today) \
             .execute()
 
         if existing.data:
-            return False  # 已记录过
+            # 已存在 → 更新 read_percent（取较大值）
+            existing_id = existing.data[0]["id"]
+            existing_pct = existing.data[0].get("read_percent")
+            if read_percent is not None and (
+                existing_pct is None or read_percent > existing_pct
+            ):
+                self.client.table("reading_history") \
+                    .update({"read_percent": read_percent, "read_at": datetime.now().isoformat()}) \
+                    .eq("id", existing_id) \
+                    .execute()
+            return False
 
+        # 不存在 → 插入
+        data = {"user_id": user_id, "article_id": article_id}
+        if read_percent is not None:
+            data["read_percent"] = read_percent
+        if duration_sec is not None:
+            data["duration_sec"] = duration_sec
         self.client.table("reading_history") \
-            .insert({"user_id": user_id, "article_id": article_id}) \
+            .insert(data) \
             .execute()
         return True
 
@@ -352,6 +370,41 @@ class DatabaseManager:
             .eq("user_id", user_id) \
             .execute()
         return True
+
+    # ── 用户画像 ────────────────────────────
+
+    def upsert_user_tag(self, user_id: str, tag: str, source: str = 'chat') -> None:
+        """更新用户标签权重（存在则 +1，不存在则插入）"""
+        now = datetime.now().isoformat()
+        # 检查是否已存在
+        existing = self.client.table("user_tags") \
+            .select("weight") \
+            .eq("user_id", user_id) \
+            .eq("tag", tag) \
+            .eq("source", source) \
+            .execute()
+        if existing.data:
+            # 存在 → 权重 +1
+            self.client.table("user_tags") \
+                .update({"weight": existing.data[0]["weight"] + 1, "updated_at": now}) \
+                .eq("user_id", user_id) \
+                .eq("tag", tag) \
+                .eq("source", source) \
+                .execute()
+        else:
+            # 不存在 → 插入
+            self.client.table("user_tags") \
+                .insert({"user_id": user_id, "tag": tag, "weight": 1, "source": source, "updated_at": now}) \
+                .execute()
+
+    def get_user_tags(self, user_id: str) -> List[dict]:
+        """获取用户所有标签权重"""
+        result = self.client.table("user_tags") \
+            .select("tag, weight, source") \
+            .eq("user_id", user_id) \
+            .order("weight", desc=True) \
+            .execute()
+        return result.data or []
 
     def get_reading_history(self, user_id: str, page: int = 1, page_size: int = 20) -> Dict[str, Any]:
         """获取用户浏览历史"""

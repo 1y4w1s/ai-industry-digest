@@ -9,6 +9,7 @@ import FilterBar from '../components/FilterBar';
 import ArticleGroup from '../components/ArticleGroup';
 import HeroArticle from '../components/HeroArticle';
 import DataStats from '../components/DataStats';
+import RecommendationWidget from '../components/RecommendationWidget';
 
 export default function Home() {
   const [sidePanelOpen, setSidePanelOpen] = useState(true);
@@ -87,6 +88,8 @@ export default function Home() {
         onToggleSidePanel={() => setSidePanelOpen(!sidePanelOpen)}
         sidePanelOpen={sidePanelOpen}
       />
+
+      <RecommendationWidget onNavigate={goToArticle} />
 
       <div className="flex-1 flex overflow-hidden">
         <div className="flex-1 min-w-0 overflow-y-auto">

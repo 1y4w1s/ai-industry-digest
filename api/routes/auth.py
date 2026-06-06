@@ -61,6 +61,8 @@ class BookmarkDeleteRequest(BaseModel):
 
 class HistoryRequest(BaseModel):
     article_id: str
+    read_percent: Optional[float] = None
+    duration_sec: Optional[int] = None
 
 
 class FeedbackRequest(BaseModel):
@@ -126,8 +128,13 @@ async def add_history(
     req: HistoryRequest,
     user_id: str = Depends(get_user_id),
 ):
-    """记录浏览历史"""
-    db.add_reading_history(user_id, req.article_id)
+    """记录浏览历史（带阅读深度）"""
+    db.add_reading_history(
+        user_id,
+        req.article_id,
+        read_percent=req.read_percent,
+        duration_sec=req.duration_sec,
+    )
     return {"success": True}
 
 

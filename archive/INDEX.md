@@ -52,19 +52,20 @@
 
 | 文件 | 说明 |
 |------|------|
-| [DESIGN_SPEC.md](..DESIGN_SPEC.md) | 设计规范文档（**保留在根目录**） |
-| [docs/KB_FRONTEND_DESIGN.md](..docs/KB_FRONTEND_DESIGN.md) | 知识库前端设计文档 v1.1（**保留在根目录**） |
-| [design.md](./design.md) | 原始设计方案 |
-| [proposal.md](./proposal.md) | 原始技术提案 |
+| [DESIGN_SPEC.md](..docs/design/DESIGN_SPEC.md) | 设计规范文档 |
+| [KB_FRONTEND_DESIGN.md](..docs/design/KB_FRONTEND_DESIGN.md) | 知识库前端设计文档 v1.1 |
+| [AI_PERSONALIZATION_ARCH.md](..docs/design/AI_PERSONALIZATION_ARCH.md) | AI 个性化与安全增强架构设计 v1.0（待实施） |
+| [design.md](./design.md) | 原始设计方案（归档） |
+| [proposal.md](./proposal.md) | 原始技术提案（归档） |
 | [design-system/](./design-system/) | 设计系统细节（模块架构、主页设计、重设计稿等） |
 
 ### 2.4 部署与运维
 
 | 文件 | 说明 |
 |------|------|
-| [DEPLOY_GUIDE.md](..DEPLOY_GUIDE.md) | 部署指南（**保留在根目录**） |
-| [运营维护/服务器代码全集.md](..运营维护/服务器代码全集.md) | 服务器端完整代码参考 |
-| [运营维护/部署与排障记录.md](..运营维护/部署与排障记录.md) | 部署问题和解决方案记录 |
+| [DEPLOY_GUIDE.md](..docs/ops/DEPLOY_GUIDE.md) | 部署指南 |
+| [服务器代码全集.md](..docs/ops/服务器代码全集.md) | 服务器端完整代码参考 |
+| [部署与排障记录.md](..docs/ops/部署与排障记录.md) | 部署问题和解决方案记录 |
 
 ### 2.5 配置与流程
 

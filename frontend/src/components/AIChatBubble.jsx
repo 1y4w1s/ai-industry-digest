@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { api } from '../api/client';
 import { renderMd } from '../utils/markdown';
+import DOMPurify from 'dompurify';
 
 export default function AIChatBubble({ visible = true }) {
   const [open, setOpen] = useState(false);
@@ -204,7 +205,7 @@ export default function AIChatBubble({ visible = true }) {
                     : { background: 'var(--color-bg-hover)', color: 'var(--color-text-body)' }
                 }
               >
-                <span dangerouslySetInnerHTML={{ __html: renderMd(msg.content) }} />
+                <span dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(renderMd(msg.content)) }} />
               </div>
             </div>
           ))}
