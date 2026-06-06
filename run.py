@@ -14,6 +14,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from collector.base import Article
 from collector.rss_collector import RSSCollector
 from collector.arxiv_collector import ArxivCollector
+from collector.hf_collector import HFCollector
 from processor.dedup import Deduplicator
 from processor.ai_processor import AIProcessor
 from processor.reporter import DailyReportGenerator
@@ -44,6 +45,8 @@ def create_collector(source_config: dict, collector_type: str = None):
         api_type = target_config.get("api_type", "")
         if api_type == "arxiv":
             return ArxivCollector(source_config)
+        elif api_type == "huggingface":
+            return HFCollector(source_config)
     return None
 
 

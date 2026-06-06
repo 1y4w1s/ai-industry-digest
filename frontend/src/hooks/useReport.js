@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../api/client';
+import { Cache, CACHE_TTL } from '../utils/cache';
 
 const CACHE_KEY = 'signal_home_cache';
 
@@ -46,9 +47,9 @@ export function useReport() {
           reports: reportsList,
           timestamp: Date.now(),
         }));
-        // Cache sources & tags separately (shared by other pages)
-        localStorage.setItem('signal_sources', JSON.stringify(srcList));
-        localStorage.setItem('signal_tags', JSON.stringify(tagList));
+        // Cache sources & tags via Cache utility
+        Cache.set('sources', srcList, CACHE_TTL.SOURCES);
+        Cache.set('tags', tagList, CACHE_TTL.TAGS);
       } catch {
         // On failure, try cache
         const cached = localStorage.getItem(CACHE_KEY);

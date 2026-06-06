@@ -1,8 +1,9 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { api } from '../api/client';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { renderMd, renderArticleContent } from '../utils/markdown';
+import { Cache, CACHE_TTL } from '../utils/cache';
 
 /* ── TTS hook (guarded for mobile browsers without SpeechSynthesis) ───── */
 function getSS() {
@@ -117,7 +118,7 @@ export default function ArticleReader({ articleId, onBack }) {
 
   const isBookmarked = !!bookmarkId;
   const { state: ttsState, toggle: ttsToggle, stop: ttsStop } = useTTS();
-  const articleText = article ? stripHtml(article.raw_content) : '';
+  const articleText = useMemo(() => article ? stripHtml(article.raw_content) : '', [article]);
   const ttsSupported = typeof window !== 'undefined' && window.speechSynthesis && typeof SpeechSynthesisUtterance !== 'undefined';
 
   useEffect(() => {
@@ -129,22 +130,35 @@ export default function ArticleReader({ articleId, onBack }) {
     setBookmarkId(null);
     api.getArticle(articleId).then((data) => {
       setArticle(data);
-      api.addHistory(articleId).catch(() => {});
-      api.getBookmarks(1).then((bks) => {
-        const found = (bks.items || []).find((b) => b.article_id === articleId);
+      // 延迟 2 秒写入历史，不阻塞渲染
+      setTimeout(() => api.addHistory(articleId).catch(() => {}), 2000);
+      // 从缓存获取 bookmarks，避免额外请求
+      const cachedBks = Cache.get('bookmarks');
+      if (cachedBks) {
+        const found = cachedBks.find((b) => b.article_id === articleId);
         if (found) setBookmarkId(found.id);
-      }).catch(() => {});
+      } else {
+        api.getBookmarks(1).then((bks) => {
+          const items = bks.items || [];
+          Cache.set('bookmarks', items, CACHE_TTL.BOOKMARKS);
+          const found = items.find((b) => b.article_id === articleId);
+          if (found) setBookmarkId(found.id);
+        }).catch(() => {});
+      }
     }).catch(() => {}).finally(() => setLoading(false));
   }, [articleId, ttsStop]);
 
   const toggleBookmark = async () => {
     if (isBookmarked) {
-      try { await api.removeBookmark(bookmarkId); setBookmarkId(null); } catch {}
+      try { await api.removeBookmark(bookmarkId); setBookmarkId(null); Cache.remove('bookmarks'); } catch {}
     } else {
       try {
         await api.addBookmark(articleId);
+        Cache.remove('bookmarks'); // 缓存失效
         const bks = await api.getBookmarks(1);
-        const found = (bks.items || []).find((b) => b.article_id === articleId);
+        const items = bks.items || [];
+        Cache.set('bookmarks', items, CACHE_TTL.BOOKMARKS);
+        const found = items.find((b) => b.article_id === articleId);
         if (found) setBookmarkId(found.id);
       } catch {}
     }

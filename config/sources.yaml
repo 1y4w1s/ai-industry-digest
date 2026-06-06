@@ -18,6 +18,29 @@ sources:
           max_results: 50
         timeout: 60
 
+  - name: "arXiv (CV+RO)"
+    id: "arxiv_cv_ro"
+    priority: 1
+    enabled: true
+    collectors:
+      - type: api
+        api_type: arxiv
+        params:
+          category: "cs.CV+OR+cat:cs.RO"
+          max_results: 30
+        timeout: 60
+
+  - name: "Hugging Face Daily Papers"
+    id: "hf_daily"
+    priority: 1
+    enabled: true
+    collectors:
+      - type: api
+        api_type: huggingface
+        params:
+          max_results: 20
+        timeout: 30
+
   # ============================================
   # 科技媒体（使用稳定 RSS）
   # ============================================
@@ -50,6 +73,24 @@ sources:
         timeout: 30
       - type: rss
         url: "https://rsshub.app/36kr/motif/ai"
+        timeout: 30
+
+  - name: "TechCrunch AI"
+    id: "techcrunch_ai"
+    priority: 2
+    enabled: true
+    collectors:
+      - type: rss
+        url: "https://techcrunch.com/category/artificial-intelligence/feed"
+        timeout: 30
+
+  - name: "Reddit MachineLearning"
+    id: "reddit_ml"
+    priority: 3
+    enabled: true
+    collectors:
+      - type: rss
+        url: "https://www.reddit.com/r/MachineLearning/.rss"
         timeout: 30
 
   # ============================================
