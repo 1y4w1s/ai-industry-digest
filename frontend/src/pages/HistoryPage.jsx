@@ -129,7 +129,10 @@ export default function HistoryPage() {
                 </svg>
               </div>
               <p style={{ fontSize: '14px', color: 'var(--color-text-title)', marginBottom: '4px' }}>还没有浏览记录</p>
-              <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--color-text-muted)' }}>阅读文章后会自动记录在这里</p>
+              <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--color-text-muted)', marginBottom: '12px' }}>阅读文章后会自动记录在这里</p>
+              <a href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: 'var(--color-blue-link)', textDecoration: 'none' }}>
+                去看看今日日报 →
+              </a>
             </div>
           )}
           </>)}

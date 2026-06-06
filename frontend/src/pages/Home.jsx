@@ -123,7 +123,17 @@ export default function Home() {
                   .map(([src, arts]) => (
                     <ArticleGroup key={src} sourceName={src} articles={arts} onSelectArticle={goToArticle} />
                   ))}
-                {articles.length === 0 && <div className="text-center py-16 text-sm" style={{ color: 'var(--color-text-label)' }}>{activeFilterCount > 0 ? '暂无匹配的文章，试试调整筛选条件' : '暂无内容'}</div>}
+                {articles.length === 0 && <div className="text-center py-16">
+                  <div style={{ fontSize: '14px', color: 'var(--color-text-title)', marginBottom: '4px' }}>
+                    {activeFilterCount > 0 ? '暂无匹配的文章' : '暂无内容'}
+                  </div>
+                  {activeFilterCount > 0 && (
+                    <button onClick={clearFilters}
+                      style={{ fontSize: '12px', color: 'var(--color-blue-link)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                      清除筛选条件
+                    </button>
+                  )}
+                </div>}
               </>
             ) : (
               <div className="text-center py-16 text-sm" style={{ color: 'var(--color-text-label)' }}>暂无数据</div>

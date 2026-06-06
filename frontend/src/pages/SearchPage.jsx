@@ -94,7 +94,10 @@ export default function SearchPage() {
                     </svg>
                   </div>
                   <p style={{ fontSize: '14px', color: 'var(--color-text-title)', marginBottom: '4px' }}>未找到相关文章</p>
-                  <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--color-text-muted)' }}>试试其他关键词，或询问 AI 助手获取推荐</p>
+                  <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--color-text-muted)', marginBottom: '12px' }}>试试其他关键词，或询问 AI 助手获取推荐</p>
+                  <a href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: 'var(--color-blue-link)', textDecoration: 'none' }}>
+                    去看看今日日报 →
+                  </a>
                 </div>
               )}
 

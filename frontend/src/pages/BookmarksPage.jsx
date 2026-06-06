@@ -105,7 +105,10 @@ export default function BookmarksPage() {
                 </svg>
               </div>
               <p style={{ fontSize: '14px', color: 'var(--color-text-title)', marginBottom: '4px' }}>还没有收藏</p>
-              <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--color-text-muted)' }}>在阅读文章时可以收藏喜欢的内容</p>
+              <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--color-text-muted)', marginBottom: '12px' }}>在阅读文章时可以收藏喜欢的内容</p>
+              <a href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: 'var(--color-blue-link)', textDecoration: 'none' }}>
+                去看看今日日报 →
+              </a>
             </div>
           )}
           </>)}

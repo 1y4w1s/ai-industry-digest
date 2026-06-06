@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Outlet, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import AIChatBubble from './AIChatBubble';
+import ErrorBoundary from './ErrorBoundary';
 
 const NAV_ITEMS = [
   { path: '/', label: '今日日报' },
@@ -165,7 +166,9 @@ export default function Layout() {
         </header>
 
         <main className="flex-1 flex flex-col min-h-0 overflow-auto">
-          <Outlet />
+          <ErrorBoundary>
+            <Outlet />
+          </ErrorBoundary>
         </main>
       </div>
 

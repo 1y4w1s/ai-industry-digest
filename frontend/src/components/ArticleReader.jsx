@@ -4,6 +4,8 @@ import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { renderMd, renderArticleContent } from '../utils/markdown';
 import { Cache, CACHE_TTL } from '../utils/cache';
+import { useToast } from './Toast';
+import ErrorBoundary from './ErrorBoundary';
 
 /* ── TTS hook (guarded for mobile browsers without SpeechSynthesis) ───── */
 function getSS() {
@@ -115,6 +117,7 @@ export default function ArticleReader({ articleId, onBack }) {
   const chatEndRef = useRef(null);
   const chatInputRef = useRef(null);
   const pdfContentRef = useRef(null);
+  const toast = useToast();
 
   const isBookmarked = !!bookmarkId;
   const { state: ttsState, toggle: ttsToggle, stop: ttsStop } = useTTS();
@@ -150,7 +153,7 @@ export default function ArticleReader({ articleId, onBack }) {
 
   const toggleBookmark = async () => {
     if (isBookmarked) {
-      try { await api.removeBookmark(bookmarkId); setBookmarkId(null); Cache.remove('bookmarks'); } catch {}
+      try { await api.removeBookmark(bookmarkId); setBookmarkId(null); Cache.remove('bookmarks'); toast('已取消收藏', 'info'); } catch {}
     } else {
       try {
         await api.addBookmark(articleId);
@@ -160,6 +163,7 @@ export default function ArticleReader({ articleId, onBack }) {
         Cache.set('bookmarks', items, CACHE_TTL.BOOKMARKS);
         const found = items.find((b) => b.article_id === articleId);
         if (found) setBookmarkId(found.id);
+        toast('已收藏', 'success');
       } catch {}
     }
   };
@@ -291,6 +295,7 @@ export default function ArticleReader({ articleId, onBack }) {
 
           {/* Right panel: Chat — becomes bottom panel on mobile */}
           <div className="w-full lg:w-[380px] xl:w-[420px] flex-shrink-0 flex flex-col no-print lg:border-t-0" style={{ background: 'var(--color-bg-off)', borderTop: '1px solid var(--color-border-light)' }}>
+            <ErrorBoundary>
             <div className="flex flex-col min-h-0 max-h-[40vh] lg:max-h-none">
               <div className="px-5 pt-4 pb-1 flex-shrink-0"><h3 className="font-semibold text-xs uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>深入对话</h3></div>
               <div className="flex-1 overflow-y-auto px-5 pb-2 space-y-2.5 min-h-0">
@@ -335,6 +340,8 @@ export default function ArticleReader({ articleId, onBack }) {
                 </form>
               </div>
             </div>
+          </div>
+            </ErrorBoundary>
           </div>
         </div>
       ) : (
