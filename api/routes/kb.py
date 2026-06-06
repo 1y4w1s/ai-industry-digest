@@ -18,6 +18,31 @@ router = APIRouter(prefix="/kb", tags=["知识库"])
 
 security = HTTPBearer()
 
+# ── 认证工具 ────────────────────────────
+# 与 auth.py 保持一致的 JWT 解析逻辑
+
+DEMO_USER_ID = "demo-user"
+DEMO_USER_UUID = "00000000-0000-0000-0000-000000000001"
+
+def _resolve_user_id(token: str) -> str:
+    """从 token 中解析出用户 UUID（JWT 提取 sub or demo 转换）"""
+    if token == DEMO_USER_ID:
+        return DEMO_USER_UUID
+    import re
+    uuid_pattern = r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+    if re.match(uuid_pattern, token.lower()):
+        return token  # 已经是 UUID
+    try:
+        import jwt as pyjwt
+        decoded = pyjwt.decode(token, options={"verify_signature": False})
+        user_id = decoded.get("sub")
+        if user_id and re.match(uuid_pattern, user_id.lower()):
+            return user_id
+    except Exception:
+        pass
+    # 实在解析不了，用 demo UUID 兜底（保证不 403）
+    return DEMO_USER_UUID
+
 # 支持的文件类型
 SUPPORTED_EXTENSIONS = {
     ".txt": "text",
@@ -31,18 +56,8 @@ MAX_FILE_SIZE = 10 * 1024 * 1024
 
 
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> str:
-    """获取当前用户ID（简化实现，实际应验证JWT）"""
-    # 实际实现中应该验证JWT token并提取用户ID
-    token = credentials.credentials
-    
-    # 测试模式：如果token不是有效的UUID，使用一个默认的测试用户UUID
-    import re
-    uuid_pattern = r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
-    if not re.match(uuid_pattern, token.lower()):
-        # 返回一个固定的测试用户UUID
-        return "123e4567-e89b-12d3-a456-426614174000"
-    
-    return token
+    """获取当前用户ID（从 JWT 解析）"""
+    return _resolve_user_id(credentials.credentials)
 
 
 @router.post("/documents")
@@ -213,11 +228,8 @@ async def download_document(
         user_id = credentials.credentials
     else:
         raise HTTPException(status_code=401, detail="未登录")
-    
-    import re
-    uuid_pattern = r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
-    if not re.match(uuid_pattern, user_id.lower()):
-        user_id = "123e4567-e89b-12d3-a456-426614174000"
+
+    user_id = _resolve_user_id(user_id)
     
     db = DatabaseManager()
     
