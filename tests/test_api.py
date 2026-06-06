@@ -20,7 +20,7 @@ from api.main import app
 def client():
     """创建测试客户端"""
     with patch('api.routes.auth.db') as mock_db:
-        with patch('api.routes.auth.get_user_id', return_value="test-user-id"):
+        with patch('api.routes.auth.verify_token', return_value="test-user-id"):
             yield TestClient(app)
 
 

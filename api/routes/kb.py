@@ -11,6 +11,7 @@ from datetime import datetime
 from fastapi import APIRouter, File, UploadFile, Depends, HTTPException, Header, Query
 
 from api.models.database import DatabaseManager
+from api.services.jwt_verify import verify_token, DEMO_USER_UUID
 from processor.ai_processor import AIProcessor
 
 router = APIRouter(prefix="/kb", tags=["知识库"])
@@ -19,35 +20,22 @@ router = APIRouter(prefix="/kb", tags=["知识库"])
 # 所有 KB 路由共用同一套认证逻辑，支持：
 #   - Authorization: Bearer <token>（request() 正常调用）
 #   - ?token=<token>（window.open 下载等无法传 header 的场景）
-#   - 临时用户兜底（未登录也能看 demo 文档）
-
-DEMO_USER_ID = "demo-user"
-DEMO_USER_UUID = "8de5fa50-2fdf-4540-b1fa-2c06029313eb"
+#   - 临时用户兜底（未登录也能看公开文档）
 
 
-def _resolve_user_id(raw_token: str) -> str:
-    """从原始 token 中解析出用户 UUID"""
-    # 去掉 Bearer 前缀
-    if raw_token.startswith("Bearer "):
-        raw_token = raw_token[7:]
-    # demo 用户
-    if raw_token == DEMO_USER_ID:
-        return DEMO_USER_UUID
-    # 已经是 UUID
-    import re
-    uuid_pattern = r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
-    if re.match(uuid_pattern, raw_token.lower()):
-        return raw_token
-    # JWT 解码
-    try:
-        import jwt as pyjwt
-        decoded = pyjwt.decode(raw_token, options={"verify_signature": False})
-        user_id = decoded.get("sub")
-        if user_id and re.match(uuid_pattern, user_id.lower()):
-            return user_id
-    except Exception:
-        pass
-    return DEMO_USER_UUID
+async def get_current_user(
+    authorization: Optional[str] = Header(None),
+    token: Optional[str] = Query(None),
+) -> str:
+    """统一认证依赖：header 优先，query token 兜底"""
+    raw = authorization or token
+    if not raw:
+        return DEMO_USER_UUID  # 未登录用户也能看公开文档
+    
+    user_id = verify_token(raw)
+    if not user_id:
+        return DEMO_USER_UUID  # token 无效但也允许看公开文档
+    return user_id
 
 
 # ── 文档配置 ────────────────────────────
@@ -61,16 +49,15 @@ SUPPORTED_EXTENSIONS = {
 
 MAX_FILE_SIZE = 10 * 1024 * 1024
 
+# 扩展名反向映射（file_type → ext，用于安全地构建文件路径）
+EXTENSION_MAP = {v: k for k, v in SUPPORTED_EXTENSIONS.items()}
 
-async def get_current_user(
-    authorization: Optional[str] = Header(None),
-    token: Optional[str] = Query(None),
-) -> str:
-    """统一认证依赖：header 优先，query token 兜底"""
-    raw = authorization or token
-    if not raw:
-        return DEMO_USER_UUID
-    return _resolve_user_id(raw)
+
+def _safe_file_path(document_id: str, file_type: str) -> str:
+    """安全地构建文件路径（使用服务端确定的扩展名，不信任用户输入）"""
+    upload_dir = os.path.join(os.path.dirname(__file__), "..", "uploads")
+    ext = EXTENSION_MAP.get(file_type, ".txt")
+    return os.path.join(upload_dir, f"{document_id}{ext}")
 
 
 def _doc_query(db, user_id: str):
@@ -121,11 +108,14 @@ async def upload_document(
     
     tag_list = [t.strip() for t in tags.split(",") if t.strip()] if tags else []
     
+    file_type = SUPPORTED_EXTENSIONS[ext]
+    safe_ext = EXTENSION_MAP[file_type]  # 服务端确定的扩展名，不信任用户输入
+    
     db.client.table("kb_documents").insert({
         "id": document_id,
         "user_id": user_id,
         "name": file.filename,
-        "file_type": SUPPORTED_EXTENSIONS[ext],
+        "file_type": file_type,
         "file_size": file_size,
         "status": "pending",
         "source": "user",
@@ -138,7 +128,7 @@ async def upload_document(
     # 保存文件到本地（临时）
     upload_dir = os.path.join(os.path.dirname(__file__), "..", "uploads")
     os.makedirs(upload_dir, exist_ok=True)
-    file_path = os.path.join(upload_dir, f"{document_id}{ext}")
+    file_path = os.path.join(upload_dir, f"{document_id}{safe_ext}")
     with open(file_path, "wb") as f:
         f.write(content)
 
@@ -221,10 +211,7 @@ async def preview_document(
     doc = doc_result.data[0]
     
     # 读取文件内容
-    upload_dir = os.path.join(os.path.dirname(__file__), "..", "uploads")
-    _, ext = os.path.splitext(doc["name"].lower())
-    file_path = os.path.join(upload_dir, f"{document_id}{ext}")
-    
+    file_path = _safe_file_path(document_id, doc["file_type"])
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="文件不存在")
     
@@ -249,7 +236,7 @@ async def download_document(
     db = DatabaseManager()
     
     doc_result = _doc_access_filter(
-        db.client.table("kb_documents").select("id, name"),
+        db.client.table("kb_documents").select("id, name, file_type"),
         document_id, user_id
     ).execute()
 
@@ -258,10 +245,7 @@ async def download_document(
 
     doc = doc_result.data[0]
     
-    upload_dir = os.path.join(os.path.dirname(__file__), "..", "uploads")
-    _, ext = os.path.splitext(doc["name"].lower())
-    file_path = os.path.join(upload_dir, f"{document_id}{ext}")
-    
+    file_path = _safe_file_path(document_id, doc["file_type"])
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="文件不存在")
     
@@ -486,9 +470,7 @@ async def process_document(
 
     try:
         # 读取文件内容
-        upload_dir = os.path.join(os.path.dirname(__file__), "..", "uploads")
-        _, ext = os.path.splitext(document["name"].lower())
-        file_path = os.path.join(upload_dir, f"{document_id}{ext}")
+        file_path = _safe_file_path(document_id, document["file_type"])
         
         content = read_file_content(file_path, document["file_type"])
         

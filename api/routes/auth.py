@@ -4,47 +4,27 @@ Signal - 用户认证与个人数据接口
 """
 
 import os
-import jwt
 from fastapi import APIRouter, Depends, HTTPException, Header
 from pydantic import BaseModel
 from typing import Optional
 
 from api.models.database import DatabaseManager
+from api.services.jwt_verify import verify_token
 
 router = APIRouter()
 db = DatabaseManager()
 
-
-# Demo 用户配置（用于开发测试）
-# 在生产环境中应移除或使用真实的用户系统
-DEMO_USER_ID = "demo-user"
-# 生成一个有效的 UUID 作为 demo 用户的数据库 ID
-DEMO_USER_UUID = "00000000-0000-0000-0000-000000000001"
 
 def get_user_id(authorization: str = Header(None)) -> str:
     """从 Authorization Header 验证 JWT token 并提取用户 ID"""
     if not authorization:
         raise HTTPException(status_code=401, detail="未登录")
     
-    token = authorization.replace("Bearer ", "")
+    user_id = verify_token(authorization)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="无效的认证凭证")
     
-    # Demo 用户特殊处理：转换为有效的 UUID
-    if token == DEMO_USER_ID:
-        return DEMO_USER_UUID
-    
-    # 尝试解析 JWT token
-    try:
-        # Supabase JWT 使用 RS256 算法，需要公钥验证
-        # 简化实现：直接解码不验证签名（生产环境应验证）
-        decoded = jwt.decode(token, options={"verify_signature": False})
-        user_id = decoded.get("sub")
-        if user_id:
-            return user_id
-    except Exception:
-        pass
-    
-    # 如果无法解析 JWT，直接使用 token 作为 user_id（兼容旧实现）
-    return token
+    return user_id
 
 
 # ── 请求/响应模型 ──────────────────────────────
