@@ -301,3 +301,21 @@ A: 检查：
 1. `SSH_PRIVATE_KEY` Secret 是否已配置
 2. GitHub Actions 页面是否有报错
 3. 服务器是否开机
+
+### Q: 部署后页面空白 / JS/CSS 404 (hash 文件名不匹配)
+
+A: 每次 `npm run build` 生成的 JS/CSS 文件名 hash 不同。浏览器缓存了旧 `index.html`，引用了已经不存在的旧 hash 文件。
+
+**解决方案 A — 浏览器端强制刷新：**
+按 `Ctrl+Shift+R` (Windows) 或 `Cmd+Shift+R` (Mac) 强制刷新，跳过缓存。
+
+**解决方案 B — 服务器端根治（推荐）：**
+在 Nginx 配置中对 `index.html` 禁用缓存，这样每次部署后浏览器自动拉取新 HTML：
+
+```nginx
+location = /index.html {
+    add_header Cache-Control "no-cache, no-store, must-revalidate";
+}
+```
+
+添加到 `/etc/nginx/sites-available/default` 的 `server` 块内，然后运行 `sudo nginx -t && sudo systemctl restart nginx`。
