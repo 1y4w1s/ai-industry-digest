@@ -201,16 +201,18 @@ async def preview_document(
 async def download_document(
     document_id: str,
     token: Optional[str] = None,
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
 ):
     """下载原文档"""
     from fastapi.responses import FileResponse
     
-    # 支持从 query param 传递 token（用于 window.open 下载）
+    # query param token 优先（支持 window.open 下载，无法传 header）
     if token:
         user_id = token
-    else:
+    elif credentials:
         user_id = credentials.credentials
+    else:
+        raise HTTPException(status_code=401, detail="未登录")
     
     import re
     uuid_pattern = r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
@@ -537,11 +539,14 @@ async def process_document(
         raise HTTPException(status_code=500, detail=f"处理失败: {str(e)}")
 
 
-def read_file_content(file_path: str, file_type: str) -> str:
+def read_file_content(file_path: str, file_type: str, strip_html: bool = True) -> str:
     """读取文件内容"""
     if file_type == "text" or file_type == "markdown":
         with open(file_path, "r", encoding="utf-8") as f:
-            return f.read()
+            content = f.read()
+        if strip_html:
+            content = clean_html_content(content)
+        return content
     elif file_type == "pdf":
         # 使用 PyMuPDF 读取 PDF
         try:
@@ -563,6 +568,30 @@ def read_file_content(file_path: str, file_type: str) -> str:
             raise HTTPException(status_code=500, detail="缺少 python-docx 依赖")
     else:
         raise HTTPException(status_code=400, detail=f"不支持的文件类型: {file_type}")
+
+
+def clean_html_content(html: str) -> str:
+    """剥离 HTML 标签，提取纯文本，修复爬取内容中的格式残留"""
+    import re
+    # 移除 HTML 注释
+    text = re.sub(r'<!--.*?-->', '', html, flags=re.DOTALL)
+    # 移除样式/脚本块
+    text = re.sub(r'<style[^>]*>.*?</style>', '', text, flags=re.DOTALL | re.IGNORECASE)
+    text = re.sub(r'<script[^>]*>.*?</script>', '', text, flags=re.DOTALL | re.IGNORECASE)
+    # 替换 <br> <p> <div> 等块级标签为换行
+    text = re.sub(r'</?(?:p|div|br|h[1-6]|blockquote|li|tr|td|th)\s*/?>', '\n', text, flags=re.IGNORECASE)
+    # 移除所有剩余 HTML 标签
+    text = re.sub(r'<[^>]+>', '', text)
+    # HTML entity 解码
+    text = text.replace('&amp;', '&').replace('&lt;', '<').replace('&gt;', '>')
+    text = text.replace('&nbsp;', ' ').replace('&#x200b;', '').replace('&#8203;', '')
+    text = re.sub(r'&#(\d+);', lambda m: chr(int(m.group(1))), text)
+    # Reddit 特殊标记清理
+    text = re.sub(r'&#x200b;', '', text)
+    text = re.sub(r'/u/\w+', '', text)  # Reddit 用户名
+    # 合并多余空行
+    text = re.sub(r'\n{3,}', '\n\n', text)
+    return text.strip()
 
 
 def split_into_chunks(content: str, chunk_size: int = 500, overlap: int = 50) -> List[str]:

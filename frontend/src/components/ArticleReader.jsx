@@ -115,6 +115,7 @@ export default function ArticleReader({ articleId, onBack }) {
   const [sessionId, setSessionId] = useState(null);
   const [chatLoading, setChatLoading] = useState(false);
   const [bookmarkId, setBookmarkId] = useState(null);
+  const [chatCollapsed, setChatCollapsed] = useState(false);  // 移动端对话面板折叠
   const chatEndRef = useRef(null);
   const chatInputRef = useRef(null);
   const pdfContentRef = useRef(null);
@@ -336,7 +337,18 @@ export default function ArticleReader({ articleId, onBack }) {
           <div className="w-full lg:w-[400px] xl:w-[440px] flex-shrink-0 flex flex-col no-print lg:border-t-0" style={{ background: 'var(--color-bg-off)', borderTop: '1px solid var(--color-border-light)' }}>
             <ErrorBoundary>
             <div className="flex flex-col min-h-0 max-h-[40vh] lg:max-h-none" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-              <div className="px-5 pt-4 pb-2 flex-shrink-0"><h3 className="font-semibold text-xs uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>深入对话</h3></div>
+              {/* 标题栏 + 移动端折叠按钮 */}
+              <div className="px-5 pt-4 pb-2 flex-shrink-0 flex items-center justify-between">
+                <h3 className="font-semibold text-xs uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>深入对话</h3>
+                <button onClick={() => setChatCollapsed(!chatCollapsed)}
+                  className="lg:hidden flex items-center justify-center"
+                  style={{ background: 'var(--color-bg-hover)', border: 'none', borderRadius: '3px', cursor: 'pointer', padding: '2px 8px', fontSize: '11px', color: 'var(--color-text-label)' }}>
+                  {chatCollapsed ? '展开' : '折叠'}
+                </button>
+              </div>
+
+              {/* 折叠内容 — 移动端折叠时隐藏 */}
+              <div className={`flex-1 flex flex-col min-h-0 ${chatCollapsed ? 'hidden' : ''} lg:block`}>
               <div className="flex-1 overflow-y-auto px-4 pb-2 space-y-2.5 min-h-0">
                 {messages.length === 0 && (
                   <div className="flex flex-col items-center justify-center" style={{ minHeight: '260px', padding: '24px 12px' }}>
@@ -391,6 +403,7 @@ export default function ArticleReader({ articleId, onBack }) {
                     style={{ background: 'var(--color-text-title)', color: 'var(--color-bg-white)' }}>发送</button>
                 </form>
               </div>
+            </div>
             </div>
             </ErrorBoundary>
           </div>
