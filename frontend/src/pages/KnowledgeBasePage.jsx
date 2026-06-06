@@ -27,8 +27,10 @@ export default function KnowledgeBasePage() {
   const [pageSize, setPageSize] = useState(PAGE_SIZE);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [uploadOpen, setUploadOpen] = useState(false);
   const [selected, setSelected] = useState(new Set());
   const fileInputRef = useRef(null);
+  const uploadInputRef = useRef(null);
   const searchTimer = useRef(null);
 
   // 筛选状态
@@ -296,7 +298,7 @@ export default function KnowledgeBasePage() {
       {/* ── Toolbar ── */}
       <div className="flex items-center justify-between px-6 py-2.5 border-b flex-shrink-0" style={{ borderColor: 'var(--color-border-light)' }}>
         <div className="flex items-center gap-2">
-          <Btn icon={Icon.plus} label="新增" onClick={() => fileInputRef.current?.click()} primary />
+          <Btn icon={Icon.plus} label="新增" onClick={() => setUploadOpen(true)} primary />
           <div style={{ position: 'relative' }}>
             <Btn icon={Icon.batch} label="批量" onClick={() => setBatchOpen(!batchOpen)} disabled={selected.size === 0} />
             {batchOpen && (
@@ -334,9 +336,6 @@ export default function KnowledgeBasePage() {
             <option value={50}>50</option>
           </select>
         </div>
-        <input ref={fileInputRef} type="file" accept=".txt,.md,.pdf,.docx" multiple style={{ display: 'none' }}
-          onChange={(e) => { handleUpload(e.target.files); e.target.value = ''; }}
-        />
       </div>
 
       {/* ── Filter bar ── */}
@@ -480,24 +479,6 @@ export default function KnowledgeBasePage() {
         )}
       </div>
 
-      {/* ── 拖拽上传区域 ── */}
-      <div className="flex-shrink-0 px-6 py-2">
-        <div
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={(e) => { e.preventDefault(); handleUpload(e.dataTransfer.files); }}
-          style={{
-            padding: '8px', borderRadius: '4px',
-            border: '1px dashed var(--color-border)',
-            textAlign: 'center', cursor: 'pointer', fontSize: '11px', color: 'var(--color-text-label)',
-            transition: 'all 0.15s',
-          }}
-          className="hover:bg-[var(--color-bg-off)]"
-          onClick={() => fileInputRef.current?.click()}
-        >
-          拖拽文件到此处上传 · 支持 TXT / MD / PDF / DOCX
-        </div>
-      </div>
-
       {/* ── Pagination ── */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between px-6 py-3 border-t flex-shrink-0" style={{ borderColor: 'var(--color-border-light)' }}>
@@ -544,6 +525,67 @@ export default function KnowledgeBasePage() {
         data={previewContent}
         loading={previewLoading}
       />
+
+      {/* ── Upload Card Modal ── */}
+      {uploadOpen && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.3)' }}
+          onClick={() => setUploadOpen(false)}
+        >
+          <div onClick={(e) => e.stopPropagation()} style={{
+            background: 'var(--color-bg-white)', borderRadius: '6px', padding: '32px',
+            width: 'min(480px, 90vw)', boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+          }}>
+            <h3 className="text-base font-semibold mb-1" style={{ fontFamily: "'Source Serif 4', Georgia, serif", color: 'var(--color-text-title)' }}>
+              上传文档
+            </h3>
+            <p className="text-xs mb-5" style={{ color: 'var(--color-text-muted)' }}>
+              支持 TXT / Markdown / PDF / DOCX，单文件最大 10MB
+            </p>
+
+            {/* 拖拽区域 */}
+            <div
+              onDragOver={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--color-border-bold)'; e.currentTarget.style.background = 'var(--color-bg-off)'; }}
+              onDragLeave={(e) => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.background = 'transparent'; }}
+              onDrop={(e) => { e.preventDefault(); handleUpload(e.dataTransfer.files); setUploadOpen(false); }}
+              style={{
+                padding: '48px 24px', borderRadius: '6px',
+                border: '2px dashed var(--color-border)',
+                textAlign: 'center', cursor: 'pointer',
+                transition: 'all 0.2s', marginBottom: 16,
+              }}
+              className="hover:bg-[var(--color-bg-off)]"
+            >
+              <svg className="w-10 h-10 mx-auto mb-3" style={{ color: 'var(--color-text-label)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+              </svg>
+              <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--color-text-muted)', marginBottom: 12 }}>
+                拖拽文件到此处
+              </p>
+              <span style={{
+                display: 'inline-block', padding: '8px 24px', fontSize: 'var(--fs-sm)',
+                background: 'var(--color-text-title)', color: 'var(--color-bg-white)',
+                border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 500,
+              }}
+                onClick={(e) => { e.stopPropagation(); uploadInputRef.current?.click(); }}
+                className="hover:opacity-80"
+              >
+                选择文件
+              </span>
+              <input ref={uploadInputRef} type="file" accept=".txt,.md,.pdf,.docx" multiple style={{ display: 'none' }}
+                onChange={(e) => { handleUpload(e.target.files); setUploadOpen(false); e.target.value = ''; }}
+              />
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setUploadOpen(false)} style={{
+                padding: '8px 20px', fontSize: 'var(--fs-sm)', borderRadius: '4px',
+                background: 'var(--color-bg-off)', border: '1px solid var(--color-border)',
+                cursor: 'pointer', color: 'var(--color-text-body)',
+              }}>取消</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Tags Editor Modal ── */}
       {editTagsDoc && (

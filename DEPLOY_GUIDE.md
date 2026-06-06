@@ -180,29 +180,54 @@ sudo systemctl restart nginx
 
 ## 定时任务配置
 
-### 知识库自动导入（推荐）
+### 一键配置（推荐）
 
-每天凌晨 3:00 执行完整流程（采集 → AI 处理 → 日报生成 → 知识库导入），早起的人打开页面时数据已是最新的：
+在服务器上执行以下两条命令即可完成配置：
+
+```bash
+# 1. 配置定时任务（每天凌晨 3:00 全流程 + 自动导入知识库）
+(crontab -l 2>/dev/null; echo "0 3 * * * cd /opt/ai-industry-digest && KB_IMPORT=true python3 run.py >> /opt/ai-industry-digest/daily.log 2>&1") | crontab -
+
+# 2. 验证配置
+crontab -l
+```
+
+### 手动编辑方式
 
 ```bash
 # 编辑 crontab
 crontab -e
 
-# 推荐：每天凌晨 3:00 全流程 + 知识库自动导入（一条命令搞定）
+# 在文件末尾添加以下行：
+# ─────────────────────────────────
+# Signal 自动采集 + 知识库导入 - 每天凌晨 3:00
 0 3 * * * cd /opt/ai-industry-digest && KB_IMPORT=true python3 run.py >> /opt/ai-industry-digest/daily.log 2>&1
 
 # 如果只需要知识库导入（不采集），每天 4:00 执行
 0 4 * * * cd /opt/ai-industry-digest && python3 scripts/import_to_kb.py >> /opt/ai-industry-digest/kb_import.log 2>&1
 ```
 
+### 流程说明
+
+```
+03:00  采集（RSS/Arxiv/HF）→ AI处理 → 日报生成 → 知识库导入
+  ↓
+03:15~03:20  全部完成
+  ↓
+你起床 → 打开页面 → 日报最新 ✅ + 知识库已更新 ✅
+```
+
 ### 查看定时任务日志
 
 ```bash
-# 知识库导入日志
-tail -f /opt/ai-industry-digest/kb_import.log
-
-# 每日采集+导入日志
+# 查看每日采集+导入日志
 tail -f /opt/ai-industry-digest/daily.log
+
+# 查看最近一次运行情况
+tail -20 /opt/ai-industry-digest/daily.log
+
+# 知识库导入日志（单独）
+tail -f /opt/ai-industry-digest/kb_import.log
 ```
 
 ### 管理定时任务
