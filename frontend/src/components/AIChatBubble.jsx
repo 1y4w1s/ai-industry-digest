@@ -10,8 +10,11 @@ export default function AIChatBubble({ visible = true }) {
   const [loading, setLoading] = useState(false);
   const chatEndRef = useRef(null);
   const inputRef = useRef(null);
-  const dragRef = useRef({ startX: 0, startY: 0, posX: window.innerWidth - 72, posY: window.innerHeight - 100, dragging: false });
-  const [btnStyle, setBtnStyle] = useState({ right: 24, bottom: 24 });
+  const panelRef = useRef(null);
+
+  // 整体位置状态（按钮 + 弹窗一起拖动）
+  const [pos, setPos] = useState({ right: 24, bottom: 24 });
+  const dragRef = useRef({ startX: 0, startY: 0, startRight: 24, startBottom: 24, dragging: false });
 
   useEffect(() => {
     if (!visible) setOpen(false);
@@ -26,31 +29,30 @@ export default function AIChatBubble({ visible = true }) {
     if (!open) setTimeout(() => inputRef.current?.focus(), 300);
   };
 
-  // 拖拽控制
-  const handleMouseDown = (e) => {
+  // 统一的拖拽处理（按钮和弹窗标题栏都可拖动）
+  const startDrag = (e) => {
+    dragRef.current.startX = e.clientX;
+    dragRef.current.startY = e.clientY;
+    dragRef.current.startRight = pos.right;
+    dragRef.current.startBottom = pos.bottom;
     dragRef.current.dragging = true;
-    dragRef.current.startX = e.clientX - btnStyle.right;
-    dragRef.current.startY = e.clientY - btnStyle.bottom;
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
+    document.addEventListener('mousemove', onDrag);
+    document.addEventListener('mouseup', endDrag);
   };
 
-  const handleMouseMove = (e) => {
+  const onDrag = (e) => {
     if (!dragRef.current.dragging) return;
-    const newRight = e.clientX - dragRef.current.startX;
-    const newBottom = e.clientY - dragRef.current.startY;
-    const maxRight = window.innerWidth - 60;
-    const maxBottom = window.innerHeight - 60;
-    setBtnStyle({
-      right: Math.max(8, Math.min(maxRight, newRight)),
-      bottom: Math.max(8, Math.min(maxBottom, newBottom)),
-    });
+    const dx = e.clientX - dragRef.current.startX;
+    const dy = e.clientY - dragRef.current.startY;
+    const newRight = Math.max(8, Math.min(window.innerWidth - 60, dragRef.current.startRight - dx));
+    const newBottom = Math.max(8, Math.min(window.innerHeight - 60, dragRef.current.startBottom - dy));
+    setPos({ right: newRight, bottom: newBottom });
   };
 
-  const handleMouseUp = () => {
+  const endDrag = () => {
     dragRef.current.dragging = false;
-    document.removeEventListener('mousemove', handleMouseMove);
-    document.removeEventListener('mouseup', handleMouseUp);
+    document.removeEventListener('mousemove', onDrag);
+    document.removeEventListener('mouseup', endDrag);
   };
 
   const handleSubmit = async (e) => {
@@ -75,45 +77,62 @@ export default function AIChatBubble({ visible = true }) {
 
   return (
     <>
-      {/* 按钮 — 弹窗打开时隐藏 */}
+      {/* 浮动按钮 - 始终可见 */}
       <button
         onClick={toggle}
-        onMouseDown={handleMouseDown}
+        onMouseDown={(e) => { if (e.button === 0) startDrag(e); }}
         style={{
-          position: 'fixed', zIndex: 50,
-          right: btnStyle.right, bottom: btnStyle.bottom,
+          position: 'fixed', zIndex: 60,
+          right: pos.right, bottom: pos.bottom,
           width: 42, height: 42,
-          display: open ? 'none' : 'flex',
+          display: 'flex',
           alignItems: 'center', justifyContent: 'center',
           background: 'var(--color-text-title)',
           border: 'none', borderRadius: '50%',
           color: 'var(--color-bg-white)',
           cursor: 'grab',
-          transition: 'transform 0.15s',
-          boxShadow: '0 2px 12px rgba(0,0,0,0.15)',
+          transition: 'transform 0.15s, box-shadow 0.15s',
+          boxShadow: open ? '0 0 0 3px rgba(var(--color-text-title),0.15)' : '0 2px 12px rgba(0,0,0,0.15)',
         }}
         className="hover:scale-110 select-none"
       >
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
-        </svg>
+        {open ? (
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        ) : (
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
+          </svg>
+        )}
       </button>
 
-      {/* 弹窗 — 位置跟随按钮 */}
+      {/* 弹窗 — 跟随按钮位置 */}
       <div
-        className={`fixed z-50 w-[340px] max-w-[calc(100vw-32px)] flex flex-col transition-all duration-250 origin-bottom-right ${open ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}
+        ref={panelRef}
+        className={`fixed z-50 w-[340px] max-w-[calc(100vw-32px)] flex flex-col transition-all duration-200 origin-bottom-right ${open ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}
         style={{
-          right: Math.max(8, btnStyle.right - 298),
-          bottom: btnStyle.bottom + 56,
+          right: Math.max(8, pos.right - 298),
+          bottom: pos.bottom + 56,
           background: 'var(--color-bg-white)',
           border: '1px solid var(--color-border)',
           borderRadius: '6px',
           boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
         }}
       >
-        <div className="flex items-center justify-between px-4 py-2.5" style={{ borderBottom: '1px solid var(--color-border-light)' }}>
-          <span className="text-xs font-semibold" style={{ color: 'var(--color-text-title)' }}>AI 助手</span>
-          <button onClick={() => { setMessages([]); setSessionId(null); }} style={{ fontSize: 'var(--fs-xs)', color: 'var(--color-text-label)' }}>清空</button>
+        {/* 标题栏 — 可拖动 */}
+        <div
+          onMouseDown={(e) => { if (e.button === 0) startDrag(e); }}
+          className="flex items-center justify-between px-4 py-2.5 select-none"
+          style={{ borderBottom: '1px solid var(--color-border-light)', cursor: 'grab' }}
+        >
+          <span className="text-xs font-semibold" style={{ color: 'var(--color-text-title)' }}>
+            AI 助手
+          </span>
+          <button onClick={(e) => { e.stopPropagation(); setMessages([]); setSessionId(null); }}
+            style={{ fontSize: 'var(--fs-xs)', color: 'var(--color-text-label)', background: 'none', border: 'none', cursor: 'pointer' }}>
+            清空
+          </button>
         </div>
 
         <div className="overflow-y-auto p-3 space-y-2 min-h-[140px] max-h-[320px]">
