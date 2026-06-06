@@ -17,6 +17,17 @@ echo "========================================================"
 
 cd "$PROJECT_DIR" || { echo "❌ 项目目录不存在: $PROJECT_DIR"; exit 1; }
 
+# 0. 确保使用 SSH 协议（防止 HTTPS 被重置）
+echo ""
+echo "📦 [0/4] 检查远程仓库配置..."
+REMOTE_URL=$(git remote get-url origin 2>/dev/null || echo "")
+if [[ "$REMOTE_URL" == https://github.com/* ]]; then
+    SSH_URL="git@github.com:1y4w1s/ai-industry-digest.git"
+    echo "   ⚠️ 检测到 HTTPS 协议，自动切换为 SSH: $SSH_URL"
+    git remote set-url origin "$SSH_URL"
+fi
+echo "   ✅ 远程仓库: $(git remote get-url origin)"
+
 # 1. 拉取最新代码
 echo ""
 echo "📦 [1/4] 拉取最新代码..."
