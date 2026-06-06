@@ -1,6 +1,6 @@
 # Signal — 项目归档索引
 
-> 归档时间：2026-06-06（第 2 次归档）
+> 归档时间：2026-06-06（第 3 次归档）
 > 项目名称：AI 行业日报聚合平台 (Signal)
 > 线上地址：http://43.139.133.245:8080
 
@@ -23,10 +23,18 @@
 | 搜索结果高亮 | ✅ **完成** | 关键词在标题和摘要中金色高亮 |
 | PDF 导出 | ✅ **完成** | 文章详情页支持导出为 PDF |
 | 移动端适配 | ✅ **完成** | 侧栏抽屉、筛选滚动、文章阅读器纵向堆叠 |
-| 单元测试 | ✅ **完成** | 20 项后端测试（数据库层 + API 层） |
+| 单元测试 | ✅ **完成** | **42 项测试**（41 passed, 1 skipped） |
 | **知识库管理** | ✅ **完成** | 文档上传、切片、实体识别、关系抽取、知识图谱可视化 |
 | **知识库自动导入** | ✅ **完成** | 每天 cron 自动从日报文章导入知识库 |
 | **AI 对话优化** | ✅ **完成** | 气泡可拖拽、点击拖拽分离、弹窗独立关闭、深色模式对比度修复 |
+| **AI 个性化推荐** | ✅ **完成** | 标签画像 + 阅读深度追踪 + 推荐接口 + 前端 Widget |
+| **知识库认证重构** | ✅ **完成** | 统一 JWT/Header/Query token 三通道认证 |
+| **知识库公开/私有** | ✅ **完成** | 上传可见性开关 + 公共文档库（公开 OR 自己拥有权限模型） |
+| **提示词个性化** | ✅ **完成** | 文章标签动态提示词 + 用户标签个性化提示词 |
+| **AI 链接跳转** | ✅ **完成** | renderMd 支持 Markdown 链接语法 + SPA 导航 |
+| **气泡弹窗互斥** | ✅ **完成** | 弹窗打开时气泡隐藏，关闭后重现 |
+| **移动端面板折叠** | ✅ **完成** | 文章阅读器右侧面板可折叠/展开 |
+| **文档重组** | ✅ **完成** | docs/ 分类 + 删除 _ref/ 冗余目录 + 统一引用路径 |
 
 ---
 
@@ -85,6 +93,7 @@
 | [tests/test_database.py](..tests/test_database.py) | 数据库层单元测试（10 项） |
 | [tests/test_api.py](..tests/test_api.py) | API 层单元测试（10 项） |
 | [tests/test_kb.py](..tests/test_kb.py) | 知识库单元测试（11 项） |
+| [tests/test_tag_extractor.py](..tests/test_tag_extractor.py) | TagExtractor 单元测试（10 项） |
 | [test_verify.py](..test_verify.py) | 快速验证脚本 |
 
 ---
@@ -148,6 +157,13 @@ kb_entities（实体） + kb_relations（关系）
 | `kb_relations` | 实体间关系 |
 | `kb_entity_chunks` | 实体-切片关联 |
 | `kb_imported_articles` | 已导入的日报文章追踪 |
+
+### 3.6 新增迁移脚本
+
+| 文件 | 说明 |
+|------|------|
+| `scripts/migration_user_tags.sql` | 用户标签画像表（个性化推荐） |
+| `scripts/migration_kb_public.sql` | 知识库公开/私有列（公共知识库体系） |
 
 ---
 
@@ -217,7 +233,11 @@ Supabase 数据库 (articles / daily_reports)
 
 ---
 
-> 本归档文件由 2026-06-06 生成，第 2 次归档。
-> 本次归档：PROPOSAL_AI_ENHANCEMENT.md、ROADMAP.md、SPRINT_PLAN.md、PROJECT_PLAN.md
-> 新增模块：知识库管理、自动导入脚本、AI 对话拖拽优化、深色模式对比度修复
-> 如需恢复规划文档到工作区，复制对应文件到项目根目录即可。
+> 本归档文件由 2026-06-06 生成，第 3 次归档。
+> 本次归档包括：
+>   第 1 批：PROPOSAL_AI_ENHANCEMENT.md、优化任务书
+>   第 2 批：ROADMAP.md、SPRINT_PLAN.md、PROJECT_PLAN.md
+>   第 3 批：AI 个性化推荐、用户画像、阅读深度追踪、安全加固、知识库公共/私有切换、认证重构、提示词个性化、移动端折叠、文档重组
+> 新增模块：DOMPurify 安全防护、user_tags 画像、TagExtractor、推荐系统、RecommendationWidget、知识库公开权限
+> 新增测试：test_tag_extractor.py（10 项），全量测试 41 passing / 1 skipped
+> 新增迁移：migration_user_tags.sql、migration_kb_public.sql
