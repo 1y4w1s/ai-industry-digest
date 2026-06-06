@@ -312,8 +312,10 @@ export default function ArticleReader({ articleId, onBack }) {
                 )}
                 {messages.map((msg, i) => (
                   <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[90%] px-3 py-2 text-xs leading-relaxed rounded ${msg.role === 'user' ? 'text-white' : ''}`}
-                      style={msg.role === 'user' ? { background: 'var(--color-text-title)' } : { background: 'var(--color-bg-white)', color: 'var(--color-text-body)' }}>
+                    <div className="max-w-[90%] px-3 py-2 text-xs leading-relaxed rounded"
+                      style={msg.role === 'user'
+                        ? { background: 'var(--color-text-title)', color: 'var(--color-bg-white)' }
+                        : { background: 'var(--color-bg-white)', color: 'var(--color-text-body)' }}>
                       <span dangerouslySetInnerHTML={{ __html: renderMd(msg.content) }} />
                     </div>
                   </div>

@@ -10,11 +10,14 @@ export default function AIChatBubble({ visible = true }) {
   const [loading, setLoading] = useState(false);
   const chatEndRef = useRef(null);
   const inputRef = useRef(null);
-  const panelRef = useRef(null);
 
-  // 整体位置状态（按钮 + 弹窗一起拖动）
-  const [pos, setPos] = useState({ right: 24, bottom: 24 });
-  const dragRef = useRef({ startX: 0, startY: 0, startRight: 24, startBottom: 24, dragging: false });
+  // 气泡位置（独立）
+  const [bubblePos, setBubblePos] = useState({ right: 24, bottom: 24 });
+  // 弹窗位置（独立）
+  const [panelPos, setPanelPos] = useState({ right: 24, bottom: 108 });
+
+  // 拖拽状态
+  const drag = useRef({ target: null, startX: 0, startY: 0, moved: false });
 
   useEffect(() => {
     if (!visible) setOpen(false);
@@ -29,30 +32,51 @@ export default function AIChatBubble({ visible = true }) {
     if (!open) setTimeout(() => inputRef.current?.focus(), 300);
   };
 
-  // 统一的拖拽处理（按钮和弹窗标题栏都可拖动）
-  const startDrag = (e) => {
-    dragRef.current.startX = e.clientX;
-    dragRef.current.startY = e.clientY;
-    dragRef.current.startRight = pos.right;
-    dragRef.current.startBottom = pos.bottom;
-    dragRef.current.dragging = true;
-    document.addEventListener('mousemove', onDrag);
-    document.addEventListener('mouseup', endDrag);
+  // ── 统一拖拽（分离点击 vs 拖拽） ──
+  const handleMouseDown = (e, target) => {
+    drag.current = {
+      target,
+      startX: e.clientX,
+      startY: e.clientY,
+      moved: false,
+    };
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
   };
 
-  const onDrag = (e) => {
-    if (!dragRef.current.dragging) return;
-    const dx = e.clientX - dragRef.current.startX;
-    const dy = e.clientY - dragRef.current.startY;
-    const newRight = Math.max(8, Math.min(window.innerWidth - 60, dragRef.current.startRight - dx));
-    const newBottom = Math.max(8, Math.min(window.innerHeight - 60, dragRef.current.startBottom - dy));
-    setPos({ right: newRight, bottom: newBottom });
+  const handleMouseMove = (e) => {
+    const dx = e.clientX - drag.current.startX;
+    const dy = e.clientY - drag.current.startY;
+    if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+      drag.current.moved = true;
+    }
+    if (!drag.current.moved) return;
+
+    if (drag.current.target === 'bubble') {
+      setBubblePos((prev) => ({
+        right: Math.max(8, Math.min(window.innerWidth - 60, prev.right - dx)),
+        bottom: Math.max(8, Math.min(window.innerHeight - 60, prev.bottom - dy)),
+      }));
+      drag.current.startX = e.clientX;
+      drag.current.startY = e.clientY;
+    } else if (drag.current.target === 'panel') {
+      setPanelPos((prev) => ({
+        right: Math.max(8, Math.min(window.innerWidth - 60, prev.right - dx)),
+        bottom: Math.max(8, Math.min(window.innerHeight - 60, prev.bottom - dy)),
+      }));
+      drag.current.startX = e.clientX;
+      drag.current.startY = e.clientY;
+    }
   };
 
-  const endDrag = () => {
-    dragRef.current.dragging = false;
-    document.removeEventListener('mousemove', onDrag);
-    document.removeEventListener('mouseup', endDrag);
+  const handleMouseUp = () => {
+    document.removeEventListener('mousemove', handleMouseMove);
+    document.removeEventListener('mouseup', handleMouseUp);
+    // 如果没有移动 → 视为点击
+    if (!drag.current.moved && drag.current.target === 'bubble') {
+      toggle();
+    }
+    drag.current.moved = false;
   };
 
   const handleSubmit = async (e) => {
@@ -75,26 +99,44 @@ export default function AIChatBubble({ visible = true }) {
 
   if (!visible) return null;
 
+  const bubbleBtnStyle = {
+    position: 'fixed', zIndex: 60,
+    right: bubblePos.right, bottom: bubblePos.bottom,
+    width: 42, height: 42,
+    display: 'flex',
+    alignItems: 'center', justifyContent: 'center',
+    background: 'var(--color-text-title)',
+    border: 'none', borderRadius: '50%',
+    color: 'var(--color-bg-white)',
+    cursor: 'grab',
+    transition: 'transform 0.15s, box-shadow 0.15s',
+    boxShadow: open ? '0 0 0 3px rgba(0,0,0,0.12)' : '0 2px 12px rgba(0,0,0,0.15)',
+  };
+
+  const panelStyle = {
+    position: 'fixed', zIndex: 50,
+    right: Math.max(8, panelPos.right),
+    bottom: panelPos.bottom,
+    width: 340, maxWidth: 'calc(100vw - 32px)',
+    display: 'flex', flexDirection: 'column',
+    background: 'var(--color-bg-white)',
+    border: '1px solid var(--color-border)',
+    borderRadius: '6px',
+    boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+    opacity: open ? 1 : 0,
+    pointerEvents: open ? 'auto' : 'none',
+    transform: open ? 'scale(1)' : 'scale(0.95)',
+    transition: 'opacity 0.2s, transform 0.2s',
+    transformOrigin: 'bottom right',
+  };
+
   return (
     <>
-      {/* 浮动按钮 - 始终可见 */}
+      {/* 气泡按钮 */}
       <button
-        onClick={toggle}
-        onMouseDown={(e) => { if (e.button === 0) startDrag(e); }}
-        style={{
-          position: 'fixed', zIndex: 60,
-          right: pos.right, bottom: pos.bottom,
-          width: 42, height: 42,
-          display: 'flex',
-          alignItems: 'center', justifyContent: 'center',
-          background: 'var(--color-text-title)',
-          border: 'none', borderRadius: '50%',
-          color: 'var(--color-bg-white)',
-          cursor: 'grab',
-          transition: 'transform 0.15s, box-shadow 0.15s',
-          boxShadow: open ? '0 0 0 3px rgba(var(--color-text-title),0.15)' : '0 2px 12px rgba(0,0,0,0.15)',
-        }}
-        className="hover:scale-110 select-none"
+        onMouseDown={(e) => handleMouseDown(e, 'bubble')}
+        style={bubbleBtnStyle}
+        className="select-none hover:scale-110"
       >
         {open ? (
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -107,32 +149,36 @@ export default function AIChatBubble({ visible = true }) {
         )}
       </button>
 
-      {/* 弹窗 — 跟随按钮位置 */}
-      <div
-        ref={panelRef}
-        className={`fixed z-50 w-[340px] max-w-[calc(100vw-32px)] flex flex-col transition-all duration-200 origin-bottom-right ${open ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}
-        style={{
-          right: Math.max(8, pos.right - 298),
-          bottom: pos.bottom + 56,
-          background: 'var(--color-bg-white)',
-          border: '1px solid var(--color-border)',
-          borderRadius: '6px',
-          boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
-        }}
-      >
-        {/* 标题栏 — 可拖动 */}
+      {/* 弹窗 */}
+      <div style={panelStyle}>
+        {/* 标题栏 — 可拖动 + 独立关闭按钮 */}
         <div
-          onMouseDown={(e) => { if (e.button === 0) startDrag(e); }}
+          onMouseDown={(e) => handleMouseDown(e, 'panel')}
           className="flex items-center justify-between px-4 py-2.5 select-none"
           style={{ borderBottom: '1px solid var(--color-border-light)', cursor: 'grab' }}
         >
           <span className="text-xs font-semibold" style={{ color: 'var(--color-text-title)' }}>
             AI 助手
           </span>
-          <button onClick={(e) => { e.stopPropagation(); setMessages([]); setSessionId(null); }}
-            style={{ fontSize: 'var(--fs-xs)', color: 'var(--color-text-label)', background: 'none', border: 'none', cursor: 'pointer' }}>
-            清空
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={(e) => { e.stopPropagation(); setMessages([]); setSessionId(null); }}
+              style={{ fontSize: 'var(--fs-xs)', color: 'var(--color-text-label)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 6px', borderRadius: '3px' }}
+              className="hover:bg-[var(--color-bg-hover)]"
+            >
+              清空
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); setOpen(false); }}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', padding: '2px 4px', borderRadius: '3px' }}
+              className="hover:bg-[var(--color-bg-hover)]"
+              title="关闭"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         <div className="overflow-y-auto p-3 space-y-2 min-h-[140px] max-h-[320px]">
@@ -150,8 +196,14 @@ export default function AIChatBubble({ visible = true }) {
           )}
           {messages.map((msg, i) => (
             <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[85%] px-3 py-2 rounded text-xs leading-relaxed ${msg.role === 'user' ? 'text-white' : ''}`}
-                style={msg.role === 'user' ? { background: 'var(--color-text-title)' } : { background: 'var(--color-bg-hover)', color: 'var(--color-text-body)' }}>
+              <div
+                className="max-w-[85%] px-3 py-2 rounded text-xs leading-relaxed"
+                style={
+                  msg.role === 'user'
+                    ? { background: 'var(--color-text-title)', color: 'var(--color-bg-white)' }
+                    : { background: 'var(--color-bg-hover)', color: 'var(--color-text-body)' }
+                }
+              >
                 <span dangerouslySetInnerHTML={{ __html: renderMd(msg.content) }} />
               </div>
             </div>
