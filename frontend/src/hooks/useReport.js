@@ -16,34 +16,39 @@ export function useReport() {
   const [fromCache, setFromCache] = useState(false);
   const [cacheAge, setCacheAge] = useState(null);
 
-  // Load sources + tags once (cached to avoid 429)
-  useEffect(() => {
-    const cachedSources = localStorage.getItem('signal_sources');
-    const cachedTags = localStorage.getItem('signal_tags');
-    if (cachedSources) try { setSources(JSON.parse(cachedSources)); } catch {}
-    if (cachedTags) try { setTags(JSON.parse(cachedTags)); } catch {}
-    api.getSources().then((d) => { const s = d.sources || []; setSources(s); localStorage.setItem('signal_sources', JSON.stringify(s)); }).catch(() => {});
-    api.getTags().then((d) => { const t = d.tags || []; setTags(t); localStorage.setItem('signal_tags', JSON.stringify(t)); }).catch(() => {});
-  }, []);
-
-  // Load reports list
+  // Single aggregated fetch: reports + sources + tags + latest report in 1 request
   useEffect(() => {
     setLoading(true);
     setFromCache(false);
     setCacheAge(null);
-    const fetchReports = async () => {
+
+    const fetchHome = async () => {
       try {
-        const data = await api.getReports(page);
-        setReports(data.items || []);
-        setTotal(data.total || 0);
-        if (!selectedDate && data.items?.length > 0) {
-          setSelectedDate(data.items[0].report_date);
+        const data = await api.getHome();
+
+        const reportsList = data.reports?.items || [];
+        const srcList = data.sources || [];
+        const tagList = data.tags || [];
+
+        setReports(reportsList);
+        setTotal(data.reports?.total || 0);
+        setSources(srcList);
+        setTags(tagList);
+
+        if (!selectedDate && reportsList.length > 0) {
+          setSelectedDate(reportsList[0].report_date);
         }
+
+        setReport(data.report_detail);
+
         // Cache successful response
         localStorage.setItem(CACHE_KEY, JSON.stringify({
-          reports: data.items || [],
+          reports: reportsList,
           timestamp: Date.now(),
         }));
+        // Cache sources & tags separately (shared by other pages)
+        localStorage.setItem('signal_sources', JSON.stringify(srcList));
+        localStorage.setItem('signal_tags', JSON.stringify(tagList));
       } catch {
         // On failure, try cache
         const cached = localStorage.getItem(CACHE_KEY);
@@ -62,12 +67,16 @@ export function useReport() {
         setLoading(false);
       }
     };
-    fetchReports();
-  }, [page]);
 
-  // Load report detail when selectedDate changes
+    fetchHome();
+  }, []); // Only run once on mount — page switching is local now
+
+  // When selectedDate changes, fetch that day's report detail
   useEffect(() => {
     if (!selectedDate) return;
+    // If report already matches selectedDate from the initial load, skip
+    if (report?.report_date === selectedDate) return;
+
     setDetailLoading(true);
     api.getReport(selectedDate).then((data) => setReport(data)).catch(() => {}).finally(() => setDetailLoading(false));
   }, [selectedDate]);

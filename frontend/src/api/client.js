@@ -83,4 +83,7 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ message, article_id: articleId, session_id: sessionId }),
     }),
+
+  // 首页聚合
+  getHome: () => request('/home'),
 };

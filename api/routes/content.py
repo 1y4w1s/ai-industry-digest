@@ -124,3 +124,21 @@ async def get_stats():
         "sources": db.get_sources(),
         "tags": db.get_tags(),
     }
+
+
+@router.get("/home", tags=["首页"])
+async def get_home():
+    """首页聚合接口：一次返回所有首页数据（reports + sources + tags + 最新日报）"""
+    reports = db.get_reports(page=1, page_size=7)
+    sources = db.get_sources()
+    tags = db.get_tags()
+    report_detail = None
+    if reports.get("items"):
+        latest = reports["items"][0]
+        report_detail = db.get_report_by_date(latest["report_date"])
+    return {
+        "reports": reports,
+        "sources": sources,
+        "tags": tags,
+        "report_detail": report_detail,
+    }
