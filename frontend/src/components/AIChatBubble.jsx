@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { renderMd } from '../utils/markdown';
 import DOMPurify from 'dompurify';
@@ -11,6 +12,8 @@ export default function AIChatBubble({ visible = true }) {
   const [loading, setLoading] = useState(false);
   const chatEndRef = useRef(null);
   const inputRef = useRef(null);
+  const messagesRef = useRef(null);  // 用于链接点击委托
+  const navigate = useNavigate();
 
   // 气泡位置（独立）
   const [bubblePos, setBubblePos] = useState({ right: 24, bottom: 24 });
@@ -27,6 +30,24 @@ export default function AIChatBubble({ visible = true }) {
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // 链接点击委托：内部链接用 React Router 导航，不刷新页面
+  useEffect(() => {
+    const el = messagesRef.current;
+    if (!el) return;
+    const onClick = (e) => {
+      const link = e.target.closest('a');
+      if (!link) return;
+      const href = link.getAttribute('href');
+      if (href && href.startsWith('/')) {
+        e.preventDefault();
+        navigate(href);
+        setOpen(false);  // 导航后自动关闭弹窗
+      }
+    };
+    el.addEventListener('click', onClick);
+    return () => el.removeEventListener('click', onClick);
+  }, [navigate]);
 
   const toggle = () => {
     setOpen(!open);
@@ -178,7 +199,7 @@ export default function AIChatBubble({ visible = true }) {
           </div>
         </div>
 
-        <div className="overflow-y-auto p-3 space-y-2 min-h-[140px] max-h-[320px]">
+        <div ref={messagesRef} className="overflow-y-auto p-3 space-y-2 min-h-[140px] max-h-[320px]">
           {messages.length === 0 && (
             <div className="text-center py-4">
               <p className="text-xs mb-2" style={{ color: 'var(--color-text-label)' }}>问我关于 AI 行业的问题</p>

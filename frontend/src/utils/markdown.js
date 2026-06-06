@@ -11,6 +11,13 @@ export function renderMd(text) {
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.+?)\*/g, '<em>$1</em>')
     .replace(/`(.+?)`/g, '<code style="font-size:0.9em;background:var(--color-bg-hover);padding:1px 4px;border-radius:2px">$1</code>')
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, text, url) => {
+      // 内部链接使用 SPA 导航，外部链接新标签打开
+      if (url.startsWith('/')) {
+        return `<a href="${url}" style="color:var(--color-blue-link);text-decoration:underline">${text}</a>`;
+      }
+      return `<a href="${url}" target="_blank" rel="noopener noreferrer" style="color:var(--color-blue-link);text-decoration:underline">${text}</a>`;
+    })
     .replace(/\n/g, '<br/>');
 }
 
