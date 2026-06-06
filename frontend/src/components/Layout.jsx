@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { path: '/archive', label: '日报归档' },
   { path: '/bookmarks', label: '收藏' },
   { path: '/history', label: '浏览历史' },
+  { path: '/knowledge', label: '知识库' },
   { path: '/settings', label: '设置' },
 ];
 

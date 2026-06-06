@@ -11,6 +11,7 @@ import ProfilePage from './pages/ProfilePage';
 import SettingsPage from './pages/SettingsPage';
 import ArchivePage from './pages/ArchivePage';
 import LoginPage from './pages/LoginPage';
+import KnowledgeBasePage from './pages/KnowledgeBasePage';
 
 function PrivateRoute({ children }) {
   const { isLoggedIn, loading } = useAuth();
@@ -40,6 +41,7 @@ function AppContent() {
         <Route path="profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
         <Route path="settings" element={<SettingsPage />} />
          <Route path="archive" element={<ArchivePage />} />
+         <Route path="knowledge" element={<KnowledgeBasePage />} />
       </Route>
     </Routes>
   );

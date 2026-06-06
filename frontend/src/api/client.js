@@ -86,4 +86,43 @@ export const api = {
 
   // 首页聚合
   getHome: () => request('/home'),
+
+  // 知识库
+  kb: {
+    list: (params = {}) => {
+      const q = new URLSearchParams();
+      if (params.page) q.set('page', params.page);
+      if (params.page_size) q.set('page_size', params.page_size);
+      if (params.tag) q.set('tag', params.tag);
+      if (params.status) q.set('status', params.status);
+      return request(`/kb/documents?${q}`);
+    },
+
+    get: (id) => request(`/kb/documents/${id}`),
+
+    upload: async (file, tags = '') => {
+      const token = getToken() || DEMO_TOKEN;
+      const formData = new FormData();
+      formData.append('file', file);
+      if (tags) formData.append('tags', tags);
+      const res = await fetch(`${API_BASE}/kb/documents`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData,
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: res.statusText }));
+        throw new Error(err.detail || '上传失败');
+      }
+      return res.json();
+    },
+
+    delete: (id) => request(`/kb/documents/${id}`, { method: 'DELETE' }),
+
+    process: (id) => request(`/kb/documents/${id}/process`, { method: 'POST' }),
+
+    getChunks: (id) => request(`/kb/documents/${id}/chunks`),
+
+    getGraph: (id) => request(`/kb/documents/${id}/graph`),
+  },
 };
