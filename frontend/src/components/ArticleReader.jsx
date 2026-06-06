@@ -277,9 +277,9 @@ export default function ArticleReader({ articleId, onBack }) {
 
           {/* Right panel: Chat — becomes bottom panel on mobile */}
           <div className="w-full lg:w-[380px] xl:w-[420px] flex-shrink-0 flex flex-col no-print lg:border-t-0" style={{ background: 'var(--color-bg-off)', borderTop: '1px solid var(--color-border-light)' }}>
-            <div className="flex flex-col flex-1 min-h-0">
-              <div className="px-5 pt-4 pb-1"><h3 className="font-semibold text-xs uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>深入对话</h3></div>
-              <div className="flex-1 overflow-y-auto px-5 pb-2 space-y-2.5">
+            <div className="flex flex-col min-h-0 max-h-[40vh] lg:max-h-none">
+              <div className="px-5 pt-4 pb-1 flex-shrink-0"><h3 className="font-semibold text-xs uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>深入对话</h3></div>
+              <div className="flex-1 overflow-y-auto px-5 pb-2 space-y-2.5 min-h-0">
                 {messages.length === 0 && (
                   <div className="text-center py-4">
                     <p className="text-xs mb-2" style={{ color: 'var(--color-text-label)' }}>问关于这篇文章的问题</p>

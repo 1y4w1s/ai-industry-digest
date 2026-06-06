@@ -6,6 +6,7 @@ on:
   workflow_dispatch:
 
 env:
+  TZ: Asia/Shanghai
   SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
   SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
   DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
