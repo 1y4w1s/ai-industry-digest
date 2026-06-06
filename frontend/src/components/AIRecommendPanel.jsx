@@ -87,7 +87,7 @@ export default function AIRecommendPanel({ keyword }) {
               问我关于 AI 行业的问题，或者获取个性化推荐
             </p>
             <div className="space-y-2">
-              {['今天有什么重要新闻？', 'AI 融资情况如何？', '推荐热门文章'].map((q) => (
+              {['今天有什么重要新闻？', 'AI 融资情况如何？', '推荐热门文章', 'AI 行业趋势分析', '最近有什么技术突破？'].map((q) => (
                 <button
                   key={q}
                   onClick={() => {

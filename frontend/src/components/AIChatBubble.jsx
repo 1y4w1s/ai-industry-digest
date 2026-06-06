@@ -10,6 +10,8 @@ export default function AIChatBubble({ visible = true }) {
   const [input, setInput] = useState('');
   const [sessionId, setSessionId] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [userTags, setUserTags] = useState([]);       // 用户标签（用于个性化提示词）
+  const [tagsLoaded, setTagsLoaded] = useState(false);  // 是否已加载
   const chatEndRef = useRef(null);
   const inputRef = useRef(null);
   const messagesRef = useRef(null);  // 用于链接点击委托
@@ -30,6 +32,23 @@ export default function AIChatBubble({ visible = true }) {
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // 弹窗打开时加载用户标签（仅一次）
+  useEffect(() => {
+    if (open && !tagsLoaded) {
+      api.getRecommend(3).then((data) => {
+        if (data?.items?.length > 0) {
+          // 从推荐的文章中提取标签
+          const tagSet = new Set();
+          data.items.forEach((item) => {
+            (item.tags || []).forEach((t) => tagSet.add(t));
+          });
+          setUserTags([...tagSet].slice(0, 4));
+        }
+        setTagsLoaded(true);
+      }).catch(() => setTagsLoaded(true));
+    }
+  }, [open, tagsLoaded]);
 
   // 链接点击委托：内部链接用 React Router 导航，不刷新页面
   useEffect(() => {
@@ -204,11 +223,21 @@ export default function AIChatBubble({ visible = true }) {
             <div className="text-center py-4">
               <p className="text-xs mb-2" style={{ color: 'var(--color-text-label)' }}>问我关于 AI 行业的问题</p>
               <div className="flex flex-wrap gap-1.5 justify-center">
-                {['今天有什么大新闻？', 'AI 融资情况？', '推荐好文章'].map((q) => (
-                  <button key={q} onClick={() => { setInput(q); setTimeout(() => inputRef.current?.focus(), 100); }}
-                    className="px-2.5 py-1 text-[10px] rounded transition-all"
-                    style={{ background: 'var(--color-bg-hover)', color: 'var(--color-text-muted)', border: '1px solid var(--color-border-light)' }}>{q}</button>
-                ))}
+                {(() => {
+                  const base = ['今天有什么大新闻？', 'AI 融资情况？', '推荐好文章'];
+                  // 如果有用户标签，注入个性化提示词
+                  if (userTags.length > 0) {
+                    base.push(`关于「${userTags[0]}」的最新动态`);
+                    if (userTags.length > 1) base.push(`推荐关于「${userTags[1]}」的文章`);
+                    if (userTags.length > 2) base.push(`深度分析「${userTags[0]}」和「${userTags[1]}」的关系`);
+                  }
+                  base.push('AI 行业趋势展望');
+                  return [...new Set(base)].slice(0, 7).map((q) => (
+                    <button key={q} onClick={() => { setInput(q); setTimeout(() => inputRef.current?.focus(), 100); }}
+                      className="px-2.5 py-1 text-[10px] rounded transition-all"
+                      style={{ background: 'var(--color-bg-hover)', color: 'var(--color-text-muted)', border: '1px solid var(--color-border-light)' }}>{q}</button>
+                  ));
+                })()}
               </div>
             </div>
           )}

@@ -342,10 +342,21 @@ export default function ArticleReader({ articleId, onBack }) {
                   <div className="text-center py-4">
                     <p className="text-xs mb-2" style={{ color: 'var(--color-text-label)' }}>问关于这篇文章的问题</p>
                     <div className="flex flex-wrap gap-1.5 justify-center">
-                      {['总结核心观点', '有哪些技术细节？', '有什么争议？'].map((q) => (
-                        <button key={q} onClick={() => { setChatInput(q); setTimeout(() => chatInputRef.current?.focus(), 100); }}
-                          className="px-2.5 py-1 text-[10px] rounded" style={{ background: 'var(--color-border-light)', color: 'var(--color-text-muted)' }}>{q}</button>
-                      ))}
+                      {(() => {
+                        const tags = article?.tags || [];
+                        const prompts = ['总结核心观点', '有哪些技术细节？', '有什么争议？', '这篇文章的局限性？'];
+                        if (tags.length > 0) {
+                          prompts.push(`解释本文中的「${tags[0]}」概念`);
+                          if (tags.length > 1) prompts.push(`本文如何体现「${tags[1]}」的发展？`);
+                          if (tags.length > 2) prompts.push(`「${tags[2]}」在其中的作用是什么？`);
+                          prompts.push(`和同类文章相比，本文的独特之处？`);
+                        }
+                        // 去重并限制最多 7 个
+                        return [...new Set(prompts)].slice(0, 7).map((q) => (
+                          <button key={q} onClick={() => { setChatInput(q); setTimeout(() => chatInputRef.current?.focus(), 100); }}
+                            className="px-2.5 py-1 text-[10px] rounded" style={{ background: 'var(--color-border-light)', color: 'var(--color-text-muted)' }}>{q}</button>
+                        ));
+                      })()}
                     </div>
                   </div>
                 )}
