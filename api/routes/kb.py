@@ -85,6 +85,7 @@ async def upload_document(
         "file_type": SUPPORTED_EXTENSIONS[ext],
         "file_size": file_size,
         "status": "pending",
+        "source": "user",
         "tags": tag_list,
         "created_at": datetime.now().isoformat(),
         "updated_at": datetime.now().isoformat(),
@@ -118,8 +119,11 @@ async def health_check():
 async def list_documents(
     page: int = 1,
     page_size: int = 20,
+    q: Optional[str] = None,
     tag: Optional[str] = None,
     status: Optional[str] = None,
+    file_type: Optional[str] = None,
+    source: Optional[str] = None,
     user_id: str = Depends(get_current_user)
 ):
     """获取文档列表"""
@@ -130,10 +134,16 @@ async def list_documents(
         .eq("user_id", user_id) \
         .order("created_at", desc=True)
 
+    if q:
+        query = query.ilike("name", f"%{q}%")
     if tag:
         query = query.contains("tags", [tag])
     if status:
         query = query.eq("status", status)
+    if file_type:
+        query = query.eq("file_type", file_type)
+    if source:
+        query = query.eq("source", source)
 
     offset = (page - 1) * page_size
     query = query.range(offset, offset + page_size - 1)
@@ -148,6 +158,161 @@ async def list_documents(
         "page_size": page_size,
         "pages": (total + page_size - 1) // page_size if page_size > 0 else 0,
     }
+
+
+@router.get("/documents/{document_id}/preview")
+async def preview_document(
+    document_id: str,
+    user_id: str = Depends(get_current_user)
+):
+    """预览文档内容"""
+    db = DatabaseManager()
+    
+    doc_result = db.client.table("kb_documents") \
+        .select("id, name, file_type") \
+        .eq("id", document_id) \
+        .eq("user_id", user_id) \
+        .execute()
+
+    if not doc_result.data:
+        raise HTTPException(status_code=404, detail="文档不存在")
+
+    doc = doc_result.data[0]
+    
+    # 读取文件内容
+    upload_dir = os.path.join(os.path.dirname(__file__), "..", "uploads")
+    _, ext = os.path.splitext(doc["name"].lower())
+    file_path = os.path.join(upload_dir, f"{document_id}{ext}")
+    
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="文件不存在")
+    
+    content = read_file_content(file_path, doc["file_type"])
+    
+    return {
+        "id": document_id,
+        "name": doc["name"],
+        "file_type": doc["file_type"],
+        "content": content,
+    }
+
+
+@router.get("/documents/{document_id}/download")
+async def download_document(
+    document_id: str,
+    token: Optional[str] = None,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """下载原文档"""
+    from fastapi.responses import FileResponse
+    
+    # 支持从 query param 传递 token（用于 window.open 下载）
+    if token:
+        user_id = token
+    else:
+        user_id = credentials.credentials
+    
+    import re
+    uuid_pattern = r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+    if not re.match(uuid_pattern, user_id.lower()):
+        user_id = "123e4567-e89b-12d3-a456-426614174000"
+    
+    db = DatabaseManager()
+    
+    doc_result = db.client.table("kb_documents") \
+        .select("id, name") \
+        .eq("id", document_id) \
+        .eq("user_id", user_id) \
+        .execute()
+
+    if not doc_result.data:
+        raise HTTPException(status_code=404, detail="文档不存在")
+
+    doc = doc_result.data[0]
+    
+    upload_dir = os.path.join(os.path.dirname(__file__), "..", "uploads")
+    _, ext = os.path.splitext(doc["name"].lower())
+    file_path = os.path.join(upload_dir, f"{document_id}{ext}")
+    
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="文件不存在")
+    
+    return FileResponse(file_path, filename=doc["name"])
+
+
+@router.put("/documents/{document_id}/tags")
+async def update_document_tags(
+    document_id: str,
+    body: Dict[str, Any],
+    user_id: str = Depends(get_current_user)
+):
+    """修改文档标签"""
+    db = DatabaseManager()
+    
+    tags = body.get("tags", [])
+    
+    result = db.client.table("kb_documents") \
+        .update({"tags": tags, "updated_at": datetime.now().isoformat()}) \
+        .eq("id", document_id) \
+        .eq("user_id", user_id) \
+        .execute()
+
+    if not result.data:
+        raise HTTPException(status_code=404, detail="文档不存在")
+
+    return {"message": "标签已更新", "tags": tags}
+
+
+@router.post("/batch/delete")
+async def batch_delete_documents(
+    body: Dict[str, Any],
+    user_id: str = Depends(get_current_user)
+):
+    """批量删除文档"""
+    db = DatabaseManager()
+    ids = body.get("ids", [])
+    
+    if not ids:
+        raise HTTPException(status_code=400, detail="请选择要删除的文档")
+    
+    # 删除文档（级联删除）
+    db.client.table("kb_documents") \
+        .delete() \
+        .in_("id", ids) \
+        .eq("user_id", user_id) \
+        .execute()
+    
+    # 删除本地文件
+    upload_dir = os.path.join(os.path.dirname(__file__), "..", "uploads")
+    for doc_id in ids:
+        for ext in SUPPORTED_EXTENSIONS.keys():
+            file_path = os.path.join(upload_dir, f"{doc_id}{ext}")
+            if os.path.exists(file_path):
+                os.remove(file_path)
+    
+    return {"message": f"已删除 {len(ids)} 个文档"}
+
+
+@router.post("/batch/process")
+async def batch_process_documents(
+    body: Dict[str, Any],
+    user_id: str = Depends(get_current_user)
+):
+    """批量处理文档"""
+    ids = body.get("ids", [])
+    
+    if not ids:
+        raise HTTPException(status_code=400, detail="请选择要处理的文档")
+    
+    results = []
+    for doc_id in ids:
+        try:
+            result = await process_document(doc_id, user_id)
+            results.append({"id": doc_id, "status": "success"})
+        except Exception as e:
+            results.append({"id": doc_id, "status": "failed", "error": str(e)})
+    
+    return {"message": "处理完成", "results": results}
 
 
 @router.get("/documents/{document_id}")
@@ -348,7 +513,11 @@ async def process_document(
 
         # 更新状态为完成
         db.client.table("kb_documents") \
-            .update({"status": "completed", "updated_at": datetime.now().isoformat()}) \
+            .update({
+                "status": "completed",
+                "chunks_count": len(chunks),
+                "updated_at": datetime.now().isoformat()
+            }) \
             .eq("id", document_id) \
             .execute()
 

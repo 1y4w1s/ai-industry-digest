@@ -1,32 +1,103 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { api } from '../api/client';
 import KnowledgeGraphDrawer from '../components/KnowledgeGraphDrawer';
+import KnowledgePreviewDrawer from '../components/KnowledgePreviewDrawer';
 
 const PAGE_SIZE = 20;
+
+// ── SVG Icons ──
+const Icon = {
+  search: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>,
+  plus: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>,
+  trash: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>,
+  download: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>,
+  refresh: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182" /></svg>,
+  query: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>,
+  reset: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" /></svg>,
+  graph: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5" /></svg>,
+  eye: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
+  dots: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zm0 6a.75.75 0 110-1.5.75.75 0 010 1.5zm0 6a.75.75 0 110-1.5.75.75 0 010 1.5z" /></svg>,
+  batch: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg>,
+};
 
 export default function KnowledgeBasePage() {
   const [documents, setDocuments] = useState([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(PAGE_SIZE);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
-  const [processingId, setProcessingId] = useState(null);
+  const [selected, setSelected] = useState(new Set());
+  const fileInputRef = useRef(null);
+  const searchTimer = useRef(null);
+
+  // 筛选状态
+  const [searchQ, setSearchQ] = useState('');
+  const [fileTypeFilter, setFileTypeFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [sourceFilter, setSourceFilter] = useState('');
+
+  // 抽屉状态
   const [graphDoc, setGraphDoc] = useState(null);
   const [graphData, setGraphData] = useState(null);
   const [graphLoading, setGraphLoading] = useState(false);
-  const [dragOver, setDragOver] = useState(false);
-  const fileInputRef = useRef(null);
+  const [previewDoc, setPreviewDoc] = useState(null);
+  const [previewContent, setPreviewContent] = useState(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
 
-  // 筛选
-  const [statusFilter, setStatusFilter] = useState('');
-  const [tagFilter, setTagFilter] = useState('');
+  // 批量下拉状态
+  const [batchOpen, setBatchOpen] = useState(false);
+  const [menuDoc, setMenuDoc] = useState(null);
 
+  // 标签编辑
+  const [editTagsDoc, setEditTagsDoc] = useState(null);
+  const [editTagsInput, setEditTagsInput] = useState('');
+
+  // 实际用于请求的参数
+  const [queryParams, setQueryParams] = useState({
+    q: '', file_type: '', status: '', source: '',
+  });
+
+  // 防抖搜索
+  const handleSearchChange = (value) => {
+    setSearchQ(value);
+    clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(() => {
+      setPage(1);
+      setQueryParams((prev) => ({ ...prev, q: value }));
+    }, 300);
+  };
+
+  // 查询
+  const handleQuery = () => {
+    setPage(1);
+    setQueryParams({
+      q: searchQ,
+      file_type: fileTypeFilter,
+      status: statusFilter,
+      source: sourceFilter,
+    });
+  };
+
+  // 重置
+  const handleReset = () => {
+    setSearchQ('');
+    setFileTypeFilter('');
+    setStatusFilter('');
+    setSourceFilter('');
+    setPage(1);
+    setQueryParams({ q: '', file_type: '', status: '', source: '' });
+  };
+
+  // 获取文档列表
   const fetchDocuments = useCallback(async () => {
     setLoading(true);
     try {
-      const params = { page, page_size: PAGE_SIZE };
-      if (statusFilter) params.status = statusFilter;
-      if (tagFilter) params.tag = tagFilter;
+      const params = { page, page_size: pageSize };
+      if (queryParams.q) params.q = queryParams.q;
+      if (queryParams.file_type) params.file_type = queryParams.file_type;
+      if (queryParams.status) params.status = queryParams.status;
+      if (queryParams.source) params.source = queryParams.source;
       const data = await api.kb.list(params);
       setDocuments(data.items || []);
       setTotal(data.total || 0);
@@ -35,11 +106,11 @@ export default function KnowledgeBasePage() {
     } finally {
       setLoading(false);
     }
-  }, [page, statusFilter, tagFilter]);
+  }, [page, pageSize, queryParams]);
 
   useEffect(() => { fetchDocuments(); }, [fetchDocuments]);
 
-  // 上传文档
+  // 上传
   const handleUpload = async (files) => {
     if (!files?.length) return;
     setUploading(true);
@@ -55,34 +126,13 @@ export default function KnowledgeBasePage() {
     }
   };
 
-  const handleFileSelect = (e) => {
-    handleUpload(e.target.files);
-    e.target.value = '';
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    setDragOver(false);
-    handleUpload(e.dataTransfer.files);
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    setDragOver(true);
-  };
-
-  const handleDragLeave = () => setDragOver(false);
-
   // 处理文档
   const handleProcess = async (id) => {
-    setProcessingId(id);
     try {
       await api.kb.process(id);
       await fetchDocuments();
     } catch (err) {
       console.error('处理失败:', err);
-    } finally {
-      setProcessingId(null);
     }
   };
 
@@ -92,16 +142,39 @@ export default function KnowledgeBasePage() {
     try {
       await api.kb.delete(id);
       await fetchDocuments();
-      if (graphDoc?.id === id) {
-        setGraphDoc(null);
-        setGraphData(null);
-      }
+      if (graphDoc?.id === id) setGraphDoc(null);
+      if (previewDoc?.id === id) setPreviewDoc(null);
     } catch (err) {
       console.error('删除失败:', err);
     }
   };
 
-  // 查看知识图谱
+  // 批量操作
+  const handleBatchDelete = async () => {
+    if (selected.size === 0) return;
+    if (!confirm(`确定删除选中的 ${selected.size} 个文档？`)) return;
+    try {
+      await api.kb.batchDelete([...selected]);
+      setSelected(new Set());
+      await fetchDocuments();
+    } catch (err) {
+      console.error('批量删除失败:', err);
+    }
+    setBatchOpen(false);
+  };
+
+  const handleBatchProcess = async () => {
+    if (selected.size === 0) return;
+    try {
+      await api.kb.batchProcess([...selected]);
+      await fetchDocuments();
+    } catch (err) {
+      console.error('批量处理失败:', err);
+    }
+    setBatchOpen(false);
+  };
+
+  // 图谱
   const openGraph = async (doc) => {
     setGraphDoc(doc);
     setGraphData(null);
@@ -110,9 +183,55 @@ export default function KnowledgeBasePage() {
       const data = await api.kb.getGraph(doc.id);
       setGraphData(data);
     } catch (err) {
-      console.error('获取知识图谱失败:', err);
+      console.error('获取图谱失败:', err);
     } finally {
       setGraphLoading(false);
+    }
+  };
+
+  // 预览
+  const openPreview = async (doc) => {
+    setPreviewDoc(doc);
+    setPreviewContent(null);
+    setPreviewLoading(true);
+    try {
+      const data = await api.kb.preview(doc.id);
+      setPreviewContent(data);
+    } catch (err) {
+      console.error('预览失败:', err);
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
+  // 标签编辑
+  const handleSaveTags = async () => {
+    if (!editTagsDoc) return;
+    try {
+      const tags = editTagsInput.split(',').map((t) => t.trim()).filter(Boolean);
+      await api.kb.updateTags(editTagsDoc.id, tags);
+      setEditTagsDoc(null);
+      await fetchDocuments();
+    } catch (err) {
+      console.error('保存标签失败:', err);
+    }
+  };
+
+  // 辅助
+  const toggleSelect = (id) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selected.size === documents.length) {
+      setSelected(new Set());
+    } else {
+      setSelected(new Set(documents.map((d) => d.id)));
     }
   };
 
@@ -123,133 +242,129 @@ export default function KnowledgeBasePage() {
     return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
   };
 
-  const totalPages = Math.ceil(total / PAGE_SIZE);
+  const totalPages = Math.ceil(total / pageSize);
 
   return (
     <div className="flex-1 flex flex-col min-h-0 animate-fade-in">
-      {/* 页面标题 */}
-      <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: 'var(--color-border-light)' }}>
+      {/* ── Header ── */}
+      <div className="flex items-center justify-between px-6 py-4 border-b flex-shrink-0" style={{ borderColor: 'var(--color-border-light)' }}>
         <div>
           <h1 className="text-lg font-semibold" style={{ fontFamily: "'Source Serif 4', Georgia, serif", color: 'var(--color-text-title)' }}>
             知识库
           </h1>
           <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
-            管理上传的文档，构建知识图谱 · 共 {total} 个文档
+            共 {total} 个文档
           </p>
         </div>
-        <button
-          onClick={() => fileInputRef.current?.click()}
-          disabled={uploading}
-          style={{
-            padding: '8px 20px',
-            fontSize: 'var(--fs-sm)',
-            background: 'var(--color-text-title)',
-            color: 'var(--color-bg-white)',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontWeight: 500,
-            opacity: uploading ? 0.6 : 1,
-            transition: 'opacity 0.15s',
-          }}
-          onMouseEnter={(e) => { if (!uploading) e.target.style.opacity = 0.8; }}
-          onMouseLeave={(e) => { if (!uploading) e.target.style.opacity = 1; }}
-        >
-          {uploading ? '上传中...' : '+ 上传文档'}
-        </button>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".txt,.md,.pdf,.docx"
-          multiple
-          style={{ display: 'none' }}
-          onChange={handleFileSelect}
-        />
+        <div className="flex items-center gap-2">
+          <ToolBtn icon={Icon.download} label="下载" onClick={() => api.kb.download(previewDoc?.id || selected.values().next().value)} disabled={!previewDoc && selected.size !== 1} />
+          <ToolBtn icon={Icon.refresh} label="刷新" onClick={fetchDocuments} />
+        </div>
       </div>
 
-      {/* 上传拖放区域 */}
-      <div
-        onDrop={handleDrop}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onClick={() => fileInputRef.current?.click()}
-        style={{
-          margin: '16px 24px',
-          padding: '32px',
-          borderRadius: '4px',
-          border: `2px dashed ${dragOver ? 'var(--color-border-bold)' : 'var(--color-border)'}`,
-          background: dragOver ? 'var(--color-bg-off)' : 'transparent',
-          textAlign: 'center',
-          cursor: 'pointer',
-          transition: 'all 0.2s',
-        }}
-      >
-        <svg className="w-8 h-8 mx-auto mb-2" style={{ color: 'var(--color-text-label)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
-        </svg>
-        <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--color-text-muted)' }}>
-          {dragOver ? '释放以上传文件' : '拖拽文件到此处，或点击选择文件'}
-        </p>
-        <p style={{ fontSize: '11px', color: 'var(--color-text-label)', marginTop: '4px' }}>
-          支持 TXT、Markdown、PDF、DOCX 格式
-        </p>
-      </div>
-
-      {/* 筛选栏 */}
-      <div className="flex items-center gap-3 px-6 mb-3">
-        <select
-          value={statusFilter}
-          onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-          style={{
-            padding: '6px 12px',
-            fontSize: 'var(--fs-sm)',
-            background: 'var(--color-bg-off)',
-            border: '1px solid var(--color-border)',
-            borderRadius: '4px',
-            color: 'var(--color-text-body)',
-            outline: 'none',
-          }}
-        >
-          <option value="">全部状态</option>
-          <option value="pending">待处理</option>
-          <option value="processing">处理中</option>
-          <option value="completed">已完成</option>
-          <option value="failed">失败</option>
-        </select>
-        <input
-          type="text"
-          placeholder="按标签筛选..."
-          value={tagFilter}
-          onChange={(e) => { setTagFilter(e.target.value); setPage(1); }}
-          style={{
-            padding: '6px 12px',
-            fontSize: 'var(--fs-sm)',
-            background: 'var(--color-bg-off)',
-            border: '1px solid var(--color-border)',
-            borderRadius: '4px',
-            color: 'var(--color-text-body)',
-            outline: 'none',
-            width: '200px',
-          }}
-        />
-        {(statusFilter || tagFilter) && (
-          <button
-            onClick={() => { setStatusFilter(''); setTagFilter(''); setPage(1); }}
+      {/* ── Search bar ── */}
+      <div className="px-6 py-3 border-b flex-shrink-0" style={{ borderColor: 'var(--color-border-light)' }}>
+        <div className="relative max-w-md">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--color-text-label)' }}>{Icon.search}</span>
+          <input
+            type="text"
+            value={searchQ}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            placeholder="搜索文件名..."
             style={{
-              fontSize: '11px',
-              color: 'var(--color-text-muted)',
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              padding: '4px 8px',
+              width: '100%',
+              padding: '7px 12px 7px 36px',
+              fontSize: 'var(--fs-sm)',
+              background: 'var(--color-bg-off)',
+              border: '1px solid var(--color-border)',
+              borderRadius: '4px',
+              color: 'var(--color-text-body)',
+              outline: 'none',
+            }}
+          />
+          {searchQ && (
+            <button
+              onClick={() => { setSearchQ(''); setQueryParams((p) => ({ ...p, q: '' })); }}
+              style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-label)', padding: 4 }}
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* ── Toolbar ── */}
+      <div className="flex items-center justify-between px-6 py-2.5 border-b flex-shrink-0" style={{ borderColor: 'var(--color-border-light)' }}>
+        <div className="flex items-center gap-2">
+          <Btn icon={Icon.plus} label="新增" onClick={() => fileInputRef.current?.click()} primary />
+          <div style={{ position: 'relative' }}>
+            <Btn icon={Icon.batch} label="批量" onClick={() => setBatchOpen(!batchOpen)} disabled={selected.size === 0} />
+            {batchOpen && (
+              <>
+                <div style={{ position: 'fixed', inset: 0, zIndex: 50 }} onClick={() => setBatchOpen(false)} />
+                <div style={{
+                  position: 'absolute', top: '100%', left: 0, marginTop: 4, zIndex: 51,
+                  background: 'var(--color-bg-white)', border: '1px solid var(--color-border)',
+                  borderRadius: '4px', minWidth: 140, padding: '4px 0', boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                }}>
+                  <DropdownItem onClick={handleBatchDelete}>批量删除</DropdownItem>
+                  <DropdownItem onClick={handleBatchProcess}>批量处理</DropdownItem>
+                  <div style={{ height: 1, background: 'var(--color-border-light)', margin: '4px 0' }} />
+                  <DropdownItem onClick={() => { setSelected(selected.size === documents.length ? new Set() : new Set(documents.map(d => d.id))); setBatchOpen(false); }}>
+                    {selected.size === documents.length ? '取消全选' : '全选'}
+                  </DropdownItem>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-2" style={{ fontSize: 'var(--fs-sm)', color: 'var(--color-text-muted)' }}>
+          <span>每页显示:</span>
+          <select
+            value={pageSize}
+            onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
+            style={{
+              padding: '4px 8px', fontSize: 'var(--fs-sm)',
+              background: 'var(--color-bg-off)', border: '1px solid var(--color-border)',
+              borderRadius: '4px', color: 'var(--color-text-body)', outline: 'none',
             }}
           >
-            清除筛选
-          </button>
-        )}
+            <option value={10}>10</option>
+            <option value={20}>20</option>
+            <option value={50}>50</option>
+          </select>
+        </div>
+        <input ref={fileInputRef} type="file" accept=".txt,.md,.pdf,.docx" multiple style={{ display: 'none' }}
+          onChange={(e) => { handleUpload(e.target.files); e.target.value = ''; }}
+        />
       </div>
 
-      {/* 文档列表 */}
+      {/* ── Filter bar ── */}
+      <div className="flex items-center gap-3 px-6 py-2.5 border-b flex-shrink-0" style={{ borderColor: 'var(--color-border-light)' }}>
+        <SelectFilter value={fileTypeFilter} onChange={setFileTypeFilter} label="分类" options={[
+          { value: '', label: '全部分类' },
+          { value: 'text', label: 'TXT' },
+          { value: 'markdown', label: 'Markdown' },
+          { value: 'pdf', label: 'PDF' },
+          { value: 'docx', label: 'DOCX' },
+        ]} />
+        <SelectFilter value={statusFilter} onChange={setStatusFilter} label="状态" options={[
+          { value: '', label: '全部状态' },
+          { value: 'pending', label: '待处理' },
+          { value: 'processing', label: '处理中' },
+          { value: 'completed', label: '已完成' },
+          { value: 'failed', label: '失败' },
+        ]} />
+        <SelectFilter value={sourceFilter} onChange={setSourceFilter} label="来源" options={[
+          { value: '', label: '全部来源' },
+          { value: 'user', label: '用户上传' },
+          { value: 'website', label: '网站' },
+        ]} />
+        <Btn icon={Icon.query} label="查询" onClick={handleQuery} />
+        <Btn icon={Icon.reset} label="重置" onClick={handleReset} />
+      </div>
+
+      {/* ── Table ── */}
       <div className="flex-1 overflow-auto px-6">
         {loading ? (
           <div className="flex items-center justify-center py-20">
@@ -264,134 +379,156 @@ export default function KnowledgeBasePage() {
             <svg className="w-12 h-12 mb-3" style={{ color: 'var(--color-border)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
             </svg>
-            <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--color-text-muted)' }}>还没有文档，上传一个开始吧</p>
+            <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--color-text-muted)' }}>还没有文档，点击「+ 新增」上传</p>
           </div>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--fs-sm)' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 'var(--fs-sm)', minWidth: 800 }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--color-border-light)', color: 'var(--color-text-label)' }}>
-                <th style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 500, width: '40%' }}>文件名</th>
-                <th style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 500, width: '10%' }}>类型</th>
-                <th style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 500, width: '8%' }}>大小</th>
-                <th style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 500, width: '8%' }}>状态</th>
-                <th style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 500, width: '14%' }}>标签</th>
-                <th style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 500, width: '14%' }}>上传时间</th>
-                <th style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 500, width: '16%' }}>操作</th>
+                <th style={{ padding: '10px 8px', textAlign: 'left', fontWeight: 500, width: 40 }}>
+                  <input type="checkbox" checked={selected.size === documents.length && documents.length > 0}
+                    onChange={toggleSelectAll} style={{ cursor: 'pointer' }}
+                  />
+                </th>
+                <th style={{ padding: '10px 8px', textAlign: 'left', fontWeight: 500, width: 50 }}>#</th>
+                <th style={{ padding: '10px 8px', textAlign: 'left', fontWeight: 500 }}>名称</th>
+                <th style={{ padding: '10px 8px', textAlign: 'left', fontWeight: 500, width: 80 }}>类型</th>
+                <th style={{ padding: '10px 8px', textAlign: 'left', fontWeight: 500, width: 80 }}>来源</th>
+                <th style={{ padding: '10px 8px', textAlign: 'center', fontWeight: 500, width: 70 }}>命中</th>
+                <th style={{ padding: '10px 8px', textAlign: 'left', fontWeight: 500, width: 160 }}>状态</th>
+                <th style={{ padding: '10px 8px', textAlign: 'right', fontWeight: 500, width: 120 }}>操作</th>
               </tr>
             </thead>
             <tbody>
-              {documents.map((doc) => (
-                <tr
-                  key={doc.id}
-                  style={{
-                    borderBottom: '1px solid var(--color-border-light)',
-                    transition: 'background 0.12s',
-                  }}
-                  className="hover:bg-[var(--color-bg-off)]"
-                >
-                  <td style={{ padding: '10px 12px' }}>
-                    <span style={{ color: 'var(--color-text-title)', fontWeight: 500 }}>{doc.name}</span>
-                  </td>
-                  <td style={{ padding: '10px 12px', color: 'var(--color-text-muted)' }}>
-                    <span style={{
-                      padding: '2px 8px',
-                      borderRadius: '3px',
-                      fontSize: '10px',
-                      background: 'var(--color-bg-hover)',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.3px',
-                    }}>
-                      {doc.file_type}
-                    </span>
-                  </td>
-                  <td style={{ padding: '10px 12px', color: 'var(--color-text-muted)' }}>{formatFileSize(doc.file_size)}</td>
-                  <td style={{ padding: '10px 12px' }}>
-                    <StatusBadge status={doc.status} />
-                  </td>
-                  <td style={{ padding: '10px 12px' }}>
-                    <div className="flex flex-wrap gap-1">
-                      {(doc.tags || []).map((t) => (
-                        <span key={t} style={{
-                          padding: '1px 6px',
-                          fontSize: '10px',
-                          borderRadius: '3px',
-                          background: 'var(--color-border-light)',
-                          color: 'var(--color-text-muted)',
-                        }}>
-                          {t}
-                        </span>
-                      ))}
-                    </div>
-                  </td>
-                  <td style={{ padding: '10px 12px', color: 'var(--color-text-muted)', fontSize: '11px' }}>
-                    {new Date(doc.created_at).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                  </td>
-                  <td style={{ padding: '10px 12px', textAlign: 'right' }}>
-                    <div className="flex items-center justify-end gap-2">
-                      {doc.status === 'pending' && (
-                        <ActionBtn onClick={() => handleProcess(doc.id)} disabled={processingId === doc.id}>
-                          {processingId === doc.id ? '...' : '处理'}
-                        </ActionBtn>
-                      )}
-                      <ActionBtn onClick={() => openGraph(doc)} disabled={doc.status !== 'completed' || doc.status === 'failed'} title={doc.status !== 'completed' ? '文档未完成处理' : ''}>
-                        图谱
-                      </ActionBtn>
-                      <ActionBtn onClick={() => handleDelete(doc.id, doc.name)} className="text-[var(--color-high)] hover:bg-[var(--color-bg-hover)]">
-                        删除
-                      </ActionBtn>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {documents.map((doc, idx) => {
+                const seq = (page - 1) * pageSize + idx + 1;
+                return (
+                  <tr key={doc.id}
+                    style={{ borderBottom: '1px solid var(--color-border-light)', transition: 'background 0.12s' }}
+                    className="hover:bg-[var(--color-bg-off)]"
+                  >
+                    <td style={{ padding: '10px 8px' }}>
+                      <input type="checkbox" checked={selected.has(doc.id)}
+                        onChange={() => toggleSelect(doc.id)} style={{ cursor: 'pointer' }}
+                      />
+                    </td>
+                    <td style={{ padding: '10px 8px', color: 'var(--color-text-label)' }}>{seq}</td>
+                    <td style={{ padding: '10px 8px' }}>
+                      <span onClick={() => openPreview(doc)}
+                        style={{ color: 'var(--color-text-title)', fontWeight: 500, cursor: 'pointer' }}
+                        className="hover:underline"
+                      >
+                        {doc.name}
+                      </span>
+                    </td>
+                    <td style={{ padding: '10px 8px' }}>
+                      <span style={{
+                        padding: '2px 8px', borderRadius: '3px', fontSize: '10px',
+                        background: 'var(--color-bg-hover)', textTransform: 'uppercase',
+                        letterSpacing: '0.3px', color: 'var(--color-text-muted)',
+                      }}>
+                        {doc.file_type === 'markdown' ? 'MD' : doc.file_type?.toUpperCase()}
+                      </span>
+                    </td>
+                    <td style={{ padding: '10px 8px', color: 'var(--color-text-muted)', fontSize: '11px' }}>
+                      {doc.source === 'website' ? '网站' : '用户'}
+                    </td>
+                    <td style={{ padding: '10px 8px', textAlign: 'center', color: 'var(--color-text-muted)' }}>
+                      {doc.hit_count ?? 0}
+                    </td>
+                    <td style={{ padding: '10px 8px' }}>
+                      <StatusBadge status={doc.status} chunksCount={doc.chunks_count} />
+                    </td>
+                    <td style={{ padding: '10px 8px', textAlign: 'right' }}>
+                      <div className="flex items-center justify-end gap-1">
+                        {doc.status === 'completed' && (
+                          <IconBtn icon={Icon.graph} title="图谱" onClick={() => openGraph(doc)} />
+                        )}
+                        <IconBtn icon={Icon.eye} title="预览" onClick={() => openPreview(doc)} />
+                        <div style={{ position: 'relative' }}>
+                          <IconBtn icon={Icon.dots} title="更多" onClick={() => setMenuDoc(menuDoc === doc.id ? null : doc.id)} />
+                          {menuDoc === doc.id && (
+                            <>
+                              <div style={{ position: 'fixed', inset: 0, zIndex: 50 }} onClick={() => setMenuDoc(null)} />
+                              <div style={{
+                                position: 'absolute', right: 0, top: '100%', marginTop: 4, zIndex: 51,
+                                background: 'var(--color-bg-white)', border: '1px solid var(--color-border)',
+                                borderRadius: '4px', minWidth: 120, padding: '4px 0', boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                              }}>
+                                {doc.status === 'failed' && (
+                                  <DropdownItem onClick={() => { handleProcess(doc.id); setMenuDoc(null); }}>重试</DropdownItem>
+                                )}
+                                <DropdownItem onClick={() => {
+                                  setEditTagsDoc(doc);
+                                  setEditTagsInput((doc.tags || []).join(', '));
+                                  setMenuDoc(null);
+                                }}>修改标签</DropdownItem>
+                                <DropdownItem onClick={() => { api.kb.download(doc.id); setMenuDoc(null); }}>下载</DropdownItem>
+                                <div style={{ height: 1, background: 'var(--color-border-light)', margin: '4px 0' }} />
+                                <DropdownItem onClick={() => { handleDelete(doc.id, doc.name); setMenuDoc(null); }} danger>删除</DropdownItem>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}
       </div>
 
-      {/* 分页 */}
+      {/* ── 拖拽上传区域 ── */}
+      <div className="flex-shrink-0 px-6 py-2">
+        <div
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => { e.preventDefault(); handleUpload(e.dataTransfer.files); }}
+          style={{
+            padding: '8px', borderRadius: '4px',
+            border: '1px dashed var(--color-border)',
+            textAlign: 'center', cursor: 'pointer', fontSize: '11px', color: 'var(--color-text-label)',
+            transition: 'all 0.15s',
+          }}
+          className="hover:bg-[var(--color-bg-off)]"
+          onClick={() => fileInputRef.current?.click()}
+        >
+          拖拽文件到此处上传 · 支持 TXT / MD / PDF / DOCX
+        </div>
+      </div>
+
+      {/* ── Pagination ── */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between px-6 py-3 border-t" style={{ borderColor: 'var(--color-border-light)' }}>
+        <div className="flex items-center justify-between px-6 py-3 border-t flex-shrink-0" style={{ borderColor: 'var(--color-border-light)' }}>
           <span style={{ fontSize: '11px', color: 'var(--color-text-label)' }}>
             第 {page}/{totalPages} 页，共 {total} 个文档
           </span>
-          <div className="flex gap-2">
-            <button
-              disabled={page <= 1}
-              onClick={() => setPage(page - 1)}
-              style={{
-                padding: '6px 14px',
-                fontSize: 'var(--fs-sm)',
-                background: 'var(--color-bg-off)',
-                border: '1px solid var(--color-border)',
-                borderRadius: '4px',
-                cursor: page <= 1 ? 'not-allowed' : 'pointer',
-                opacity: page <= 1 ? 0.4 : 1,
-                color: 'var(--color-text-body)',
-              }}
-            >
-              上一页
-            </button>
-            <button
-              disabled={page >= totalPages}
-              onClick={() => setPage(page + 1)}
-              style={{
-                padding: '6px 14px',
-                fontSize: 'var(--fs-sm)',
-                background: 'var(--color-bg-off)',
-                border: '1px solid var(--color-border)',
-                borderRadius: '4px',
-                cursor: page >= totalPages ? 'not-allowed' : 'pointer',
-                opacity: page >= totalPages ? 0.4 : 1,
-                color: 'var(--color-text-body)',
-              }}
-            >
-              下一页
-            </button>
+          <div className="flex items-center gap-1">
+            <PageBtn disabled={page <= 1} onClick={() => setPage(page - 1)}>‹</PageBtn>
+            {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+              let n;
+              if (totalPages <= 7) {
+                n = i + 1;
+              } else if (page <= 4) {
+                n = i + 1;
+              } else if (page >= totalPages - 3) {
+                n = totalPages - 6 + i;
+              } else {
+                n = page - 3 + i;
+              }
+              return (
+                <PageBtn key={n} active={n === page} onClick={() => setPage(n)}>
+                  {n}
+                </PageBtn>
+              );
+            })}
+            <PageBtn disabled={page >= totalPages} onClick={() => setPage(page + 1)}>›</PageBtn>
           </div>
         </div>
       )}
 
-      {/* 知识图谱抽屉 */}
+      {/* ── Drawers ── */}
       <KnowledgeGraphDrawer
         open={!!graphDoc}
         onClose={() => { setGraphDoc(null); setGraphData(null); }}
@@ -399,54 +536,202 @@ export default function KnowledgeBasePage() {
         data={graphData}
         loading={graphLoading}
       />
+
+      <KnowledgePreviewDrawer
+        open={!!previewDoc}
+        onClose={() => { setPreviewDoc(null); setPreviewContent(null); }}
+        doc={previewDoc}
+        data={previewContent}
+        loading={previewLoading}
+      />
+
+      {/* ── Tags Editor Modal ── */}
+      {editTagsDoc && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.3)' }}
+          onClick={() => setEditTagsDoc(null)}
+        >
+          <div onClick={(e) => e.stopPropagation()} style={{
+            background: 'var(--color-bg-white)', borderRadius: '6px', padding: '24px',
+            minWidth: 360, boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+          }}>
+            <h3 className="text-base font-semibold mb-4" style={{ fontFamily: "'Source Serif 4', Georgia, serif", color: 'var(--color-text-title)' }}>
+              编辑标签 — {editTagsDoc.name}
+            </h3>
+            <div className="flex flex-wrap gap-2 mb-3">
+              {(editTagsInput.split(',').map(t => t.trim()).filter(Boolean)).map((tag) => (
+                <span key={tag} style={{
+                  padding: '3px 10px', borderRadius: '3px', fontSize: '12px',
+                  background: 'var(--color-border-light)', color: 'var(--color-text-body)',
+                  display: 'flex', alignItems: 'center', gap: 6,
+                }}>
+                  {tag}
+                  <button onClick={() => {
+                    const tags = editTagsInput.split(',').map(t => t.trim()).filter(Boolean).filter(t => t !== tag);
+                    setEditTagsInput(tags.join(', '));
+                  }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', padding: 0, fontSize: 14 }}>
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+            <input
+              type="text"
+              value={editTagsInput}
+              onChange={(e) => setEditTagsInput(e.target.value)}
+              placeholder="输入标签，用逗号分隔..."
+              style={{
+                width: '100%', padding: '8px 12px', fontSize: 'var(--fs-sm)',
+                border: '1px solid var(--color-border)', borderRadius: '4px',
+                background: 'var(--color-bg-off)', color: 'var(--color-text-body)',
+                outline: 'none', marginBottom: 16,
+              }}
+            />
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setEditTagsDoc(null)} style={{
+                padding: '8px 20px', fontSize: 'var(--fs-sm)', borderRadius: '4px',
+                background: 'var(--color-bg-off)', border: '1px solid var(--color-border)',
+                cursor: 'pointer', color: 'var(--color-text-body)',
+              }}>取消</button>
+              <button onClick={handleSaveTags} style={{
+                padding: '8px 20px', fontSize: 'var(--fs-sm)', borderRadius: '4px',
+                background: 'var(--color-text-title)', border: 'none',
+                cursor: 'pointer', color: 'var(--color-bg-white)', fontWeight: 500,
+              }}>保存</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-// --- 子组件 ---
+// ── Sub-components ──
 
-function StatusBadge({ status }) {
+function StatusBadge({ status, chunksCount }) {
   const config = {
     pending: { label: '待处理', bg: '#FFF3E0', color: '#E65100' },
-    processing: { label: '处理中', bg: '#E3F2FD', color: '#1565C0' },
-    completed: { label: '已完成', bg: '#E8F5E9', color: '#2E7D32' },
+    processing: { label: `处理中${chunksCount ? `(${chunksCount})` : ''}`, bg: '#E3F2FD', color: '#1565C0' },
+    completed: { label: `已完成${chunksCount ? `(${chunksCount})` : ''}`, bg: '#E8F5E9', color: '#2E7D32' },
     failed: { label: '失败', bg: '#FFEBEE', color: '#C62828' },
   };
   const s = config[status] || { label: status, bg: 'var(--color-bg-off)', color: 'var(--color-text-muted)' };
   return (
-    <span style={{
-      padding: '2px 8px',
-      borderRadius: '3px',
-      fontSize: '10px',
-      background: s.bg,
-      color: s.color,
-      fontWeight: 500,
-    }}>
+    <span style={{ padding: '3px 10px', borderRadius: '3px', fontSize: '11px', background: s.bg, color: s.color, fontWeight: 500, display: 'inline-block' }}>
       {s.label}
     </span>
   );
 }
 
-function ActionBtn({ onClick, disabled, children, title, className }) {
+function ToolBtn({ icon, label, onClick, disabled }) {
   return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      title={title}
+    <button onClick={onClick} disabled={disabled}
       style={{
-        padding: '4px 10px',
-        fontSize: '11px',
-        background: 'transparent',
-        border: '1px solid var(--color-border)',
-        borderRadius: '4px',
-        cursor: disabled ? 'not-allowed' : 'pointer',
-        opacity: disabled ? 0.4 : 1,
-        color: 'var(--color-text-muted)',
+        display: 'inline-flex', alignItems: 'center', gap: 6,
+        padding: '6px 14px', fontSize: 'var(--fs-sm)',
+        background: 'transparent', border: '1px solid var(--color-border)',
+        borderRadius: '4px', cursor: disabled ? 'not-allowed' : 'pointer',
+        opacity: disabled ? 0.4 : 1, color: 'var(--color-text-muted)',
         transition: 'all 0.12s',
       }}
-      className={className || 'hover:bg-[var(--color-bg-hover)] hover:border-[var(--color-border-bold)]'}
+      className="hover:bg-[var(--color-bg-hover)] hover:border-[var(--color-border-bold)]"
+    >
+      {icon}
+      <span>{label}</span>
+    </button>
+  );
+}
+
+function Btn({ icon, label, onClick, disabled, primary }) {
+  return (
+    <button onClick={onClick} disabled={disabled}
+      style={{
+        display: 'inline-flex', alignItems: 'center', gap: 6,
+        padding: '6px 14px', fontSize: 'var(--fs-sm)',
+        background: primary ? 'var(--color-text-title)' : 'transparent',
+        border: primary ? 'none' : '1px solid var(--color-border)',
+        borderRadius: '4px', cursor: disabled ? 'not-allowed' : 'pointer',
+        opacity: disabled ? 0.4 : 1,
+        color: primary ? 'var(--color-bg-white)' : 'var(--color-text-muted)',
+        fontWeight: primary ? 500 : 400,
+        transition: 'all 0.12s',
+      }}
+      className={!primary ? "hover:bg-[var(--color-bg-hover)]" : ""}
+    >
+      {icon}
+      <span>{label}</span>
+    </button>
+  );
+}
+
+function IconBtn({ icon, title, onClick }) {
+  return (
+    <button onClick={onClick} title={title}
+      style={{
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+        width: 30, height: 30, borderRadius: '4px',
+        background: 'transparent', border: 'none',
+        cursor: 'pointer', color: 'var(--color-text-muted)',
+        transition: 'all 0.12s',
+      }}
+      className="hover:bg-[var(--color-bg-hover)] hover:text-[var(--color-text-body)]"
+    >
+      {icon}
+    </button>
+  );
+}
+
+function DropdownItem({ onClick, children, danger }) {
+  return (
+    <button onClick={onClick}
+      style={{
+        display: 'block', width: '100%', textAlign: 'left',
+        padding: '7px 16px', fontSize: 'var(--fs-sm)',
+        background: 'transparent', border: 'none',
+        cursor: 'pointer', transition: 'background 0.1s',
+        color: danger ? 'var(--color-high)' : 'var(--color-text-body)',
+      }}
+      className="hover:bg-[var(--color-bg-hover)]"
     >
       {children}
     </button>
+  );
+}
+
+function PageBtn({ disabled, active, onClick, children }) {
+  return (
+    <button onClick={onClick} disabled={disabled}
+      style={{
+        minWidth: 32, height: 32, padding: '0 6px',
+        fontSize: '13px', borderRadius: '4px',
+        background: active ? 'var(--color-text-title)' : 'transparent',
+        color: active ? 'var(--color-bg-white)' : 'var(--color-text-muted)',
+        border: active ? 'none' : '1px solid transparent',
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        fontWeight: active ? 600 : 400,
+        opacity: disabled ? 0.4 : 1,
+        transition: 'all 0.12s',
+      }}
+      className={!active && !disabled ? "hover:bg-[var(--color-bg-hover)] hover:border-[var(--color-border)]" : ""}
+    >
+      {children}
+    </button>
+  );
+}
+
+function SelectFilter({ value, onChange, label, options }) {
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      style={{
+        padding: '6px 12px', fontSize: 'var(--fs-sm)',
+        background: 'var(--color-bg-off)', border: '1px solid var(--color-border)',
+        borderRadius: '4px', color: 'var(--color-text-body)', outline: 'none',
+      }}
+    >
+      {options.map((opt) => (
+        <option key={opt.value} value={opt.value}>{opt.label}</option>
+      ))}
+    </select>
   );
 }

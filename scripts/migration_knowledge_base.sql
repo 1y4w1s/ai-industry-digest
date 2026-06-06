@@ -7,6 +7,9 @@ CREATE TABLE IF NOT EXISTS kb_documents (
     file_size INTEGER,
     status VARCHAR(20) DEFAULT 'pending', -- pending, processing, completed, failed
     tags TEXT[],
+    source VARCHAR(50) DEFAULT 'user', -- 'website' | 'user'
+    hit_count INTEGER DEFAULT 0,       -- 搜索命中次数
+    chunks_count INTEGER DEFAULT 0,    -- 切片总数
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );

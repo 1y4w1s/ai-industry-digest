@@ -95,6 +95,9 @@ export const api = {
       if (params.page_size) q.set('page_size', params.page_size);
       if (params.tag) q.set('tag', params.tag);
       if (params.status) q.set('status', params.status);
+      if (params.file_type) q.set('file_type', params.file_type);
+      if (params.source) q.set('source', params.source);
+      if (params.q) q.set('q', params.q);
       return request(`/kb/documents?${q}`);
     },
 
@@ -124,5 +127,30 @@ export const api = {
     getChunks: (id) => request(`/kb/documents/${id}/chunks`),
 
     getGraph: (id) => request(`/kb/documents/${id}/graph`),
+
+    preview: (id) => request(`/kb/documents/${id}/preview`),
+
+    download: (id) => {
+      const token = getToken() || DEMO_TOKEN;
+      window.open(`${API_BASE}/kb/documents/${id}/download?token=${token}`, '_blank');
+    },
+
+    updateTags: (id, tags) =>
+      request(`/kb/documents/${id}/tags`, {
+        method: 'PUT',
+        body: JSON.stringify({ tags }),
+      }),
+
+    batchDelete: (ids) =>
+      request('/kb/batch/delete', {
+        method: 'POST',
+        body: JSON.stringify({ ids }),
+      }),
+
+    batchProcess: (ids) =>
+      request('/kb/batch/process', {
+        method: 'POST',
+        body: JSON.stringify({ ids }),
+      }),
   },
 };
