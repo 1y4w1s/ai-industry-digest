@@ -340,7 +340,6 @@ export default function ArticleReader({ articleId, onBack }) {
                 </form>
               </div>
             </div>
-          </div>
             </ErrorBoundary>
           </div>
         </div>
