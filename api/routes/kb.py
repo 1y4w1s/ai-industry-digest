@@ -8,42 +8,50 @@ import uuid
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 
-from fastapi import APIRouter, File, UploadFile, Depends, HTTPException
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import APIRouter, File, UploadFile, Depends, HTTPException, Header, Query
 
 from api.models.database import DatabaseManager
 from processor.ai_processor import AIProcessor
 
 router = APIRouter(prefix="/kb", tags=["知识库"])
 
-security = HTTPBearer()
-
-# ── 认证工具 ────────────────────────────
-# 与 auth.py 保持一致的 JWT 解析逻辑
+# ── 统一认证工具 ────────────────────────
+# 所有 KB 路由共用同一套认证逻辑，支持：
+#   - Authorization: Bearer <token>（request() 正常调用）
+#   - ?token=<token>（window.open 下载等无法传 header 的场景）
+#   - 临时用户兜底（未登录也能看 demo 文档）
 
 DEMO_USER_ID = "demo-user"
 DEMO_USER_UUID = "8de5fa50-2fdf-4540-b1fa-2c06029313eb"
 
-def _resolve_user_id(token: str) -> str:
-    """从 token 中解析出用户 UUID（JWT 提取 sub or demo 转换）"""
-    if token == DEMO_USER_ID:
+
+def _resolve_user_id(raw_token: str) -> str:
+    """从原始 token 中解析出用户 UUID"""
+    # 去掉 Bearer 前缀
+    if raw_token.startswith("Bearer "):
+        raw_token = raw_token[7:]
+    # demo 用户
+    if raw_token == DEMO_USER_ID:
         return DEMO_USER_UUID
+    # 已经是 UUID
     import re
     uuid_pattern = r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
-    if re.match(uuid_pattern, token.lower()):
-        return token  # 已经是 UUID
+    if re.match(uuid_pattern, raw_token.lower()):
+        return raw_token
+    # JWT 解码
     try:
         import jwt as pyjwt
-        decoded = pyjwt.decode(token, options={"verify_signature": False})
+        decoded = pyjwt.decode(raw_token, options={"verify_signature": False})
         user_id = decoded.get("sub")
         if user_id and re.match(uuid_pattern, user_id.lower()):
             return user_id
     except Exception:
         pass
-    # 实在解析不了，用 demo UUID 兜底（保证不 403）
     return DEMO_USER_UUID
 
-# 支持的文件类型
+
+# ── 文档配置 ────────────────────────────
+
 SUPPORTED_EXTENSIONS = {
     ".txt": "text",
     ".md": "markdown",
@@ -51,13 +59,18 @@ SUPPORTED_EXTENSIONS = {
     ".docx": "docx",
 }
 
-# 最大文件大小（10MB）
 MAX_FILE_SIZE = 10 * 1024 * 1024
 
 
-async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> str:
-    """获取当前用户ID（从 JWT 解析）"""
-    return _resolve_user_id(credentials.credentials)
+async def get_current_user(
+    authorization: Optional[str] = Header(None),
+    token: Optional[str] = Query(None),
+) -> str:
+    """统一认证依赖：header 优先，query token 兜底"""
+    raw = authorization or token
+    if not raw:
+        return DEMO_USER_UUID
+    return _resolve_user_id(raw)
 
 
 @router.post("/documents")
@@ -215,21 +228,10 @@ async def preview_document(
 @router.get("/documents/{document_id}/download")
 async def download_document(
     document_id: str,
-    token: Optional[str] = None,
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
+    user_id: str = Depends(get_current_user),
 ):
-    """下载原文档"""
+    """下载原文档（支持 ?token= 或 Authorization header 认证）"""
     from fastapi.responses import FileResponse
-    
-    # query param token 优先（支持 window.open 下载，无法传 header）
-    if token:
-        user_id = token
-    elif credentials:
-        user_id = credentials.credentials
-    else:
-        raise HTTPException(status_code=401, detail="未登录")
-
-    user_id = _resolve_user_id(user_id)
     
     db = DatabaseManager()
     
