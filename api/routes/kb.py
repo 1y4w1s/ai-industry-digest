@@ -22,7 +22,7 @@ security = HTTPBearer()
 # 与 auth.py 保持一致的 JWT 解析逻辑
 
 DEMO_USER_ID = "demo-user"
-DEMO_USER_UUID = "00000000-0000-0000-0000-000000000001"
+DEMO_USER_UUID = "8de5fa50-2fdf-4540-b1fa-2c06029313eb"
 
 def _resolve_user_id(token: str) -> str:
     """从 token 中解析出用户 UUID（JWT 提取 sub or demo 转换）"""
