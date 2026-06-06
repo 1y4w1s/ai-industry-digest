@@ -73,10 +73,25 @@ async def get_current_user(
     return _resolve_user_id(raw)
 
 
+def _doc_query(db, user_id: str):
+    """构建知识库文档查询：公开文档 OR 用户自己的文档"""
+    return db.client.table("kb_documents") \
+        .select("*", count="exact") \
+        .or_(f"is_public.eq.true,user_id.eq.{user_id}")
+
+
+def _doc_access_filter(query, document_id: str, user_id: str):
+    """文档访问权限过滤：公开 OR 自己拥有"""
+    return query \
+        .eq("id", document_id) \
+        .or_(f"is_public.eq.true,user_id.eq.{user_id}")
+
+
 @router.post("/documents")
 async def upload_document(
     file: UploadFile = File(...),
     tags: Optional[str] = "",
+    is_public: bool = True,
     user_id: str = Depends(get_current_user)
 ):
     """上传文档"""
@@ -115,6 +130,7 @@ async def upload_document(
         "status": "pending",
         "source": "user",
         "tags": tag_list,
+        "is_public": is_public,
         "created_at": datetime.now().isoformat(),
         "updated_at": datetime.now().isoformat(),
     }).execute()
@@ -157,9 +173,7 @@ async def list_documents(
     """获取文档列表"""
     db = DatabaseManager()
     
-    query = db.client.table("kb_documents") \
-        .select("*", count="exact") \
-        .eq("user_id", user_id) \
+    query = _doc_query(db, user_id) \
         .order("created_at", desc=True)
 
     if q:
@@ -196,11 +210,10 @@ async def preview_document(
     """预览文档内容"""
     db = DatabaseManager()
     
-    doc_result = db.client.table("kb_documents") \
-        .select("id, name, file_type") \
-        .eq("id", document_id) \
-        .eq("user_id", user_id) \
-        .execute()
+    doc_result = _doc_access_filter(
+        db.client.table("kb_documents").select("id, name, file_type"),
+        document_id, user_id
+    ).execute()
 
     if not doc_result.data:
         raise HTTPException(status_code=404, detail="文档不存在")
@@ -235,11 +248,10 @@ async def download_document(
     
     db = DatabaseManager()
     
-    doc_result = db.client.table("kb_documents") \
-        .select("id, name") \
-        .eq("id", document_id) \
-        .eq("user_id", user_id) \
-        .execute()
+    doc_result = _doc_access_filter(
+        db.client.table("kb_documents").select("id, name"),
+        document_id, user_id
+    ).execute()
 
     if not doc_result.data:
         raise HTTPException(status_code=404, detail="文档不存在")
@@ -339,11 +351,10 @@ async def get_document(
     """获取文档详情"""
     db = DatabaseManager()
     
-    result = db.client.table("kb_documents") \
-        .select("*") \
-        .eq("id", document_id) \
-        .eq("user_id", user_id) \
-        .execute()
+    result = _doc_access_filter(
+        db.client.table("kb_documents").select("*"),
+        document_id, user_id
+    ).execute()
 
     if not result.data:
         raise HTTPException(status_code=404, detail="文档不存在")
@@ -394,12 +405,11 @@ async def get_document_chunks(
     """获取文档切片列表"""
     db = DatabaseManager()
     
-    # 验证文档属于用户
-    doc_result = db.client.table("kb_documents") \
-        .select("id") \
-        .eq("id", document_id) \
-        .eq("user_id", user_id) \
-        .execute()
+    # 验证文档可访问（公开 OR 自己拥有）
+    doc_result = _doc_access_filter(
+        db.client.table("kb_documents").select("id"),
+        document_id, user_id
+    ).execute()
 
     if not doc_result.data:
         raise HTTPException(status_code=404, detail="文档不存在")
@@ -421,12 +431,11 @@ async def get_document_graph(
     """获取文档知识图谱数据"""
     db = DatabaseManager()
     
-    # 验证文档属于用户
-    doc_result = db.client.table("kb_documents") \
-        .select("id") \
-        .eq("id", document_id) \
-        .eq("user_id", user_id) \
-        .execute()
+    # 验证文档可访问（公开 OR 自己拥有）
+    doc_result = _doc_access_filter(
+        db.client.table("kb_documents").select("id"),
+        document_id, user_id
+    ).execute()
 
     if not doc_result.data:
         raise HTTPException(status_code=404, detail="文档不存在")

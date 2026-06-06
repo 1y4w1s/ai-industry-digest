@@ -28,6 +28,7 @@ export default function KnowledgeBasePage() {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [uploadPublic, setUploadPublic] = useState(true);  // 上传时是否公开
   const [selected, setSelected] = useState(new Set());
   const fileInputRef = useRef(null);
   const uploadInputRef = useRef(null);
@@ -118,7 +119,7 @@ export default function KnowledgeBasePage() {
     setUploading(true);
     try {
       for (const file of files) {
-        await api.kb.upload(file);
+        await api.kb.upload(file, '', uploadPublic);
       }
       await fetchDocuments();
     } catch (err) {
@@ -419,6 +420,14 @@ export default function KnowledgeBasePage() {
                       >
                         {doc.name}
                       </span>
+                      {doc.is_public === false && (
+                        <span style={{
+                          marginLeft: 6, padding: '1px 6px', borderRadius: '3px', fontSize: '10px',
+                          background: 'rgba(200,150,10,0.1)', color: '#8c7a0a',
+                          border: '1px solid rgba(200,150,10,0.2)',
+                          verticalAlign: 'middle',
+                        }}>私有</span>
+                      )}
                     </td>
                     <td style={{ padding: '10px 8px' }}>
                       <span style={{
@@ -575,6 +584,25 @@ export default function KnowledgeBasePage() {
                 onChange={(e) => { handleUpload(e.target.files); setUploadOpen(false); e.target.value = ''; }}
               />
             </div>
+
+            <label className="flex items-center justify-between px-1 mb-4" style={{ cursor: 'pointer' }}
+              onClick={() => setUploadPublic(!uploadPublic)}
+            >
+              <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+                {uploadPublic ? '公开（所有人可见）' : '私有（仅自己可见）'}
+              </span>
+              <div style={{
+                width: 36, height: 20, borderRadius: 10,
+                background: uploadPublic ? 'var(--color-text-title)' : 'var(--color-border)',
+                position: 'relative', transition: 'background 0.2s',
+              }}>
+                <div style={{
+                  width: 16, height: 16, borderRadius: '50%',
+                  background: 'white', position: 'absolute', top: 2,
+                  left: uploadPublic ? 18 : 2, transition: 'left 0.2s',
+                }} />
+              </div>
+            </label>
 
             <div className="flex justify-end gap-2">
               <button onClick={() => setUploadOpen(false)} style={{

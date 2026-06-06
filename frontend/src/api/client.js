@@ -108,11 +108,12 @@ export const api = {
 
     get: (id) => request(`/kb/documents/${id}`),
 
-    upload: async (file, tags = '') => {
+    upload: async (file, tags = '', isPublic = true) => {
       const token = getToken() || DEMO_TOKEN;
       const formData = new FormData();
       formData.append('file', file);
       if (tags) formData.append('tags', tags);
+      formData.append('is_public', isPublic ? 'true' : 'false');
       const res = await fetch(`${API_BASE}/kb/documents`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` },

@@ -118,6 +118,7 @@ def create_kb_document(db: DatabaseManager, article: dict) -> str:
         "status": "pending",
         "source": "website",
         "tags": tags,
+        "is_public": True,
         "created_at": datetime.now().isoformat(),
         "updated_at": datetime.now().isoformat(),
     }).execute()
