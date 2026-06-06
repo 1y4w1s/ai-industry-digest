@@ -18,6 +18,7 @@ Signal - 知识库自动导入脚本
 
 import os
 import sys
+import asyncio
 import uuid
 import argparse
 from datetime import datetime, date, timedelta
@@ -164,7 +165,7 @@ def process_document(db: DatabaseManager, document_id: str, content: str) -> dic
         relations = []
         try:
             ai = AIProcessor()
-            entities, relations = ai.extract_knowledge(content)
+            entities, relations = asyncio.run(ai.extract_knowledge(content))
         except Exception as e:
             print(f"    [WARN] AI 处理失败: {e}")
 
