@@ -34,14 +34,19 @@ echo "📦 [1/4] 拉取最新代码..."
 git pull origin master
 echo "   ✅ 代码已更新"
 
+# 1b. 执行数据库 migration
+echo ""
+echo "📦 [2/5] 执行数据库 migration..."
+python scripts/migrate.py 2>/dev/null && echo "   ✅ Migration 完成" || echo "   ⚠️ 部分 migration 需人工执行（见 scripts/migration_*.sql）"
+
 # 2. 更新 Python 依赖
 echo ""
-echo "📦 [2/4] 更新 Python 依赖..."
+echo "📦 [3/5] 更新 Python 依赖..."
 pip install -r requirements.txt -q 2>/dev/null && echo "   ✅ Python 依赖已更新" || echo "   ⏭  Python 依赖无变更"
 
 # 3. 构建前端
 echo ""
-echo "📦 [3/4] 构建前端..."
+echo "📦 [4/5] 构建前端..."
 cd frontend
 npm install --silent 2>/dev/null
 npm run build
@@ -49,7 +54,7 @@ echo "   ✅ 前端构建完成"
 
 # 4. 重启后端
 echo ""
-echo "📦 [4/4] 重启后端服务..."
+echo "📦 [5/5] 重启后端服务..."
 cd "$PROJECT_DIR"
 
 pkill -f "uvicorn api.main:app" 2>/dev/null || true

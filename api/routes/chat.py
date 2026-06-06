@@ -9,11 +9,11 @@ from typing import Optional
 from pydantic import BaseModel
 
 from fastapi import APIRouter, HTTPException, BackgroundTasks, Header
-from api.models.database import DatabaseManager
+from api.models.database import get_db
 from api.services.tag_extractor import TagExtractor
 
 router = APIRouter()
-db = DatabaseManager()
+db = get_db()
 
 # 对话上下文存储（生产环境建议用 Redis，这里用内存简化）
 chat_contexts: dict = {}
@@ -205,7 +205,7 @@ def _schedule_tag_extraction(
     background_tasks: BackgroundTasks,
     authorization: Optional[str],
     message: str,
-    db_instance: DatabaseManager,
+    db_instance,
 ):
     """调度标签提取任务（仅在用户已登录时执行）"""
     if not authorization:
@@ -228,7 +228,7 @@ def _schedule_tag_extraction(
     background_tasks.add_task(_extract_tags, user_id, message, db_instance)
 
 
-def _extract_tags(user_id: str, message: str, db_instance: DatabaseManager):
+def _extract_tags(user_id: str, message: str, db_instance):
     """后台任务：从消息中提取标签并写入 user_tags"""
     try:
         extractor = TagExtractor.from_database(db_instance)

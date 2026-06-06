@@ -8,10 +8,10 @@ from typing import Optional
 
 from fastapi import APIRouter, Query, HTTPException
 from fastapi.responses import Response
-from api.models.database import DatabaseManager
+from api.models.database import get_db
 
 router = APIRouter()
-db = DatabaseManager()
+db = get_db()
 
 
 @router.get("/reports", tags=["日报"])
@@ -128,17 +128,12 @@ async def get_stats():
 
 @router.get("/home", tags=["首页"])
 async def get_home():
-    """首页聚合接口：一次返回所有首页数据（reports + sources + tags + 最新日报）"""
+    """首页聚合接口：返回报告列表 + 元数据（日报详情由前端按需加载）"""
     reports = db.get_reports(page=1, page_size=7)
     sources = db.get_sources()
     tags = db.get_tags()
-    report_detail = None
-    if reports.get("items"):
-        latest = reports["items"][0]
-        report_detail = db.get_report_by_date(latest["report_date"])
     return {
         "reports": reports,
         "sources": sources,
         "tags": tags,
-        "report_detail": report_detail,
     }

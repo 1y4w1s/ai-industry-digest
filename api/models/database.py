@@ -575,3 +575,15 @@ class DatabaseManager:
             "peak_hour": peak_hour,
             "avg_read_length": avg_read_length,
         }
+
+
+# ── 单例导出 ────────────────────────────
+# 所有路由文件应使用 get_db() 而非直接实例化 DatabaseManager()
+_db_instance = None
+
+def get_db() -> DatabaseManager:
+    """获取全局 DatabaseManager 单例（避免每个请求新建连接池）"""
+    global _db_instance
+    if _db_instance is None:
+        _db_instance = DatabaseManager()
+    return _db_instance

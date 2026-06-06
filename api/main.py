@@ -33,7 +33,21 @@ app.add_middleware(
 )
 
 # 速率限制中间件（每 IP 每分钟最多 120 次）
-rate_limit_store = {}
+rate_limit_store: dict = {}
+RATE_LIMIT_MAX_IPS = 1000  # 最多追踪 1000 个 IP
+RATE_LIMIT_WINDOW = 60     # 1 分钟窗口
+RATE_LIMIT_MAX_REQS = 120  # 每分钟最多 120 次
+
+def _cleanup_rate_limit_store():
+    """定期清理过期的速率限制记录，防止内存泄漏"""
+    global rate_limit_store
+    now = time.time()
+    cutoff = now - RATE_LIMIT_WINDOW
+    rate_limit_store = {
+        ip: [t for t in timestamps if t > cutoff]
+        for ip, timestamps in rate_limit_store.items()
+        if any(t > cutoff for t in timestamps)
+    }
 
 @app.middleware("http")
 async def rate_limit_middleware(request: Request, call_next):
@@ -45,16 +59,22 @@ async def rate_limit_middleware(request: Request, call_next):
         return await call_next(request)
 
     now = time.time()
-    window = 60  # 1 分钟窗口
-    max_requests = 120  # 每分钟最多 120 次（首页加载约 5-6 请求，支持 ~20 次刷新）
+
+    # 每 60 秒清理一次
+    if int(now) % RATE_LIMIT_WINDOW == 0:
+        _cleanup_rate_limit_store()
+
+    # 限制追踪的 IP 数
+    if len(rate_limit_store) > RATE_LIMIT_MAX_IPS:
+        _cleanup_rate_limit_store()
 
     # 清理过期记录
     rate_limit_store[client_ip] = [
         t for t in rate_limit_store.get(client_ip, [])
-        if now - t < window
+        if now - t < RATE_LIMIT_WINDOW
     ]
 
-    if len(rate_limit_store[client_ip]) >= max_requests:
+    if len(rate_limit_store[client_ip]) >= RATE_LIMIT_MAX_REQS:
         return JSONResponse(
             status_code=429,
             content={"detail": "请求过于频繁，请稍后再试", "retry_after": 60}
