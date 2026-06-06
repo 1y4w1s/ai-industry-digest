@@ -163,11 +163,63 @@ nohup /home/ubuntu/.local/bin/uvicorn api.main:app --host 0.0.0.0 --port 8000 > 
 # 手动运行采集
 cd /opt/ai-industry-digest && python3 run.py
 
+# 手动导入文章到知识库
+cd /opt/ai-industry-digest && python3 scripts/import_to_kb.py --all
+
+# 预览要导入的文章（不实际执行）
+cd /opt/ai-industry-digest && python3 scripts/import_to_kb.py --dry-run --all
+
+# 查看知识库导入统计
+cd /opt/ai-industry-digest && python3 scripts/import_to_kb.py --stats
+
 # 重启 Nginx
 sudo systemctl restart nginx
 ```
 
 ---
+
+## 定时任务配置
+
+### 知识库自动导入（推荐）
+
+每天早上 6 点，自动将前一天的日报文章导入知识库：
+
+```bash
+# 编辑 crontab
+crontab -e
+
+# 添加以下行（每天 6:00 导入知识库）
+0 6 * * * cd /opt/ai-industry-digest && python3 scripts/import_to_kb.py >> /opt/ai-industry-digest/kb_import.log 2>&1
+
+# 如果需要每天采集+导入一起跑（每天 8:00）
+0 8 * * * cd /opt/ai-industry-digest && python3 run.py && python3 scripts/import_to_kb.py >> /opt/ai-industry-digest/daily.log 2>&1
+
+# 或者用环境变量控制 run.py 自动导入（每天 8:00）
+0 8 * * * cd /opt/ai-industry-digest && KB_IMPORT=true python3 run.py >> /opt/ai-industry-digest/daily.log 2>&1
+```
+
+### 查看定时任务日志
+
+```bash
+# 知识库导入日志
+tail -f /opt/ai-industry-digest/kb_import.log
+
+# 每日采集+导入日志
+tail -f /opt/ai-industry-digest/daily.log
+```
+
+### 管理定时任务
+
+```bash
+# 查看当前定时任务
+crontab -l
+
+# 编辑定时任务
+crontab -e
+
+# 清空定时任务
+crontab -r
+```
 
 ## 常见问题
 

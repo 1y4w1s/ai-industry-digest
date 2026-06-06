@@ -6,7 +6,7 @@ Signal - 全流程运行入口
 import os
 import sys
 import yaml
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from typing import List
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -165,6 +165,21 @@ def main():
     elapsed = (datetime.utcnow() - start_time).total_seconds()
     print(f"\n⏱ 总耗时: {elapsed:.1f} 秒")
     print("=" * 60)
+
+    # 9. 自动导入知识库（可选，通过环境变量 KB_IMPORT=true 启用）
+    if os.getenv("KB_IMPORT", "").lower() in ("true", "1", "yes"):
+        print("\n" + "=" * 60)
+        print("  📚 正在导入知识库...")
+        print("=" * 60)
+        try:
+            from scripts.import_to_kb import import_articles
+            from_date = (date.today() - timedelta(days=1)).isoformat()
+            to_date = date.today().isoformat()
+            import_articles(from_date=from_date, to_date=to_date)
+        except ImportError as e:
+            print(f"  [WARN] 知识库导入模块加载失败: {e}")
+        except Exception as e:
+            print(f"  [WARN] 知识库导入失败: {e}")
 
 
 if __name__ == "__main__":
