@@ -540,32 +540,73 @@ async def process_document(
 
 
 def read_file_content(file_path: str, file_type: str, strip_html: bool = True) -> str:
-    """读取文件内容"""
+    """读取文件内容（带截断保护，防止大文件超时）"""
+    import time
+    start = time.time()
+    MAX_SECONDS = 15  # 最多处理 15 秒，超过则返回已有内容
+    truncated = False
+
     if file_type == "text" or file_type == "markdown":
         with open(file_path, "r", encoding="utf-8") as f:
             content = f.read()
         if strip_html:
             content = clean_html_content(content)
         return content
+
     elif file_type == "pdf":
-        # 使用 PyMuPDF 读取 PDF
+        # 使用 PyMuPDF 读取 PDF（限制前 10 页）
         try:
             import fitz
             doc = fitz.open(file_path)
+            total_pages = len(doc)
+            max_pages = min(total_pages, 10)
             text = ""
-            for page in doc:
-                text += page.get_text()
-            return text
+            for i in range(max_pages):
+                if time.time() - start > MAX_SECONDS:
+                    truncated = True
+                    break
+                text += doc[i].get_text()
+            doc.close()
+            suffix = f"\n\n[仅显示前 {max_pages}/{total_pages} 页预览]"
+            if truncated:
+                suffix = f"\n\n[处理超时，仅显示前 {i+1}/{total_pages} 页]"
+            return text.strip() + suffix
         except ImportError:
             raise HTTPException(status_code=500, detail="缺少 PyMuPDF 依赖")
+
     elif file_type == "docx":
-        # 使用 python-docx 读取 DOCX
+        # 使用 python-docx 读取 DOCX（提取文本，限制 50 段，图片用占位标记）
         try:
             from docx import Document
             doc = Document(file_path)
-            return "\n".join([para.text for para in doc.paragraphs])
+            paragraphs = []
+            max_paras = 50
+            for i, para in enumerate(doc.paragraphs):
+                if time.time() - start > MAX_SECONDS:
+                    truncated = True
+                    break
+                if i >= max_paras:
+                    truncated = True
+                    break
+                text = para.text.strip()
+                if text:
+                    paragraphs.append(text)
+            # 提取图片占位（仅统计有无，不提取图片本身）
+            inline_count = 0
+            for para in doc.paragraphs[:max_paras]:
+                for run in para.runs:
+                    if run._element.findall('.//{http://schemas.openxmlformats.org/wordprocessingml/2006/main}drawing'):
+                        inline_count += 1
+            text = "\n\n".join(paragraphs)
+            if inline_count > 0:
+                text += f"\n\n[本文档包含 {inline_count} 张图片，文本预览中不显示图片]"
+            if truncated or len(doc.paragraphs) > max_paras:
+                total = len(doc.paragraphs)
+                text += f"\n\n[仅显示前 {max_paras}/{total} 段文本预览]"
+            return text
         except ImportError:
             raise HTTPException(status_code=500, detail="缺少 python-docx 依赖")
+
     else:
         raise HTTPException(status_code=400, detail=f"不支持的文件类型: {file_type}")
 
