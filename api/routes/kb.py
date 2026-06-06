@@ -96,6 +96,12 @@ async def upload_document(
     }
 
 
+@router.get("/health")
+async def health_check():
+    """知识库服务健康检查（公开接口）"""
+    return {"status": "ok", "service": "knowledge-base"}
+
+
 @router.get("/documents")
 async def list_documents(
     page: int = 1,
