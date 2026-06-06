@@ -1,17 +1,12 @@
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
-const TOKEN_KEY = 'signal_auth_token';
-// Demo 用户 token（用于未登录时的演示模式）
-const DEMO_TOKEN = 'demo-user';
 
-function getToken() {
-  try { return localStorage.getItem(TOKEN_KEY); } catch { return null; }
-}
+import { getToken, DEMO_TOKEN, getAuthHeader } from '../lib/token';
 
 async function request(path, options = {}) {
-  const token = getToken() || DEMO_TOKEN;
   const headers = { 'Content-Type': 'application/json', ...options.headers };
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+  const auth = getAuthHeader();
+  if (auth) {
+    headers['Authorization'] = auth;
   }
   const res = await fetch(`${API_BASE}${path}`, { headers, ...options });
   if (res.status === 429) {
@@ -159,4 +154,8 @@ export const api = {
         body: JSON.stringify({ ids }),
       }),
   },
+
+  // 全站搜索
+  searchAll: (q, page = 1, page_size = 50) =>
+    request(`/search?q=${encodeURIComponent(q)}&page=${page}&page_size=${page_size}`),
 };

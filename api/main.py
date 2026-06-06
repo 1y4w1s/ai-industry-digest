@@ -23,10 +23,11 @@ app = FastAPI(
     version="2.0.0",
 )
 
-# CORS 配置
+# CORS 配置（生产环境应收紧为具体域名）
+ALLOWED_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:5173,http://localhost:8000,http://43.139.133.245:8080,https://43.139.133.245:8080").split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -82,6 +83,28 @@ async def rate_limit_middleware(request: Request, call_next):
 
     rate_limit_store[client_ip].append(now)
     return await call_next(request)
+
+
+# ── 健康检查 ────────────────────────────
+
+@app.get("/health")
+async def health():
+    """系统健康检查（数据库连通性 + 基础状态）"""
+    db_ok = False
+    try:
+        from api.models.database import get_db
+        db = get_db()
+        db.client.table("articles").select("id").limit(1).execute()
+        db_ok = True
+    except Exception:
+        db_ok = False
+    
+    return {
+        "status": "ok" if db_ok else "degraded",
+        "version": "2.0.0",
+        "db": "ok" if db_ok else "error",
+        "timestamp": __import__('datetime').datetime.now().isoformat(),
+    }
 
 
 # 注册路由

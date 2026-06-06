@@ -1,17 +1,32 @@
 import { Routes, Route } from 'react-router-dom';
+import { lazy, Suspense } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import Layout from './components/Layout';
 import { ToastProvider } from './components/Toast';
 import Home from './pages/Home';
-import SearchPage from './pages/SearchPage';
-import BookmarksPage from './pages/BookmarksPage';
-import HistoryPage from './pages/HistoryPage';
-import ProfilePage from './pages/ProfilePage';
-import SettingsPage from './pages/SettingsPage';
-import ArchivePage from './pages/ArchivePage';
-import LoginPage from './pages/LoginPage';
-import KnowledgeBasePage from './pages/KnowledgeBasePage';
+
+// 代码分割：非首屏页面按需加载
+const SearchPage = lazy(() => import('./pages/SearchPage'));
+const BookmarksPage = lazy(() => import('./pages/BookmarksPage'));
+const HistoryPage = lazy(() => import('./pages/HistoryPage'));
+const ProfilePage = lazy(() => import('./pages/ProfilePage'));
+const SettingsPage = lazy(() => import('./pages/SettingsPage'));
+const ArchivePage = lazy(() => import('./pages/ArchivePage'));
+const LoginPage = lazy(() => import('./pages/LoginPage'));
+const KnowledgeBasePage = lazy(() => import('./pages/KnowledgeBasePage'));
+
+function SuspenseFallback() {
+  return (
+    <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="flex gap-1.5">
+        <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: 'var(--color-text-label)', animationDelay: '0ms' }} />
+        <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: 'var(--color-text-label)', animationDelay: '150ms' }} />
+        <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: 'var(--color-text-label)', animationDelay: '300ms' }} />
+      </div>
+    </div>
+  );
+}
 
 function PrivateRoute({ children }) {
   const { isLoggedIn, loading } = useAuth();
@@ -32,16 +47,16 @@ function PrivateRoute({ children }) {
 function AppContent() {
   return (
     <Routes>
-      <Route path="/login" element={<LoginPage />} />
+      <Route path="/login" element={<Suspense fallback={<SuspenseFallback />}><LoginPage /></Suspense>} />
       <Route element={<Layout />}>
         <Route index element={<Home />} />
-        <Route path="search" element={<SearchPage />} />
-        <Route path="bookmarks" element={<PrivateRoute><BookmarksPage /></PrivateRoute>} />
-        <Route path="history" element={<PrivateRoute><HistoryPage /></PrivateRoute>} />
-        <Route path="profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
-        <Route path="settings" element={<SettingsPage />} />
-         <Route path="archive" element={<ArchivePage />} />
-         <Route path="knowledge" element={<KnowledgeBasePage />} />
+        <Route path="search" element={<Suspense fallback={<SuspenseFallback />}><SearchPage /></Suspense>} />
+        <Route path="bookmarks" element={<Suspense fallback={<SuspenseFallback />}><PrivateRoute><BookmarksPage /></PrivateRoute></Suspense>} />
+        <Route path="history" element={<Suspense fallback={<SuspenseFallback />}><PrivateRoute><HistoryPage /></PrivateRoute></Suspense>} />
+        <Route path="profile" element={<Suspense fallback={<SuspenseFallback />}><PrivateRoute><ProfilePage /></PrivateRoute></Suspense>} />
+        <Route path="settings" element={<Suspense fallback={<SuspenseFallback />}><SettingsPage /></Suspense>} />
+         <Route path="archive" element={<Suspense fallback={<SuspenseFallback />}><ArchivePage /></Suspense>} />
+         <Route path="knowledge" element={<Suspense fallback={<SuspenseFallback />}><KnowledgeBasePage /></Suspense>} />
       </Route>
     </Routes>
   );

@@ -12,6 +12,7 @@ export default function SearchPage() {
   const goToArticle = (id) => navigate(`/?article=${encodeURIComponent(id)}`);
 
   const [results, setResults] = useState(null);
+  const [kbResults, setKbResults] = useState(null);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
 
@@ -22,12 +23,16 @@ export default function SearchPage() {
   useEffect(() => {
     if (!query) return;
     setLoading(true);
-    api.getArticles({ page, page_size: 50, keyword: query })
+    api.searchAll(query, page, 50)
       .then((data) => {
-        const items = (data.items || []).map((a) => ({ ...a, _imp: a.importance }));
-        setResults({ ...data, items });
+        const items = (data.articles?.items || []).map((a) => ({ ...a, _imp: a.importance }));
+        setResults({ ...data.articles, items });
+        setKbResults(data.kb_documents || null);
       })
-      .catch(() => setResults({ items: [], total: 0, pages: 0 }))
+      .catch(() => {
+        setResults({ items: [], total: 0, pages: 0 });
+        setKbResults(null);
+      })
       .finally(() => setLoading(false));
   }, [query, page]);
 
@@ -83,6 +88,37 @@ export default function SearchPage() {
                   {results.items.map((a) => (
                     <ArticleCard key={a.id || a.url} article={a} onSelect={goToArticle} variant="detailed" keyword={query} />
                   ))}
+                </div>
+              )}
+
+              {/* 知识库搜索结果 */}
+              {!loading && kbResults && kbResults.items?.length > 0 && (
+                <div className="mt-8">
+                  <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--color-text-title)' }}>
+                    知识库文档 ({kbResults.total})
+                  </h3>
+                  <div className="space-y-1">
+                    {kbResults.items.map((doc) => (
+                      <div key={doc.id} className="flex items-center gap-3 px-4 py-3 rounded transition-colors"
+                        style={{ background: 'var(--color-bg-off)', cursor: 'pointer' }}
+                        onClick={() => navigate(`/knowledge?preview=${doc.id}`)}
+                      >
+                        <span style={{
+                          padding: '2px 6px', borderRadius: '3px', fontSize: '10px', flexShrink: 0,
+                          background: 'var(--color-bg-hover)', textTransform: 'uppercase',
+                          color: 'var(--color-text-muted)',
+                        }}>
+                          {doc.file_type === 'markdown' ? 'MD' : doc.file_type?.toUpperCase() || 'TXT'}
+                        </span>
+                        <span className="flex-1 text-sm truncate" style={{ color: 'var(--color-text-title)' }}>
+                          {doc.name}
+                        </span>
+                        <svg className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'var(--color-text-label)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                        </svg>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
 

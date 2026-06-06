@@ -245,6 +245,29 @@ export default function KnowledgeBasePage() {
     return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
   };
 
+  if (loading) {
+    return (
+      <div className="flex-1 flex flex-col min-h-0 animate-fade-in">
+        <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: 'var(--color-border-light)' }}>
+          <div><div className="h-5 w-24 rounded" style={{ background: 'var(--color-bg-hover)' }} /></div>
+        </div>
+        <div className="px-6 py-3 border-b" style={{ borderColor: 'var(--color-border-light)' }}>
+          <div className="h-8 w-full max-w-md rounded" style={{ background: 'var(--color-bg-hover)' }} />
+        </div>
+        <div className="flex-1 p-6">
+          {[1,2,3,4,5].map(i => (
+            <div key={i} className="h-12 mb-2 rounded flex items-center gap-4" style={{ background: 'var(--color-bg-hover)', opacity: 1 - i * 0.15 }}>
+              <div className="h-3 w-3/12 rounded" style={{ background: 'var(--color-bg-white)' }} />
+              <div className="h-3 w-1/12 rounded" style={{ background: 'var(--color-bg-white)' }} />
+              <div className="h-3 w-1/12 rounded" style={{ background: 'var(--color-bg-white)' }} />
+              <div className="h-3 w-1/12 rounded" style={{ background: 'var(--color-bg-white)' }} />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   const totalPages = Math.ceil(total / pageSize);
 
   return (
