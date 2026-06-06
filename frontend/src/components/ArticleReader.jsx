@@ -333,15 +333,15 @@ export default function ArticleReader({ articleId, onBack }) {
           </div>
 
           {/* Right panel: Chat — becomes bottom panel on mobile */}
-          <div className="w-full lg:w-[380px] xl:w-[420px] flex-shrink-0 flex flex-col no-print lg:border-t-0" style={{ background: 'var(--color-bg-off)', borderTop: '1px solid var(--color-border-light)' }}>
+          <div className="w-full lg:w-[400px] xl:w-[440px] flex-shrink-0 flex flex-col no-print lg:border-t-0" style={{ background: 'var(--color-bg-off)', borderTop: '1px solid var(--color-border-light)' }}>
             <ErrorBoundary>
-            <div className="flex flex-col min-h-0 max-h-[40vh] lg:max-h-none">
-              <div className="px-5 pt-4 pb-1 flex-shrink-0"><h3 className="font-semibold text-xs uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>深入对话</h3></div>
-              <div className="flex-1 overflow-y-auto px-5 pb-2 space-y-2.5 min-h-0">
+            <div className="flex flex-col min-h-0 max-h-[40vh] lg:max-h-none" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+              <div className="px-5 pt-4 pb-2 flex-shrink-0"><h3 className="font-semibold text-xs uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>深入对话</h3></div>
+              <div className="flex-1 overflow-y-auto px-4 pb-2 space-y-2.5 min-h-0">
                 {messages.length === 0 && (
-                  <div className="text-center py-4">
-                    <p className="text-xs mb-2" style={{ color: 'var(--color-text-label)' }}>问关于这篇文章的问题</p>
-                    <div className="flex flex-wrap gap-1.5 justify-center">
+                  <div className="flex flex-col items-center justify-center" style={{ minHeight: '260px', padding: '24px 12px' }}>
+                    <p className="text-xs mb-4" style={{ color: 'var(--color-text-label)' }}>问关于这篇文章的问题</p>
+                    <div className="flex flex-col gap-2 w-full max-w-[320px]">
                       {(() => {
                         const tags = article?.tags || [];
                         const prompts = ['总结核心观点', '有哪些技术细节？', '有什么争议？', '这篇文章的局限性？'];
@@ -351,10 +351,10 @@ export default function ArticleReader({ articleId, onBack }) {
                           if (tags.length > 2) prompts.push(`「${tags[2]}」在其中的作用是什么？`);
                           prompts.push(`和同类文章相比，本文的独特之处？`);
                         }
-                        // 去重并限制最多 7 个
                         return [...new Set(prompts)].slice(0, 7).map((q) => (
                           <button key={q} onClick={() => { setChatInput(q); setTimeout(() => chatInputRef.current?.focus(), 100); }}
-                            className="px-2.5 py-1 text-[10px] rounded" style={{ background: 'var(--color-border-light)', color: 'var(--color-text-muted)' }}>{q}</button>
+                            className="w-full text-left px-3.5 py-2.5 text-xs rounded transition-all hover:brightness-95"
+                            style={{ background: 'var(--color-bg-white)', border: '1px solid var(--color-border-light)', color: 'var(--color-text-body)' }}>{q}</button>
                         ));
                       })()}
                     </div>
@@ -381,13 +381,13 @@ export default function ArticleReader({ articleId, onBack }) {
                 )}
                 <div ref={chatEndRef} />
               </div>
-              <div className="p-4" style={{ borderTop: '1px solid var(--color-border-light)' }}>
+              <div className="p-4 pt-3" style={{ borderTop: '1px solid var(--color-border-light)' }}>
                 <form onSubmit={handleChat} className="flex gap-2">
                   <input ref={chatInputRef} type="text" value={chatInput} onChange={(e) => setChatInput(e.target.value)}
-                    placeholder="输入问题..." className="flex-1 px-2.5 py-1.5 text-xs rounded"
-                    style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border-light)', color: 'var(--color-text-body)' }} />
+                    placeholder="输入问题..." className="flex-1 px-3 py-2 text-sm rounded"
+                    style={{ background: 'var(--color-bg-white)', border: '1px solid var(--color-border)', color: 'var(--color-text-body)' }} />
                   <button type="submit" disabled={chatLoading || !chatInput.trim()}
-                    className="px-3 py-1.5 text-xs rounded disabled:opacity-40"
+                    className="px-4 py-2 text-sm rounded disabled:opacity-40 font-medium"
                     style={{ background: 'var(--color-text-title)', color: 'var(--color-bg-white)' }}>发送</button>
                 </form>
               </div>
