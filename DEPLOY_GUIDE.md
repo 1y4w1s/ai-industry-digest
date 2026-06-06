@@ -15,10 +15,28 @@
 
 ## 方式一：一键脚本部署
 
+### 前置配置：确保使用 SSH URL
+
+**首次部署前，请确保仓库使用 SSH 协议**（GitHub 不再支持 HTTPS 密码认证）：
+
+```bash
+# 查看当前远程配置
+cd /opt/ai-industry-digest && git remote -v
+
+# 如果显示 https://...，需要改为 SSH URL
+git remote set-url origin git@github.com:1y4w1s/ai-industry-digest.git
+
+# 验证 SSH 连接
+ssh -T git@github.com
+# 成功会显示: Hi 1y4w1s! You've successfully authenticated...
+```
+
+### 一键部署命令
+
 在服务器上执行一条命令即可完成整套部署流程：
 
 ```bash
-cd /opt/ai-industry-digest && bash scripts/deploy.sh
+cd /opt/ai-industry-digest && git pull origin master && bash scripts/deploy.sh
 ```
 
 脚本会自动执行：
@@ -169,6 +187,38 @@ A: 检查前端依赖：
 cd /opt/ai-industry-digest/frontend
 npm install
 npm run build
+```
+
+### Q: git pull 提示 Invalid username or token / Password authentication failed
+
+A: GitHub 不再支持 HTTPS 密码认证，需要改用 SSH 协议：
+
+```bash
+# 查看当前远程配置
+git remote -v
+
+# 如果显示 https://...，改为 SSH URL
+git remote set-url origin git@github.com:1y4w1s/ai-industry-digest.git
+
+# 验证 SSH 连接
+ssh -T git@github.com
+# 成功会显示: Hi 1y4w1s! You've successfully authenticated...
+```
+
+### Q: SSH 连接失败 (Permission denied)
+
+A: 检查 SSH 密钥是否正确配置：
+
+```bash
+# 检查是否有 SSH 密钥
+ls -la ~/.ssh/
+
+# 如果没有密钥，生成新的
+ssh-keygen -t ed25519 -C "your_email@example.com"
+
+# 将公钥添加到 GitHub
+cat ~/.ssh/id_ed25519.pub
+# 复制输出，粘贴到 GitHub → Settings → SSH and GPG keys
 ```
 
 ### Q: 自动部署没有触发

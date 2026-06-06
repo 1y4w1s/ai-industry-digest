@@ -4,11 +4,12 @@ Signal - AI 处理器
 支持批处理优化
 """
 
+import asyncio
 import json
 import os
 import time
-from typing import List, Optional
-from dataclasses import dataclass, field
+from typing import List, Optional, Dict, Any
+from dataclasses import dataclass
 
 import httpx
 from dotenv import load_dotenv
@@ -304,3 +305,156 @@ class AIProcessor:
             return response["choices"][0]["message"]["content"].strip()
         except (KeyError, IndexError):
             return "今日概览生成失败。"
+
+    # ── 知识抽取（用于知识库） ──────────────────────────
+
+    async def extract_knowledge(self, content: str) -> tuple:
+        """从文本中提取实体和关系（知识图谱构建）
+        
+        Returns:
+            (entities, relations): 实体列表和关系列表
+        """
+        # 实体识别
+        entities = await self._extract_entities(content)
+        
+        # 关系抽取（如果有实体）
+        relations = []
+        if entities:
+            relations = await self._extract_relations(content, entities)
+        
+        return entities, relations
+
+    async def _extract_entities(self, content: str) -> List[Dict[str, str]]:
+        """使用 DeepSeek API 进行实体识别（NER）"""
+        prompt = f"""从以下文本中识别出实体，并进行分类。
+
+文本：
+{content[:3000]}  # 限制长度
+
+实体类型及示例：
+- concept: 概念（如：大语言模型、机器学习、人工智能）
+- technology: 技术（如：Transformer、GPT、RAG）
+- person: 人名（如：Sam Altman、吴恩达）
+- organization: 机构（如：OpenAI、Google、阿里巴巴）
+- product: 产品（如：GPT-4、Claude、文心一言）
+
+请以 JSON 数组格式输出，不要包含其他文字：
+[
+  {{"name": "实体名", "type": "类型"}},
+  ...
+]
+
+只返回 JSON，不要其他内容。"""
+
+        response = await self._call_api_async(prompt)
+        if response is None:
+            return []
+
+        try:
+            content = response["choices"][0]["message"]["content"]
+            content = content.strip()
+            if content.startswith("```json"):
+                content = content[7:]
+            if content.startswith("```"):
+                content = content[3:]
+            if content.endswith("```"):
+                content = content[:-3]
+            content = content.strip()
+            
+            data = json.loads(content)
+            if isinstance(data, list):
+                return data
+            return []
+        except (json.JSONDecodeError, KeyError, IndexError):
+            return []
+
+    async def _extract_relations(self, content: str, entities: List[Dict[str, str]]) -> List[Dict[str, str]]:
+        """使用 DeepSeek API 进行关系抽取（RE）"""
+        entity_names = [e["name"] for e in entities]
+        
+        prompt = f"""从以下文本中抽取实体之间的关系。
+
+文本：
+{content[:3000]}
+
+已识别实体：
+{", ".join(entity_names)}
+
+关系类型及说明：
+- is_a: A 是一种 B（如：GPT-4 is_a 大语言模型）
+- part_of: A 是 B 的一部分
+- based_on: A 基于 B（如：GPT 基于 Transformer）
+- related_to: A 与 B 相关
+- author_of: A 是 B 的作者
+- published_by: A 由 B 发布
+- developed_by: A 由 B 开发
+
+请以 JSON 数组格式输出，不要包含其他文字：
+[
+  {{"source": "实体A", "target": "实体B", "relation": "关系类型", "label": "中文标签"}},
+  ...
+]
+
+只返回 JSON，不要其他内容。"""
+
+        response = await self._call_api_async(prompt)
+        if response is None:
+            return []
+
+        try:
+            content = response["choices"][0]["message"]["content"]
+            content = content.strip()
+            if content.startswith("```json"):
+                content = content[7:]
+            if content.startswith("```"):
+                content = content[3:]
+            if content.endswith("```"):
+                content = content[:-3]
+            content = content.strip()
+            
+            data = json.loads(content)
+            if isinstance(data, list):
+                return data
+            return []
+        except (json.JSONDecodeError, KeyError, IndexError):
+            return []
+
+    async def _call_api_async(self, prompt: str, max_retries: int = 2) -> Optional[dict]:
+        """异步调用 DeepSeek API，带重试机制"""
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json"
+        }
+
+        payload = {
+            "model": self.model,
+            "messages": [
+                {"role": "system", "content": "你是一个专业的知识图谱构建助手，擅长实体识别和关系抽取。"},
+                {"role": "user", "content": prompt}
+            ],
+            "temperature": 0.3,
+            "max_tokens": 2048
+        }
+
+        last_error = None
+        for attempt in range(max_retries + 1):
+            try:
+                if attempt > 0:
+                    wait = 2 ** attempt
+                    await asyncio.sleep(wait)
+
+                async with httpx.AsyncClient(timeout=60) as client:
+                    resp = await client.post(self.base_url, headers=headers, json=payload)
+                    resp.raise_for_status()
+                    return resp.json()
+
+            except httpx.TimeoutException as e:
+                last_error = f"超时: {e}"
+            except httpx.HTTPStatusError as e:
+                last_error = f"HTTP {e.response.status_code}"
+                if e.response.status_code == 401:
+                    return None
+            except Exception as e:
+                last_error = str(e)
+
+        return None
