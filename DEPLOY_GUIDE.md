@@ -182,20 +182,17 @@ sudo systemctl restart nginx
 
 ### 知识库自动导入（推荐）
 
-每天早上 6 点，自动将前一天的日报文章导入知识库：
+每天凌晨 3:00 执行完整流程（采集 → AI 处理 → 日报生成 → 知识库导入），早起的人打开页面时数据已是最新的：
 
 ```bash
 # 编辑 crontab
 crontab -e
 
-# 添加以下行（每天 6:00 导入知识库）
-0 6 * * * cd /opt/ai-industry-digest && python3 scripts/import_to_kb.py >> /opt/ai-industry-digest/kb_import.log 2>&1
+# 推荐：每天凌晨 3:00 全流程 + 知识库自动导入（一条命令搞定）
+0 3 * * * cd /opt/ai-industry-digest && KB_IMPORT=true python3 run.py >> /opt/ai-industry-digest/daily.log 2>&1
 
-# 如果需要每天采集+导入一起跑（每天 8:00）
-0 8 * * * cd /opt/ai-industry-digest && python3 run.py && python3 scripts/import_to_kb.py >> /opt/ai-industry-digest/daily.log 2>&1
-
-# 或者用环境变量控制 run.py 自动导入（每天 8:00）
-0 8 * * * cd /opt/ai-industry-digest && KB_IMPORT=true python3 run.py >> /opt/ai-industry-digest/daily.log 2>&1
+# 如果只需要知识库导入（不采集），每天 4:00 执行
+0 4 * * * cd /opt/ai-industry-digest && python3 scripts/import_to_kb.py >> /opt/ai-industry-digest/kb_import.log 2>&1
 ```
 
 ### 查看定时任务日志
