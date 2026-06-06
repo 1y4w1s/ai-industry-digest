@@ -60,10 +60,13 @@ async def upload_document(
             detail=f"不支持的文件类型，支持：{', '.join(SUPPORTED_EXTENSIONS.keys())}"
         )
 
-    # 验证文件大小
+    # 验证文件大小（同步读取文件内容）
     file_size = 0
     content = b""
-    async for chunk in file.file:
+    while True:
+        chunk = file.file.read(8192)
+        if not chunk:
+            break
         file_size += len(chunk)
         content += chunk
         if file_size > MAX_FILE_SIZE:
