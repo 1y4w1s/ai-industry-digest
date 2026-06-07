@@ -5,7 +5,16 @@ import {
   isLoggedIn, isTokenExpiringSoon, refreshAccessToken,
   clearToken,
 } from '../lib/token';
-import { supabase } from '../lib/supabase';
+
+// 延迟导入 supabase（201KB SDK，仅在需要 token 刷新时才加载）
+let _supabaseClient = null;
+async function getSupabase() {
+  if (!_supabaseClient) {
+    const { supabase } = await import('../lib/supabase');
+    _supabaseClient = supabase;
+  }
+  return _supabaseClient;
+}
 
 async function request(path, options = {}) {
   const headers = { 'Content-Type': 'application/json', ...options.headers };
@@ -17,7 +26,7 @@ async function request(path, options = {}) {
   // 预判：token 即将过期 → 提前刷新（用户无感知）
   if (isLoggedIn() && isTokenExpiringSoon()) {
     console.log('[API] Token 即将过期，提前刷新...');
-    const newToken = await refreshAccessToken(supabase);
+    const newToken = await refreshAccessToken(await getSupabase());
     if (newToken) {
       headers['Authorization'] = `Bearer ${newToken}`;
     }
@@ -28,7 +37,7 @@ async function request(path, options = {}) {
   // 401 拦截：已登录用户 → 尝试刷新 token 后重试
   if (res.status === 401 && isLoggedIn()) {
     console.log('[API] 收到 401，尝试刷新 token...');
-    const newToken = await refreshAccessToken(supabase);
+    const newToken = await refreshAccessToken(await getSupabase());
 
     if (newToken) {
       // 刷新成功 → 重试原请求

@@ -210,8 +210,9 @@ class DatabaseManager:
         # 如果有关联文章 ID，查询文章详情并按重要性分组
         article_ids = report.get("article_ids", [])
         if article_ids:
+            # 只选列表需要的字段，排除 raw_content（每篇 ~50KB，首页不需要）
             raw = self.client.table("articles") \
-                .select("*") \
+                .select("id, title, url, source_name, summary, tags, importance, importance_reason, published_at, source_refs") \
                 .in_("id", article_ids) \
                 .execute()
             raw_articles = raw.data or []

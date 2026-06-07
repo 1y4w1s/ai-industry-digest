@@ -15,11 +15,15 @@ export default function RecommendationWidget({ onNavigate }) {
 
   useEffect(() => {
     if (!isLoggedIn || closed) return;
-    setLoading(true);
-    api.getRecommend(5).then((data) => {
-      setItems(data.items || []);
-      setReason(data.reason || '');
-    }).catch(() => {}).finally(() => setLoading(false));
+    // 延迟请求推荐（不阻塞首屏渲染）
+    const timer = setTimeout(() => {
+      setLoading(true);
+      api.getRecommend(5).then((data) => {
+        setItems(data.items || []);
+        setReason(data.reason || '');
+      }).catch(() => {}).finally(() => setLoading(false));
+    }, 3000);
+    return () => clearTimeout(timer);
   }, [isLoggedIn, closed]);
 
   const dismiss = () => {
