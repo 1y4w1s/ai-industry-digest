@@ -244,3 +244,6 @@ export const api = {
   searchAll: (q, page = 1, page_size = 50) =>
     request(`/search?q=${encodeURIComponent(q)}&page=${page}&page_size=${page_size}`),
 };
+
+// Dev/test: 暴露到全局方便 DevTools 调试
+if (typeof window !== 'undefined') window.__api = api;
