@@ -76,10 +76,10 @@ def verify_token(token: str) -> Optional[str]:
         if user_id:
             return user_id
     except jwt.ExpiredSignatureError:
-        pass  # token 过期
-    except jwt.InvalidAudienceError:
-        pass  # audience 不对
-    except Exception:
-        pass  # 签名不对或其他错误
+        print(f"[JWT] Token 过期: {token[:32]}...")
+    except jwt.InvalidAudienceError as e:
+        print(f"[JWT] Audience 验证失败: {e}")
+    except Exception as e:
+        print(f"[JWT] 验证失败: {type(e).__name__}: {str(e)[:100]}")
     
     return None  # 验证失败
