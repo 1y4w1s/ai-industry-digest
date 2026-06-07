@@ -33,55 +33,84 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 速率限制中间件（每 IP 每分钟最多 120 次）
-rate_limit_store: dict = {}
-RATE_LIMIT_MAX_IPS = 1000  # 最多追踪 1000 个 IP
-RATE_LIMIT_WINDOW = 60     # 1 分钟窗口
-RATE_LIMIT_MAX_REQS = 120  # 每分钟最多 120 次
+# ── 速率限制 ──────────────────────────────
+# 双层限流策略：
+#   公共 API（/api/* 非 auth）→ 120 req/min/IP（防止爬虫）
+#   用户操作（/api/auth/*）   → 30 req/min/IP（收藏/历史写操作）
+#   登录（POST /api/auth/login）→ 不在本后端，由 Supabase Auth 直接处理
 
-def _cleanup_rate_limit_store():
-    """定期清理过期的速率限制记录，防止内存泄漏"""
-    global rate_limit_store
+rate_limit_store: dict = {}   # 普通 API
+auth_limit_store: dict = {}   # auth 路径（更严格）
+
+# 公共 API 限流参数
+RATE_LIMIT_MAX_IPS = 1000
+RATE_LIMIT_WINDOW = 60
+RATE_LIMIT_MAX_REQS = 120
+
+# Auth 路径限流参数
+AUTH_LIMIT_MAX_REQS = 30   # 每分钟最多 30 次
+
+
+def _cleanup_rate_limit():
+    """清理所有限流存储，防止内存泄漏"""
+    global rate_limit_store, auth_limit_store
     now = time.time()
     cutoff = now - RATE_LIMIT_WINDOW
+    
     rate_limit_store = {
-        ip: [t for t in timestamps if t > cutoff]
-        for ip, timestamps in rate_limit_store.items()
-        if any(t > cutoff for t in timestamps)
+        ip: [t for t in ts if t > cutoff]
+        for ip, ts in rate_limit_store.items()
+        if any(t > cutoff for t in ts)
     }
+    auth_limit_store = {
+        ip: [t for t in ts if t > cutoff]
+        for ip, ts in auth_limit_store.items()
+        if any(t > cutoff for t in ts)
+    }
+
 
 @app.middleware("http")
 async def rate_limit_middleware(request: Request, call_next):
     client_ip = request.client.host if request.client else "unknown"
     path = request.url.path
 
-    # 不限制静态文件和 docs
+    # 放行：静态文件、文档、代理
     if path.startswith("/test/") or path.startswith("/docs") or path.startswith("/openapi") or path.startswith("/api/proxy"):
         return await call_next(request)
 
     now = time.time()
 
-    # 每 60 秒清理一次
+    # 定期清理
     if int(now) % RATE_LIMIT_WINDOW == 0:
-        _cleanup_rate_limit_store()
+        _cleanup_rate_limit()
+    if len(rate_limit_store) > RATE_LIMIT_MAX_IPS or len(auth_limit_store) > RATE_LIMIT_MAX_IPS:
+        _cleanup_rate_limit()
 
-    # 限制追踪的 IP 数
-    if len(rate_limit_store) > RATE_LIMIT_MAX_IPS:
-        _cleanup_rate_limit_store()
+    # 选择限流策略
+    if path.startswith("/api/auth/"):
+        # Auth 路径 — 更严格
+        store = auth_limit_store
+        max_reqs = AUTH_LIMIT_MAX_REQS
+        err_msg = "操作过于频繁，请稍后再试"
+    elif path.startswith("/api/"):
+        # 普通 API
+        store = rate_limit_store
+        max_reqs = RATE_LIMIT_MAX_REQS
+        err_msg = "请求过于频繁，请稍后再试"
+    else:
+        # 非 API 路径不限流
+        return await call_next(request)
 
-    # 清理过期记录
-    rate_limit_store[client_ip] = [
-        t for t in rate_limit_store.get(client_ip, [])
-        if now - t < RATE_LIMIT_WINDOW
-    ]
+    # 清理当前 IP 过期记录
+    store[client_ip] = [t for t in store.get(client_ip, []) if now - t < RATE_LIMIT_WINDOW]
 
-    if len(rate_limit_store[client_ip]) >= RATE_LIMIT_MAX_REQS:
+    if len(store[client_ip]) >= max_reqs:
         return JSONResponse(
             status_code=429,
-            content={"detail": "请求过于频繁，请稍后再试", "retry_after": 60}
+            content={"detail": err_msg, "retry_after": 60}
         )
 
-    rate_limit_store[client_ip].append(now)
+    store[client_ip].append(now)
     return await call_next(request)
 
 
