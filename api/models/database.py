@@ -335,7 +335,7 @@ class DatabaseManager:
         today = date.today().isoformat()
         try:
             existing = self.client.table("reading_history") \
-                .select("id, read_percent") \
+                .select("id") \
                 .eq("user_id", user_id) \
                 .eq("article_id", article_id) \
                 .gte("read_at", today) \
@@ -343,20 +343,20 @@ class DatabaseManager:
 
             if existing.data:
                 existing_id = existing.data[0]["id"]
-                existing_pct = existing.data[0].get("read_percent")
-                if read_percent is not None and (
-                    existing_pct is None or read_percent > existing_pct
-                ):
-                    try:
-                        self.client.table("reading_history") \
-                            .update({"read_percent": read_percent, "read_at": datetime.now().isoformat()}) \
-                            .eq("id", existing_id) \
-                            .execute()
-                    except Exception:
-                        self.client.table("reading_history") \
-                            .update({"read_at": datetime.now().isoformat()}) \
-                            .eq("id", existing_id) \
-                            .execute()
+                try:
+                    update_data = {}
+                    if read_percent is not None:
+                        update_data["read_percent"] = read_percent
+                    update_data["read_at"] = datetime.now().isoformat()
+                    self.client.table("reading_history") \
+                        .update(update_data) \
+                        .eq("id", existing_id) \
+                        .execute()
+                except Exception:
+                    self.client.table("reading_history") \
+                        .update({"read_at": datetime.now().isoformat()}) \
+                        .eq("id", existing_id) \
+                        .execute()
                 return False
 
             data = {"user_id": user_id, "article_id": article_id}
