@@ -4,14 +4,42 @@ Signal - 内容接口路由
 """
 
 import httpx
+import time
 from typing import Optional
 
 from fastapi import APIRouter, Query, HTTPException
-from fastapi.responses import Response
+from fastapi.responses import Response, JSONResponse
 from api.models.database import get_db
 
 router = APIRouter()
 db = get_db()
+
+# ── 首页缓存（数据每天仅更新 3 次，缓存 10 分钟足够）───
+_home_cache = None
+_home_cache_time = 0
+_HOME_CACHE_TTL = 600  # 10 秒
+
+def _get_home_cached():
+    """获取缓存的首页数据（10 分钟 TTL）"""
+    global _home_cache, _home_cache_time
+    now = time.time()
+    if _home_cache is None or now - _home_cache_time > _HOME_CACHE_TTL:
+        reports = db.get_reports(page=1, page_size=7)
+        sources = db.get_sources()
+        tags = db.get_tags()
+        # 预取首日报详情，消除前端瀑布请求
+        report_detail = None
+        if reports.get("items"):
+            latest = reports["items"][0]
+            report_detail = db.get_report_by_date(latest["report_date"])
+        _home_cache = {
+            "reports": reports,
+            "sources": sources,
+            "tags": tags,
+            "report_detail": report_detail,
+        }
+        _home_cache_time = now
+    return _home_cache
 
 
 @router.get("/reports", tags=["日报"])
@@ -128,15 +156,8 @@ async def get_stats():
 
 @router.get("/home", tags=["首页"])
 async def get_home():
-    """首页聚合接口：返回报告列表 + 元数据（日报详情由前端按需加载）"""
-    reports = db.get_reports(page=1, page_size=7)
-    sources = db.get_sources()
-    tags = db.get_tags()
-    return {
-        "reports": reports,
-        "sources": sources,
-        "tags": tags,
-    }
+    """首页聚合接口（10 分钟缓存）：报告列表 + 首日报详情 + 元数据"""
+    return _get_home_cached()
 
 
 @router.get("/search", tags=["搜索"])

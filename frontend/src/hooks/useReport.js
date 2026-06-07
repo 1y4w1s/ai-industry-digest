@@ -17,7 +17,7 @@ export function useReport() {
   const [fromCache, setFromCache] = useState(false);
   const [cacheAge, setCacheAge] = useState(null);
 
-  // Single aggregated fetch: reports + sources + tags + latest report in 1 request
+  // Single aggregated fetch: reports + sources + tags + first report detail in 1 request
   useEffect(() => {
     setLoading(true);
     setFromCache(false);
@@ -40,7 +40,10 @@ export function useReport() {
           setSelectedDate(reportsList[0].report_date);
         }
 
-        setReport(data.report_detail);
+        // 使用服务端预取的首日报详情，避免瀑布请求
+        if (data.report_detail) {
+          setReport(data.report_detail);
+        }
 
         // Cache successful response
         localStorage.setItem(CACHE_KEY, JSON.stringify({

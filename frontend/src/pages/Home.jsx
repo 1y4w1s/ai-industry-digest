@@ -16,6 +16,7 @@ export default function Home() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const articleId = searchParams.get('article');
+  const [visibleCount, setVisibleCount] = useState(10);   // 移动端分批渲染：首次只展示 10 篇
 
   const goToArticle = (id) => navigate(`/?article=${encodeURIComponent(id)}`);
 
@@ -104,7 +105,7 @@ export default function Home() {
                 <DateNav
                   reports={reports}
                   selectedDate={selectedDate}
-                  onSelect={(date) => { setSelectedDate(date); setPage(1); }}
+                  onSelect={(date) => { setSelectedDate(date); setPage(1); setVisibleCount(10); }}
                 />
               </>
             )}
@@ -123,9 +124,22 @@ export default function Home() {
                 {heroArticle && <HeroArticle article={heroArticle} onSelect={goToArticle} />}
                 {Object.entries(filteredGroups)
                   .sort(([, a], [, b]) => b.filter((x) => x._imp === 'high').length - a.filter((x) => x._imp === 'high').length)
+                  .slice(0, visibleCount)
                   .map(([src, arts]) => (
                     <ArticleGroup key={src} sourceName={src} articles={arts} onSelectArticle={goToArticle} />
                   ))}
+                {/* 加载更多 */}
+                {Object.entries(filteredGroups).length > visibleCount && (
+                  <div className="text-center mt-4 no-print">
+                    <button
+                      onClick={() => setVisibleCount((c) => c + 10)}
+                      className="w-full py-2.5 text-xs rounded transition-colors"
+                      style={{ background: 'var(--color-bg-off)', color: 'var(--color-text-muted)', border: '1px solid var(--color-border-light)', cursor: 'pointer' }}
+                    >
+                      加载更多（{Object.entries(filteredGroups).length - visibleCount} 个来源）
+                    </button>
+                  </div>
+                )}
                 {articles.length === 0 && <div className="text-center py-16">
                   <div style={{ fontSize: '14px', color: 'var(--color-text-title)', marginBottom: '4px' }}>
                     {activeFilterCount > 0 ? '暂无匹配的文章' : '暂无内容'}
