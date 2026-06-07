@@ -16,6 +16,36 @@ async function getSupabase() {
   return _supabaseClient;
 }
 
+// ── 全局刷新锁 ──
+// 多个并发请求同时遇到 401 时，只有第一个去调 refreshSession，
+// 其他请求排队等同一个结果，避免重复刷新 + 读写竞争
+let _refreshPromise = null;
+
+async function _doRefresh() {
+  // 如果已经有刷新在进行中，直接复用
+  if (_refreshPromise) {
+    console.log('[API] 刷新正在进行中，等待...');
+    return _refreshPromise;
+  }
+
+  _refreshPromise = (async () => {
+    try {
+      const newToken = await refreshAccessToken(await getSupabase());
+      if (newToken) {
+        console.log('[API] Token 刷新成功');
+        return newToken;
+      }
+      console.warn('[API] Token 刷新失败');
+      return null;
+    } finally {
+      // 刷新完成后释放锁
+      _refreshPromise = null;
+    }
+  })();
+
+  return _refreshPromise;
+}
+
 async function request(path, options = {}) {
   const headers = { 'Content-Type': 'application/json', ...options.headers };
   const auth = getAuthHeader();
@@ -26,7 +56,7 @@ async function request(path, options = {}) {
   // 预判：token 即将过期 → 提前刷新（用户无感知）
   if (isLoggedIn() && isTokenExpiringSoon()) {
     console.log('[API] Token 即将过期，提前刷新...');
-    const newToken = await refreshAccessToken(await getSupabase());
+    const newToken = await _doRefresh();
     if (newToken) {
       headers['Authorization'] = `Bearer ${newToken}`;
     }
@@ -37,15 +67,21 @@ async function request(path, options = {}) {
   // 401 拦截：已登录用户 → 尝试刷新 token 后重试
   if (res.status === 401 && isLoggedIn()) {
     console.log('[API] 收到 401，尝试刷新 token...');
-    const newToken = await refreshAccessToken(await getSupabase());
+    const newToken = await _doRefresh();
 
     if (newToken) {
       // 刷新成功 → 重试原请求
       headers['Authorization'] = `Bearer ${newToken}`;
-      // options.body 是 ReadableStream（JSON 字符串），重试时需重新设置
-      // 简单场景下重新 fetch
       res = await fetch(`${API_BASE}${path}`, { headers, ...options });
       console.log('[API] Token 刷新成功，请求重试完成');
+
+      // 二次防御：重试后还是 401 → session 彻底失效
+      if (res.status === 401) {
+        console.warn('[API] 重试后仍然 401，session 已失效，跳转登录');
+        clearToken();
+        window.location.href = '/login';
+        throw new Error('登录已过期，请重新登录');
+      }
     } else {
       // 刷新失败 → 强制登出
       console.warn('[API] Token 刷新失败，跳转登录页');
