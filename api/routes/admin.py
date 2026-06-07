@@ -8,30 +8,21 @@ from typing import Dict, Any, List
 from datetime import datetime, timedelta
 
 from api.services.cache import cache
-from api.services.jwt_verify import verify_token
+from api.services.admin_auth import get_current_admin
 from api.models.database import get_db
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 router = APIRouter(prefix="/admin", tags=["admin"])
-security = HTTPBearer()
 db = get_db()
-
-
-async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> str:
-    """获取当前用户 ID"""
-    token = credentials.credentials
-    user_id = verify_token(token)
-    if not user_id:
-        raise HTTPException(status_code=401, detail="无效的认证令牌")
-    return user_id
 
 
 # ── 系统统计 ─────────────────────────────────
 
 
 @router.get("/stats/overview")
-async def get_stats_overview() -> Dict[str, Any]:
-    """获取系统概览统计"""
+async def get_stats_overview(
+    admin_id: str = Depends(get_current_admin)
+) -> Dict[str, Any]:
+    """获取系统概览统计（需要管理员权限）"""
     # 文章总数
     article_count = db.get_article_count()
     
@@ -74,8 +65,11 @@ async def get_stats_overview() -> Dict[str, Any]:
 
 
 @router.get("/stats/users")
-async def get_user_stats(period: str = "30d") -> Dict[str, Any]:
-    """获取用户增长趋势"""
+async def get_user_stats(
+    period: str = "30d",
+    admin_id: str = Depends(get_current_admin)
+) -> Dict[str, Any]:
+    """获取用户增长趋势（需要管理员权限）"""
     # 解析时间范围
     days = int(period.replace("d", ""))
     start_date = datetime.now() - timedelta(days=days)
@@ -105,8 +99,10 @@ async def get_user_stats(period: str = "30d") -> Dict[str, Any]:
 
 
 @router.get("/stats/articles")
-async def get_article_stats() -> Dict[str, Any]:
-    """获取文章统计"""
+async def get_article_stats(
+    admin_id: str = Depends(get_current_admin)
+) -> Dict[str, Any]:
+    """获取文章统计（需要管理员权限）"""
     # 来源分布
     sources = db.get_sources()
     source_dist = []
@@ -137,8 +133,11 @@ async def get_article_stats() -> Dict[str, Any]:
 
 
 @router.get("/stats/articles/popular")
-async def get_popular_articles(limit: int = 10) -> List[Dict[str, Any]]:
-    """获取热门文章（按阅读次数）"""
+async def get_popular_articles(
+    limit: int = 10,
+    admin_id: str = Depends(get_current_admin)
+) -> List[Dict[str, Any]]:
+    """获取热门文章（需要管理员权限）"""
     # 统计每篇文章的阅读次数
     result = db.client.table("reading_history") \
         .select("article_id, articles(id, title, source_name)") \
@@ -175,20 +174,27 @@ async def get_popular_articles(limit: int = 10) -> List[Dict[str, Any]]:
 
 
 @router.get("/cache/stats")
-async def get_cache_stats() -> Dict[str, Any]:
-    """获取缓存统计信息"""
+async def get_cache_stats(
+    admin_id: str = Depends(get_current_admin)
+) -> Dict[str, Any]:
+    """获取缓存统计信息（需要管理员权限）"""
     return cache.get_stats()
 
 
 @router.post("/cache/clear")
-async def clear_cache(pattern: str = "*", user_id: str = Depends(get_current_user)) -> Dict[str, Any]:
-    """清除缓存"""
+async def clear_cache(
+    pattern: str = "*",
+    admin_id: str = Depends(get_current_admin)
+) -> Dict[str, Any]:
+    """清除缓存（需要管理员权限）"""
     deleted = cache.delete_pattern(pattern)
     return {"deleted": deleted}
 
 
 @router.post("/cache/reset-stats")
-async def reset_cache_stats(user_id: str = Depends(get_current_user)) -> Dict[str, str]:
-    """重置缓存统计"""
+async def reset_cache_stats(
+    admin_id: str = Depends(get_current_admin)
+) -> Dict[str, str]:
+    """重置缓存统计（需要管理员权限）"""
     cache.reset_stats()
     return {"status": "ok"}
