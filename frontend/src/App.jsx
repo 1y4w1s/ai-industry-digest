@@ -15,6 +15,7 @@ const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const ArchivePage = lazy(() => import('./pages/ArchivePage'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const KnowledgeBasePage = lazy(() => import('./pages/KnowledgeBasePage'));
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 
 function SuspenseFallback() {
   return (
@@ -57,6 +58,7 @@ function AppContent() {
         <Route path="settings" element={<Suspense fallback={<SuspenseFallback />}><SettingsPage /></Suspense>} />
          <Route path="archive" element={<Suspense fallback={<SuspenseFallback />}><ArchivePage /></Suspense>} />
          <Route path="knowledge" element={<Suspense fallback={<SuspenseFallback />}><KnowledgeBasePage /></Suspense>} />
+         <Route path="admin" element={<Suspense fallback={<SuspenseFallback />}><PrivateRoute><AdminDashboard /></PrivateRoute></Suspense>} />
       </Route>
     </Routes>
   );

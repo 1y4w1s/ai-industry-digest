@@ -6,7 +6,23 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BarChart3, Users, FileText, Bookmark, TrendingUp, Activity } from 'lucide-react';
-import { client } from '../api/client';
+import { getToken } from '../lib/token';
+
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
+
+async function adminRequest(path) {
+  const token = getToken();
+  const res = await fetch(`${API_BASE}${path}`, {
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+    },
+  });
+  if (!res.ok) {
+    throw new Error(`请求失败: ${res.status}`);
+  }
+  return res.json();
+}
 
 // 统计卡片组件
 function StatsCard({ title, value, icon: Icon, color }) {
@@ -100,9 +116,9 @@ export default function AdminDashboard() {
 
     // 获取统计数据
     Promise.all([
-      client.get('/api/admin/stats/overview'),
-      client.get('/api/admin/stats/articles/popular?limit=10'),
-      client.get('/api/admin/stats/articles'),
+      adminRequest('/admin/stats/overview'),
+      adminRequest('/admin/stats/articles/popular?limit=10'),
+      adminRequest('/admin/stats/articles'),
     ])
       .then(([overview, popular, articles]) => {
         setStats(overview);
