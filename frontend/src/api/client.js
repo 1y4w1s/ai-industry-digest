@@ -3,7 +3,6 @@ const API_BASE = import.meta.env.VITE_API_URL || '/api';
 import {
   getToken, DEMO_TOKEN, getAuthHeader,
   isLoggedIn, isTokenExpiringSoon, refreshAccessToken,
-  clearToken,
 } from '../lib/token';
 
 // 延迟导入 supabase（201KB SDK，仅在需要 token 刷新时才加载）
@@ -75,19 +74,16 @@ async function request(path, options = {}) {
       res = await fetch(`${API_BASE}${path}`, { headers, ...options });
       console.log('[API] Token 刷新成功，请求重试完成');
 
-      // 二次防御：重试后还是 401 → session 彻底失效
+      // 重试后仍然 401 → session 确实已失效
+      // 不清除 token、不跳登录，让调用方自行处理
       if (res.status === 401) {
-        console.warn('[API] 重试后仍然 401，session 已失效，跳转登录');
-        clearToken();
-        window.location.href = '/login';
-        throw new Error('登录已过期，请重新登录');
+        console.warn('[API] 重试后仍然 401，session 已失效');
       }
     } else {
-      // 刷新失败 → 强制登出
-      console.warn('[API] Token 刷新失败，跳转登录页');
-      clearToken();
-      window.location.href = '/login';
-      throw new Error('登录已过期，请重新登录');
+      // 刷新失败 → 不清除 token，不跳登录
+      // token 留在 localStorage，用户仍可浏览公开内容
+      // 调用方自行决定是否提示用户
+      console.warn('[API] Token 刷新失败，保留当前 token，继续以未登录状态浏览');
     }
   }
 

@@ -193,7 +193,7 @@ export default function ArticleReader({ articleId, onBack }) {
 
   const toggleBookmark = async () => {
     if (isBookmarked) {
-      try { await api.removeBookmark(bookmarkId); setBookmarkId(null); Cache.remove('bookmarks'); toast('已取消收藏', 'info'); } catch {}
+      try { await api.removeBookmark(bookmarkId); setBookmarkId(null); Cache.remove('bookmarks'); toast('已取消收藏', 'info'); } catch (e) { if (e.message.includes('401') || e.message.includes('未登录')) toast('请先登录才能收藏', 'info'); }
     } else {
       try {
         await api.addBookmark(articleId);
@@ -204,7 +204,7 @@ export default function ArticleReader({ articleId, onBack }) {
         const found = items.find((b) => b.article_id === articleId);
         if (found) setBookmarkId(found.id);
         toast('已收藏', 'success');
-      } catch {}
+      } catch (e) { if (e.message.includes('401') || e.message.includes('未登录')) toast('请先登录才能收藏', 'info'); }
     }
   };
 
