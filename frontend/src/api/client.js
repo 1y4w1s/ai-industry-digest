@@ -4,16 +4,7 @@ import {
   getToken, DEMO_TOKEN, getAuthHeader,
   isLoggedIn, isTokenExpiringSoon, refreshAccessToken,
 } from '../lib/token';
-
-// 延迟导入 supabase（201KB SDK，仅在需要 token 刷新时才加载）
-let _supabaseClient = null;
-async function getSupabase() {
-  if (!_supabaseClient) {
-    const { supabase } = await import('../lib/supabase');
-    _supabaseClient = supabase;
-  }
-  return _supabaseClient;
-}
+import { supabase } from '../lib/supabase';
 
 // ── 全局刷新锁 + session 状态 ──
 // _refreshPromise: 多个并发请求同时遇到 401 时，共用同一个刷新结果
@@ -45,7 +36,7 @@ async function _doRefresh() {
 
   _refreshPromise = (async () => {
     try {
-      const newToken = await refreshAccessToken(await getSupabase());
+      const newToken = await refreshAccessToken(supabase);
       if (newToken) {
         console.log('[API] Token 刷新成功');
         return newToken;
