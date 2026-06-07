@@ -37,7 +37,48 @@ export function getAuthHeader() {
   return token ? `Bearer ${token}` : null;
 }
 
-/** 检查是否已登录 */
+/** 检查是否已登录（localStorage 中有真实 token 而非 demo） */
 export function isLoggedIn() {
-  return !!getToken();
+  const token = getToken();
+  return !!token && token !== DEMO_TOKEN;
+}
+
+/**
+ * 检查 token 是否即将过期（提前 5 分钟算"即将"）
+ * @returns {boolean} true = 需要刷新
+ */
+export function isTokenExpiringSoon() {
+  const token = getToken();
+  if (!token || token === DEMO_TOKEN) return false;
+
+  try {
+    const payloadBase64 = token.split('.')[1];
+    const payload = JSON.parse(atob(payloadBase64));
+    const exp = payload.exp * 1000;
+    const fiveMinutes = 5 * 60 * 1000;
+    return (exp - Date.now()) < fiveMinutes;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * 用 Supabase refreshSession 换取新的 access_token
+ * 需要在调用方注入 supabase client，避免循环依赖
+ * @param {object} supabase - Supabase client 实例
+ * @returns {Promise<string|null>} 新 token 或 null
+ */
+export async function refreshAccessToken(supabase) {
+  if (!supabase) return null;
+  try {
+    const { data, error } = await supabase.auth.refreshSession();
+    if (error) throw error;
+    if (data?.session?.access_token) {
+      setToken(data.session.access_token);
+      return data.session.access_token;
+    }
+  } catch (e) {
+    console.warn('[Token] 刷新失败:', e.message);
+  }
+  return null;
 }

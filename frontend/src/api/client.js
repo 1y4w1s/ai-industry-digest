@@ -1,6 +1,11 @@
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
-import { getToken, DEMO_TOKEN, getAuthHeader } from '../lib/token';
+import {
+  getToken, DEMO_TOKEN, getAuthHeader,
+  isLoggedIn, isTokenExpiringSoon, refreshAccessToken,
+  clearToken,
+} from '../lib/token';
+import { supabase } from '../lib/supabase';
 
 async function request(path, options = {}) {
   const headers = { 'Content-Type': 'application/json', ...options.headers };
@@ -8,14 +13,49 @@ async function request(path, options = {}) {
   if (auth) {
     headers['Authorization'] = auth;
   }
-  const res = await fetch(`${API_BASE}${path}`, { headers, ...options });
+
+  // 预判：token 即将过期 → 提前刷新（用户无感知）
+  if (isLoggedIn() && isTokenExpiringSoon()) {
+    console.log('[API] Token 即将过期，提前刷新...');
+    const newToken = await refreshAccessToken(supabase);
+    if (newToken) {
+      headers['Authorization'] = `Bearer ${newToken}`;
+    }
+  }
+
+  let res = await fetch(`${API_BASE}${path}`, { headers, ...options });
+
+  // 401 拦截：已登录用户 → 尝试刷新 token 后重试
+  if (res.status === 401 && isLoggedIn()) {
+    console.log('[API] 收到 401，尝试刷新 token...');
+    const newToken = await refreshAccessToken(supabase);
+
+    if (newToken) {
+      // 刷新成功 → 重试原请求
+      headers['Authorization'] = `Bearer ${newToken}`;
+      // options.body 是 ReadableStream（JSON 字符串），重试时需重新设置
+      // 简单场景下重新 fetch
+      res = await fetch(`${API_BASE}${path}`, { headers, ...options });
+      console.log('[API] Token 刷新成功，请求重试完成');
+    } else {
+      // 刷新失败 → 强制登出
+      console.warn('[API] Token 刷新失败，跳转登录页');
+      clearToken();
+      window.location.href = '/login';
+      throw new Error('登录已过期，请重新登录');
+    }
+  }
+
+  // 限流提示
   if (res.status === 429) {
     throw new Error('请求过于频繁，请稍后再试');
   }
+
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: res.statusText }));
     throw new Error(err.detail || `请求失败 (${res.status})`);
   }
+
   return res.json();
 }
 
@@ -104,14 +144,14 @@ export const api = {
     get: (id) => request(`/kb/documents/${id}`),
 
     upload: async (file, tags = '', isPublic = true) => {
-      const token = getToken() || DEMO_TOKEN;
+      const auth = getAuthHeader();
       const formData = new FormData();
       formData.append('file', file);
       if (tags) formData.append('tags', tags);
       formData.append('is_public', isPublic ? 'true' : 'false');
       const res = await fetch(`${API_BASE}/kb/documents`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` },
+        headers: auth ? { 'Authorization': auth } : {},
         body: formData,
       });
       if (!res.ok) {
