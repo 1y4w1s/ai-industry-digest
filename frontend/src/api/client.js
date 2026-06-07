@@ -15,12 +15,28 @@ async function getSupabase() {
   return _supabaseClient;
 }
 
-// ── 全局刷新锁 ──
-// 多个并发请求同时遇到 401 时，只有第一个去调 refreshSession，
-// 其他请求排队等同一个结果，避免重复刷新 + 读写竞争
+// ── 全局刷新锁 + session 状态 ──
+// _refreshPromise: 多个并发请求同时遇到 401 时，共用同一个刷新结果
+// _sessionDead: 一次刷新+重试都失败后标记 session 已死，不再重复刷新
+// _deadToken: 标记 session 死亡时的 token 值，token 变了就重置
 let _refreshPromise = null;
+let _sessionDead = false;
+let _deadToken = null;
 
 async function _doRefresh() {
+  // 如果 session 已经被标记为死亡，检查 token 是否变了（用户可能重新登录了）
+  if (_sessionDead) {
+    const currentToken = getToken();
+    if (currentToken && currentToken !== _deadToken) {
+      console.log('[API] 检测到 token 已变更，重置 session 状态');
+      _sessionDead = false;
+      _deadToken = null;
+    } else {
+      console.log('[API] Session 已失效，跳过刷新');
+      return null;
+    }
+  }
+
   // 如果已经有刷新在进行中，直接复用
   if (_refreshPromise) {
     console.log('[API] 刷新正在进行中，等待...');
@@ -74,10 +90,17 @@ async function request(path, options = {}) {
       res = await fetch(`${API_BASE}${path}`, { headers, ...options });
       console.log('[API] Token 刷新成功，请求重试完成');
 
+      // 重试成功 → session 复活
+      if (res.ok) {
+        _sessionDead = false;
+      }
+
       // 重试后仍然 401 → session 确实已失效
-      // 不清除 token、不跳登录，让调用方自行处理
+      // 标记 session_dead，后续请求不再尝试刷新
       if (res.status === 401) {
-        console.warn('[API] 重试后仍然 401，session 已失效');
+        console.warn('[API] 重试后仍然 401，session 已失效，后续请求跳过刷新');
+        _sessionDead = true;
+        _deadToken = getToken();
       }
     } else {
       // 刷新失败 → 不清除 token，不跳登录
