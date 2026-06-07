@@ -108,7 +108,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     // 检查登录状态
-    const token = localStorage.getItem('token');
+    const token = getToken();
     if (!token) {
       navigate('/login');
       return;

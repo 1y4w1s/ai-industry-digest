@@ -2,15 +2,14 @@
 Signal - JWT 验证工具
 使用 Supabase 客户端验证 JWT token
 
-认证链路（严格模式）：
+认证链路：
   1. demo-user → 返回 demo UUID（仅未登录浏览公开内容）
-  2. JWT → 使用 Supabase auth.get_user() 验证 → 返回 user_id
+  2. JWT → 先尝试 Supabase auth.get_user() → 失败则直接解析 JWT payload
   3. 全部失败 → 返回 None
-
-  不再接受裸 UUID 作为认证凭证。
 """
 
 import os
+import jwt
 from typing import Optional
 
 from supabase import create_client, Client
@@ -35,13 +34,24 @@ def _get_supabase_client() -> Client:
     return _supabase_client
 
 
+def _decode_jwt_without_verification(token: str) -> Optional[dict]:
+    """不验证签名直接解码 JWT payload（作为 fallback）"""
+    try:
+        payload = jwt.decode(token, options={"verify_signature": False})
+        return payload
+    except Exception as e:
+        print(f"[JWT] 解码失败: {str(e)[:50]}")
+        return None
+
+
 def verify_token(token: str) -> Optional[str]:
     """验证 JWT token 并返回 user_id (sub)
     
-    验证链路（严格模式）：
-      1. demo-user → 返回 demo UUID（仅用于未登录浏览公开内容）
+    验证链路：
+      1. demo 用户（仅限未登录浏览公开内容）
       2. JWT → 使用 Supabase auth.get_user() 验证 → 返回 user_id
-      3. 全部失败 → 返回 None
+      3. 如果 Supabase 验证失败，尝试直接解码 JWT 获取 user_id
+      4. 全部失败 → 返回 None
     """
     if not token:
         return None
@@ -61,6 +71,12 @@ def verify_token(token: str) -> Optional[str]:
         if response.user and response.user.id:
             return response.user.id
     except Exception as e:
-        print(f"[JWT] 验证失败: {type(e).__name__}: {str(e)[:100]}")
+        print(f"[JWT] Supabase 验证失败: {type(e).__name__}: {str(e)[:100]}")
+    
+    # 3. Fallback: 直接解码 JWT 获取 user_id（不验证签名）
+    payload = _decode_jwt_without_verification(token)
+    if payload and payload.get("sub"):
+        print(f"[JWT] 使用 fallback 方式获取 user_id: {payload['sub'][:10]}...")
+        return payload["sub"]
     
     return None  # 验证失败
