@@ -19,7 +19,9 @@ from jwt import PyJWKClient
 
 # Supabase 项目配置
 SUPABASE_URL = os.getenv("SUPABASE_URL", "https://vobpkdrujixghvttgkuq.supabase.co")
-JWKS_URL = f"{SUPABASE_URL}/.well-known/jwks.json"
+SUPABASE_KEY = os.getenv("SUPABASE_KEY", "")
+# 新版本 Supabase 使用 /auth/v1/jwks 端点，需要 API Key
+JWKS_URL = f"{SUPABASE_URL}/auth/v1/jwks"
 
 # 缓存 JWKS 客户端（减少 HTTP 请求）
 _jwks_client: Optional[PyJWKClient] = None
@@ -32,7 +34,11 @@ def _get_jwks_client() -> PyJWKClient:
     global _jwks_client, _jwks_cache_time
     now = time.time()
     if _jwks_client is None or now - _jwks_cache_time > _JWKS_TTL:
-        _jwks_client = PyJWKClient(JWKS_URL, cache_keys=True)
+        # 新版本需要添加 API Key 头
+        headers = {}
+        if SUPABASE_KEY:
+            headers["apikey"] = SUPABASE_KEY
+        _jwks_client = PyJWKClient(JWKS_URL, cache_keys=True, headers=headers)
         _jwks_cache_time = now
     return _jwks_client
 
