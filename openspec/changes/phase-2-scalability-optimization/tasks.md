@@ -112,57 +112,57 @@
 
 ## 5. WebSocket 实时通信
 
-- [ ] 5.1 创建 WebSocket 管理器 `api/services/websocket_manager.py`
+- [x] 5.1 创建 WebSocket 管理器 `api/services/websocket_manager.py`
   - 实现连接管理（连接/断开/心跳）
   - 实现消息广播
   - 实现用户隔离（只推送给自己）
 
-- [ ] 5.2 添加 WebSocket 路由 `api/routes/websocket.py`
+- [x] 5.2 添加 WebSocket 路由 `api/routes/websocket.py`
   - `WS /ws` 端点
   - Token 验证
   - 心跳处理
 
-- [ ] 5.3 修改收藏功能集成 WebSocket
+- [x] 5.3 修改收藏功能集成 WebSocket
   - 收藏/取消收藏时推送通知
 
-- [ ] 5.4 修改浏览历史功能集成 WebSocket
+- [x] 5.4 修改浏览历史功能集成 WebSocket
   - 阅读记录更新时推送通知
 
-- [ ] 5.5 前端 WebSocket 客户端 `frontend/src/lib/websocket.js`
+- [x] 5.5 前端 WebSocket 客户端 `frontend/src/lib/websocket.js`
   - 连接管理
   - 自动重连
   - 消息处理
 
-- [ ] 5.6 前端 Notification 组件
+- [x] 5.6 前端 Notification 组件
   - 显示实时通知
   - 通知列表管理
 
 ## 6. 管理员数据看板
 
-- [ ] 6.1 添加管理员 API 路由 `api/routes/admin.py`
+- [x] 6.1 添加管理员 API 路由 `api/routes/admin.py`
   - `GET /api/admin/stats/overview` - 系统概览
   - `GET /api/admin/stats/users` - 用户统计
   - `GET /api/admin/stats/articles` - 文章统计
   - `GET /api/admin/stats/ai` - AI 处理统计
 
-- [ ] 6.2 实现管理员权限控制
+- [x] 6.2 实现管理员权限控制
   - 在 `user_profiles` 表添加 `role` 字段
   - 添加 `require_admin` 装饰器
   - 在 Supabase RLS 中配置管理员策略
 
-- [ ] 6.3 创建管理后台页面 `frontend/src/pages/AdminDashboard.jsx`
+- [x] 6.3 创建管理后台页面 `frontend/src/pages/AdminDashboard.jsx`
   - 系统概览卡片
   - 用户增长趋势图（ECharts 折线图）
   - 来源分布图（ECharts 饼图）
   - 热门文章列表
 
-- [ ] 6.4 集成 ECharts
+- [x] 6.4 集成 ECharts
   - 安装 echarts
   - 创建 `components/LineChart.jsx`
   - 创建 `components/PieChart.jsx`
   - 创建 `components/StatsCard.jsx`
 
-- [ ] 6.5 添加管理后台路由和权限控制
+- [x] 6.5 添加管理后台路由和权限控制
   - `/admin` 路由（仅管理员可访问）
   - 未登录重定向到登录页
 

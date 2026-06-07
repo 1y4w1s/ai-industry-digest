@@ -10,6 +10,7 @@ from typing import Optional
 
 from api.models.database import get_db
 from api.services.jwt_verify import verify_token
+from api.services.websocket_manager import ws_manager, MessageType
 
 router = APIRouter()
 db = get_db()
@@ -75,7 +76,18 @@ async def add_bookmark(
     user_id: str = Depends(get_user_id),
 ):
     """添加收藏"""
-    return db.add_bookmark(user_id, req.article_id, req.note)
+    result = db.add_bookmark(user_id, req.article_id, req.note)
+    
+    # WebSocket 推送通知
+    await ws_manager.send_to_user(user_id, {
+        "type": MessageType.BOOKMARK_ADDED,
+        "data": {
+            "article_id": req.article_id,
+            "bookmark_id": result.get("id"),
+        }
+    })
+    
+    return result
 
 
 @router.delete("/bookmarks/{bookmark_id}", tags=["收藏"])
@@ -87,6 +99,15 @@ async def remove_bookmark(
     ok = db.remove_bookmark(bookmark_id, user_id)
     if not ok:
         raise HTTPException(status_code=404, detail="收藏不存在")
+    
+    # WebSocket 推送通知
+    await ws_manager.send_to_user(user_id, {
+        "type": MessageType.BOOKMARK_REMOVED,
+        "data": {
+            "bookmark_id": bookmark_id,
+        }
+    })
+    
     return {"success": True}
 
 
@@ -115,6 +136,15 @@ async def add_history(
         read_percent=req.read_percent,
         duration_sec=req.duration_sec,
     )
+    
+    # WebSocket 推送通知
+    await ws_manager.send_to_user(user_id, {
+        "type": MessageType.HISTORY_UPDATED,
+        "data": {
+            "article_id": req.article_id,
+        }
+    })
+    
     return {"success": True}
 
 

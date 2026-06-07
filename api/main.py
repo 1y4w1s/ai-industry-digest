@@ -17,6 +17,7 @@ from api.routes.chat import router as chat_router
 from api.routes.kb import router as kb_router
 from api.routes.recommend import router as recommend_router
 from api.routes.admin import router as admin_router
+from api.routes.websocket import router as websocket_router
 
 app = FastAPI(
     title="Signal API",
@@ -144,6 +145,7 @@ app.include_router(chat_router, prefix="/api")
 app.include_router(kb_router, prefix="/api")
 app.include_router(recommend_router, prefix="/api")
 app.include_router(admin_router, prefix="/api")
+app.include_router(websocket_router)  # WebSocket 不需要前缀
 
 # 静态文件托管（测试前端）
 test_dir = Path(__file__).resolve().parent.parent / "test"
