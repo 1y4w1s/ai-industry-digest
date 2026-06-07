@@ -7,8 +7,8 @@ from fastapi import APIRouter, HTTPException, Depends
 from typing import Dict, Any, List
 from datetime import datetime, timedelta
 
-from services.cache import cache
-from services.jwt_verify import verify_token
+from api.services.cache import cache
+from api.services.jwt_verify import verify_token
 from api.models.database import get_db
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 

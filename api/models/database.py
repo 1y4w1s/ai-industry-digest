@@ -12,7 +12,7 @@ from supabase import create_client, Client
 from dotenv import load_dotenv
 
 from collector.base import Article
-from services.cache import cache, cache_key, invalidate_cache
+from api.services.cache import cache, cache_key, invalidate_cache
 
 load_dotenv()
 
