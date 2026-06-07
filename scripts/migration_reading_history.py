@@ -18,9 +18,7 @@ def main():
     # 添加 read_percent 列
     print("尝试添加 read_percent 列...")
     try:
-        result = supabase.client.execute(
-            "ALTER TABLE reading_history ADD COLUMN IF NOT EXISTS read_percent double precision"
-        )
+        result = supabase.sql("ALTER TABLE reading_history ADD COLUMN IF NOT EXISTS read_percent double precision").execute()
         print("✅ read_percent 列添加成功")
     except Exception as e:
         print(f"❌ 添加 read_percent 列失败: {e}")
@@ -28,9 +26,7 @@ def main():
     # 添加 duration_sec 列
     print("尝试添加 duration_sec 列...")
     try:
-        result = supabase.client.execute(
-            "ALTER TABLE reading_history ADD COLUMN IF NOT EXISTS duration_sec integer"
-        )
+        result = supabase.sql("ALTER TABLE reading_history ADD COLUMN IF NOT EXISTS duration_sec integer").execute()
         print("✅ duration_sec 列添加成功")
     except Exception as e:
         print(f"❌ 添加 duration_sec 列失败: {e}")
