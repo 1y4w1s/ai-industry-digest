@@ -333,36 +333,50 @@ class DatabaseManager:
                             duration_sec: Optional[int] = None) -> bool:
         """记录浏览历史（同天同篇取 max read_percent）"""
         today = date.today().isoformat()
-        existing = self.client.table("reading_history") \
-            .select("id, read_percent") \
-            .eq("user_id", user_id) \
-            .eq("article_id", article_id) \
-            .gte("read_at", today) \
-            .execute()
+        try:
+            existing = self.client.table("reading_history") \
+                .select("id, read_percent") \
+                .eq("user_id", user_id) \
+                .eq("article_id", article_id) \
+                .gte("read_at", today) \
+                .execute()
 
-        if existing.data:
-            # 已存在 → 更新 read_percent（取较大值）
-            existing_id = existing.data[0]["id"]
-            existing_pct = existing.data[0].get("read_percent")
-            if read_percent is not None and (
-                existing_pct is None or read_percent > existing_pct
-            ):
+            if existing.data:
+                existing_id = existing.data[0]["id"]
+                existing_pct = existing.data[0].get("read_percent")
+                if read_percent is not None and (
+                    existing_pct is None or read_percent > existing_pct
+                ):
+                    try:
+                        self.client.table("reading_history") \
+                            .update({"read_percent": read_percent, "read_at": datetime.now().isoformat()}) \
+                            .eq("id", existing_id) \
+                            .execute()
+                    except Exception:
+                        self.client.table("reading_history") \
+                            .update({"read_at": datetime.now().isoformat()}) \
+                            .eq("id", existing_id) \
+                            .execute()
+                return False
+
+            data = {"user_id": user_id, "article_id": article_id}
+            try:
+                if read_percent is not None:
+                    data["read_percent"] = read_percent
+                if duration_sec is not None:
+                    data["duration_sec"] = duration_sec
                 self.client.table("reading_history") \
-                    .update({"read_percent": read_percent, "read_at": datetime.now().isoformat()}) \
-                    .eq("id", existing_id) \
+                    .insert(data) \
                     .execute()
+            except Exception:
+                data = {"user_id": user_id, "article_id": article_id}
+                self.client.table("reading_history") \
+                    .insert(data) \
+                    .execute()
+            return True
+        except Exception as e:
+            print(f"[DB] 添加浏览历史失败: {e}")
             return False
-
-        # 不存在 → 插入
-        data = {"user_id": user_id, "article_id": article_id}
-        if read_percent is not None:
-            data["read_percent"] = read_percent
-        if duration_sec is not None:
-            data["duration_sec"] = duration_sec
-        self.client.table("reading_history") \
-            .insert(data) \
-            .execute()
-        return True
 
     def clear_reading_history(self, user_id: str) -> bool:
         """清除用户所有浏览历史"""
