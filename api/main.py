@@ -16,6 +16,7 @@ from api.routes.auth import router as auth_router
 from api.routes.chat import router as chat_router
 from api.routes.kb import router as kb_router
 from api.routes.recommend import router as recommend_router
+from api.routes.admin import router as admin_router
 
 app = FastAPI(
     title="Signal API",
@@ -142,6 +143,7 @@ app.include_router(auth_router, prefix="/api/auth")
 app.include_router(chat_router, prefix="/api")
 app.include_router(kb_router, prefix="/api")
 app.include_router(recommend_router, prefix="/api")
+app.include_router(admin_router, prefix="/api")
 
 # 静态文件托管（测试前端）
 test_dir = Path(__file__).resolve().parent.parent / "test"

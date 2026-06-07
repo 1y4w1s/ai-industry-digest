@@ -12,6 +12,7 @@ from supabase import create_client, Client
 from dotenv import load_dotenv
 
 from collector.base import Article
+from services.cache import cache, cache_key, invalidate_cache
 
 load_dotenv()
 
@@ -95,6 +96,10 @@ class DatabaseManager:
                 print(f"    [DB ERROR] 写入失败 [{article.url[:50]}...]: {e}")
                 result["errors"] += 1
 
+        # 如果有新文章写入，清除文章列表缓存
+        if result["inserted"] > 0:
+            invalidate_cache("articles:*")
+
         return result
 
     # ── 文章查询（分页 + 搜索 + 过滤） ─────────────
@@ -111,11 +116,23 @@ class DatabaseManager:
         date_to: Optional[str] = None,
         sort_by: str = "published_at",
         sort_order: str = "desc",
+        use_cache: bool = True,
     ) -> Dict[str, Any]:
         """分页查询文章
         Returns:
             {"items": [...], "total": N, "page": P, "page_size": S, "pages": T}
         """
+        # 尝试从缓存获取（仅当无关键词搜索时缓存）
+        if use_cache and not keyword:
+            key = cache_key(
+                "articles", page, page_size, tag=tag, source=source,
+                importance=importance, date_from=date_from, date_to=date_to,
+                sort_by=sort_by, sort_order=sort_order
+            )
+            cached = cache.get(key)
+            if cached is not None:
+                return cached
+
         query = self.client.table("articles").select("*", count="exact")
 
         # 过滤条件
@@ -146,13 +163,24 @@ class DatabaseManager:
         result = query.execute()
 
         total = result.count or 0
-        return {
+        data = {
             "items": result.data,
             "total": total,
             "page": page,
             "page_size": page_size,
             "pages": (total + page_size - 1) // page_size if page_size > 0 else 0,
         }
+
+        # 存入缓存（仅当无关键词搜索时缓存，TTL 5分钟）
+        if use_cache and not keyword:
+            key = cache_key(
+                "articles", page, page_size, tag=tag, source=source,
+                importance=importance, date_from=date_from, date_to=date_to,
+                sort_by=sort_by, sort_order=sort_order
+            )
+            cache.set(key, data, ttl=300)
+
+        return data
 
     def get_article_by_id(self, article_id: str) -> Optional[dict]:
         """按 ID 获取单篇文章"""

@@ -14,3 +14,9 @@ python-docx==1.1.2
 PyMuPDF==1.24.0
 # JWT 验证
 cryptography==48.0.0
+# Redis 缓存
+redis>=5.0.0
+# 单元测试
+pytest>=8.0.0
+pytest-asyncio>=0.23.0
+pytest-cov>=4.0.0

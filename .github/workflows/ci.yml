@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+
+jobs:
+  test-backend:
+    name: 后端测试
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 设置 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: 安装依赖
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: 运行测试
+        run: |
+          python -m pytest tests/ -v --tb=short
+        env:
+          # 测试时不需要真实的 Supabase 连接
+          SUPABASE_URL: https://test.supabase.co
+          SUPABASE_KEY: test-key
+
+  test-frontend:
+    name: 前端构建
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 设置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: 安装依赖
+        working-directory: frontend
+        run: npm ci
+
+      - name: 代码检查
+        working-directory: frontend
+        run: npm run lint
+        continue-on-error: true
+
+      - name: 构建生产版本
+        working-directory: frontend
+        run: npm run build
+
+  # 所有测试通过后才允许合并 PR
+  ci-passed:
+    name: CI 通过
+    needs: [test-backend, test-frontend]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: 检查测试结果
+        run: |
+          if [ "${{ needs.test-backend.result }}" != "success" ] || [ "${{ needs.test-frontend.result }}" != "success" ]; then
+            echo "❌ CI 失败"
+            exit 1
+          fi
+          echo "✅ CI 通过"
