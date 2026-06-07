@@ -7,10 +7,10 @@ import os
 import jwt
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Header, Query
-from api.models.database import DatabaseManager
+from api.models.database import get_db
 
 router = APIRouter()
-db = DatabaseManager()
+db = get_db()
 
 # Demo 用户配置（与 auth.py 保持一致）
 DEMO_USER_ID = "demo-user"

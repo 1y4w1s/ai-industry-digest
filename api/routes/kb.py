@@ -10,11 +10,12 @@ from datetime import datetime
 
 from fastapi import APIRouter, File, UploadFile, Depends, HTTPException, Header, Query
 
-from api.models.database import DatabaseManager
+from api.models.database import get_db
 from api.services.jwt_verify import verify_token, DEMO_USER_UUID
 from processor.ai_processor import AIProcessor
 
 router = APIRouter(prefix="/kb", tags=["知识库"])
+db = get_db()
 
 # ── 统一认证工具 ────────────────────────
 # 所有 KB 路由共用同一套认证逻辑，支持：
@@ -103,7 +104,6 @@ async def upload_document(
             raise HTTPException(status_code=400, detail="文件大小超过限制（最大10MB）")
 
     # 保存文档记录
-    db = DatabaseManager()
     document_id = str(uuid.uuid4())
     
     tag_list = [t.strip() for t in tags.split(",") if t.strip()] if tags else []
@@ -161,7 +161,7 @@ async def list_documents(
     user_id: str = Depends(get_current_user)
 ):
     """获取文档列表"""
-    db = DatabaseManager()
+    
     
     query = _doc_query(db, user_id) \
         .order("created_at", desc=True)
@@ -198,7 +198,7 @@ async def preview_document(
     user_id: str = Depends(get_current_user)
 ):
     """预览文档内容"""
-    db = DatabaseManager()
+    
     
     doc_result = _doc_access_filter(
         db.client.table("kb_documents").select("id, name, file_type"),
@@ -233,7 +233,7 @@ async def download_document(
     """下载原文档（支持 ?token= 或 Authorization header 认证）"""
     from fastapi.responses import FileResponse
     
-    db = DatabaseManager()
+    
     
     doc_result = _doc_access_filter(
         db.client.table("kb_documents").select("id, name, file_type"),
@@ -259,7 +259,7 @@ async def update_document_tags(
     user_id: str = Depends(get_current_user)
 ):
     """修改文档标签"""
-    db = DatabaseManager()
+    
     
     tags = body.get("tags", [])
     
@@ -281,7 +281,7 @@ async def batch_delete_documents(
     user_id: str = Depends(get_current_user)
 ):
     """批量删除文档"""
-    db = DatabaseManager()
+    
     ids = body.get("ids", [])
     
     if not ids:
@@ -333,7 +333,7 @@ async def get_document(
     user_id: str = Depends(get_current_user)
 ):
     """获取文档详情"""
-    db = DatabaseManager()
+    
     
     result = _doc_access_filter(
         db.client.table("kb_documents").select("*"),
@@ -352,7 +352,7 @@ async def delete_document(
     user_id: str = Depends(get_current_user)
 ):
     """删除文档"""
-    db = DatabaseManager()
+    
     
     # 检查文档是否存在
     result = db.client.table("kb_documents") \
@@ -387,7 +387,7 @@ async def get_document_chunks(
     user_id: str = Depends(get_current_user)
 ):
     """获取文档切片列表"""
-    db = DatabaseManager()
+    
     
     # 验证文档可访问（公开 OR 自己拥有）
     doc_result = _doc_access_filter(
@@ -413,7 +413,7 @@ async def get_document_graph(
     user_id: str = Depends(get_current_user)
 ):
     """获取文档知识图谱数据"""
-    db = DatabaseManager()
+    
     
     # 验证文档可访问（公开 OR 自己拥有）
     doc_result = _doc_access_filter(
@@ -448,7 +448,7 @@ async def process_document(
     user_id: str = Depends(get_current_user)
 ):
     """处理文档（切片 + 实体识别 + 关系抽取）"""
-    db = DatabaseManager()
+    
     
     # 验证文档属于用户
     doc_result = db.client.table("kb_documents") \
