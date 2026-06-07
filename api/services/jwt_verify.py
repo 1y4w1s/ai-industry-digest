@@ -69,7 +69,7 @@ def verify_token(token: str) -> Optional[str]:
             token,
             signing_key.key,
             algorithms=["RS256"],
-            audience="authenticated",
+            audience=["authenticated", "supabase"],
             options={"verify_exp": True},
         )
         user_id = decoded.get("sub")
