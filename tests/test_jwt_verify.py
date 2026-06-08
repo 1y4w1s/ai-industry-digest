@@ -34,7 +34,7 @@ class TestJWTVerify:
         """Demo 用户 token 应返回 DEMO_USER_UUID"""
         from api.services.jwt_verify import verify_token, DEMO_USER_UUID
         
-        result = verify_token("demo_user")
+        result = verify_token("demo-user")
         assert result == DEMO_USER_UUID
 
     def test_verify_bearer_prefix(self):
@@ -42,7 +42,7 @@ class TestJWTVerify:
         from api.services.jwt_verify import verify_token, DEMO_USER_UUID
         
         # Demo user with Bearer prefix
-        result = verify_token("Bearer demo_user")
+        result = verify_token("Bearer demo-user")
         assert result == DEMO_USER_UUID
 
     @patch('api.services.jwt_verify._get_supabase_client')
