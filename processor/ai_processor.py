@@ -125,7 +125,7 @@ class AIProcessor:
         """构建批处理 Prompt"""
         articles_text = ""
         for i, article in enumerate(articles, 1):
-            content = article.raw_content[:1500]  # 单篇限制 1500 字
+            content = article.raw_content[:800]  # 单篇限制 800 字（从1500减少）
             articles_text += f"""
 --- 文章 {i} ---
 标题: {article.title}
@@ -218,7 +218,7 @@ class AIProcessor:
                 {"role": "user", "content": prompt}
             ],
             "temperature": 0.3,   # 低温度，保证输出一致性
-            "max_tokens": 4096     # 足够容纳批处理结果
+            "max_tokens": 2048     # 减少输出限制（从4096减少）
         }
 
         last_error = None
@@ -329,7 +329,7 @@ class AIProcessor:
         prompt = f"""从以下文本中识别出实体，并进行分类。
 
 文本：
-{content[:3000]}  # 限制长度
+{content[:1500]}  # 限制长度（从3000减少）
 
 实体类型及示例：
 - concept: 概念（如：大语言模型、机器学习、人工智能）

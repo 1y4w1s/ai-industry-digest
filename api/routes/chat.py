@@ -30,13 +30,10 @@ class ChatResponse(BaseModel):
     session_id: str
 
 
-from datetime import datetime
-
-SYSTEM_PROMPT = f"""你是一个专业的 AI 行业分析师助手，帮助用户理解 AI 行业新闻和趋势。
-当前日期: {datetime.now().strftime('%Y年%m月%d日')}
+SYSTEM_PROMPT = """你是一个专业的 AI 行业分析师助手，帮助用户理解 AI 行业新闻和趋势。
 
 重要规则:
-1. 你的知识截止于 2025 年初，但用户会提供最新的文章内容给你分析
+1. 你的知识截止于 2026 年初，但用户会提供最新的文章内容给你分析
 2. 当用户问到关于文章中提到的具体事件、数据或新闻时，请基于用户提供的文章内容回答，不要用你的训练数据来反驳
 3. 当回答一般性的 AI 行业趋势问题时，如果涉及近期事件，请优先引用用户提供的文章内容
 4. 如果你不确定某个具体事件，请坦白说「我不确定，但根据你提供的文章...」
@@ -117,7 +114,7 @@ async def chat(
                 source=article.get("source_name", ""),
                 summary=article.get("summary", ""),
                 tags=", ".join(article.get("tags", []) or []),
-                content=(article.get("raw_content", "") or "")[:2000],
+                content=(article.get("raw_content", "") or "")[:500],  # 减少内容长度
                 article_id=article.get("id", req.article_id),
             )
             messages.append({"role": "system", "content": context})
@@ -136,10 +133,10 @@ async def chat(
                     flat = []
                     for priority in ("high", "medium", "low"):
                         flat.extend(article_groups.get(priority, []))
-                    article_items = flat[:10]
+                    article_items = flat[:3]  # 减少注入文章数量（从10篇到3篇）
                     if article_items:
                         articles_text = "\n".join([
-                            f"- [{a.get('importance','')}] [{a.get('title','')}](/?article={a.get('id','')})（来源: {a.get('source_name','')}，ID: {a.get('id','')}）\n  {str(a.get('summary',''))[:200]}"
+                            f"- [{a.get('title','')}](/?article={a.get('id','')})（来源: {a.get('source_name','')}）\n  {str(a.get('summary',''))[:100]}"
                             for a in article_items
                         ])
                         daily_context = DAILY_CONTEXT_PROMPT.format(
@@ -152,9 +149,9 @@ async def chat(
                 else:
                     messages.append({"role": "system", "content": f"今日日期（日报日期）: {report_date}"})
 
-    # 添加历史上下文
+    # 添加历史上下文（保留最近 2 轮，减少 tokens 消耗）
     history = chat_contexts.get(session_id, [])
-    for h in history[-6:]:  # 保留最近 6 轮
+    for h in history[-2:]:  # 从6轮减少到2轮
         messages.append(h)
 
     # 加当前消息

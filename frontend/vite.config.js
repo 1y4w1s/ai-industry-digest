@@ -12,4 +12,22 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        // Vite 8 使用函数形式的 manualChunks
+        manualChunks(id) {
+          if (id.includes('node_modules/@supabase')) {
+            return 'supabase';
+          }
+          if (id.includes('node_modules/react')) {
+            return 'react-vendor';
+          }
+          if (id.includes('node_modules/@radix-ui')) {
+            return 'ui';
+          }
+        },
+      },
+    },
+  },
 })
