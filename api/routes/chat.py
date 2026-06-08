@@ -5,18 +5,109 @@ Signal - AI 对话接口
 
 import os
 import httpx
+import hashlib
 from typing import Optional
 from pydantic import BaseModel
+from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, BackgroundTasks, Header
 from api.models.database import get_db
 from api.services.tag_extractor import TagExtractor
+from api.services.cache import cache, cache_key
 
 router = APIRouter()
 db = get_db()
 
 # 对话上下文存储（生产环境建议用 Redis，这里用内存简化）
 chat_contexts: dict = {}
+
+# 统计信息（内存存储，生产环境建议用 Redis）
+chat_stats = {
+    "total_requests": 0,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "total_input_tokens": 0,
+    "total_output_tokens": 0,
+}
+
+
+def count_tokens(text: str) -> int:
+    """估算文本的 tokens 数量（粗略估算：1 token ≈ 4 字符）"""
+    return len(text) // 4
+
+
+def log_chat_request(
+    question_type: str,
+    cache_hit: bool,
+    input_tokens: int,
+    output_tokens: int,
+    article_id: Optional[str] = None,
+    message_len: int = 0,
+):
+    """记录聊天请求日志"""
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    status = "HIT" if cache_hit else "MISS"
+    
+    log_line = (
+        f"[{timestamp}] [CHAT] {status} | "
+        f"类型={question_type} | "
+        f"文章ID={article_id or 'None'} | "
+        f"输入={input_tokens} tokens | "
+        f"输出={output_tokens} tokens | "
+        f"消息长度={message_len}"
+    )
+    print(log_line)
+    
+    # 更新统计
+    chat_stats["total_requests"] += 1
+    if cache_hit:
+        chat_stats["cache_hits"] += 1
+    else:
+        chat_stats["cache_misses"] += 1
+    chat_stats["total_input_tokens"] += input_tokens
+    chat_stats["total_output_tokens"] += output_tokens
+
+
+def classify_question(message: str) -> str:
+    """
+    分类用户问题，决定是否需要注入上下文
+    
+    返回值:
+    - "general": 通用知识问题，不需要上下文
+    - "daily": 日报/新闻相关，需要注入日报上下文
+    - "article": 特定文章相关，需要注入文章上下文
+    - "chat": 闲聊对话，不需要上下文
+    """
+    message_lower = message.lower().strip()
+    
+    # 闲聊类
+    chat_keywords = ["你好", "嗨", "哈喽", "hello", "hi", "谢谢", "感谢", "再见", "拜拜"]
+    if any(keyword in message_lower for keyword in chat_keywords):
+        return "chat"
+    
+    # 通用知识类（询问定义、原理、概念）
+    general_keywords = [
+        "什么是", "解释一下", "原理", "概念", "什么意思", "如何",
+        "怎么", "为什么", "区别", "对比", "优缺点", "好处", "坏处"
+    ]
+    # 排除包含文章/新闻相关关键词的情况
+    content_keywords = ["文章", "新闻", "报道", "日报", "今天", "最近", "最新"]
+    if (any(keyword in message_lower for keyword in general_keywords) and
+        not any(keyword in message_lower for keyword in content_keywords)):
+        return "general"
+    
+    # 日报相关类
+    daily_keywords = ["日报", "新闻", "今天", "最近", "最新", "汇总", "有什么"]
+    if any(keyword in message_lower for keyword in daily_keywords):
+        return "daily"
+    
+    # 特定文章类（包含文章ID或文章相关关键词）
+    article_keywords = ["文章", "这篇", "那篇", "详情", "内容", "链接"]
+    if any(keyword in message_lower for keyword in article_keywords):
+        return "article"
+    
+    # 默认：需要上下文
+    return "daily"
 
 
 class ChatRequest(BaseModel):
@@ -90,7 +181,7 @@ async def chat(
       1. SYSTEM_PROMPT — 角色设定
       2. 当前文章（如果 article_id 有值）
       3. 今日日报文章列表（如果 article_id 为空）
-      4. 最近 6 轮对话历史
+      4. 最近 2 轮对话历史
       
     ⚠️ 注意：本接口不注入知识库内容。知识库对话隔离在 /kb 独立上下文中。
     """
@@ -99,101 +190,158 @@ async def chat(
         raise HTTPException(status_code=503, detail="AI 服务未配置（缺少 DEEPSEEK_API_KEY）")
 
     session_id = req.session_id or f"session_{hash(str(req.article_id))}_{os.urandom(4).hex()}"
+    
+    # 分类问题（用于缓存键和日志）
+    question_type = classify_question(req.message)
+    
+    # 生成缓存键（基于问题类型和消息内容）
+    cache_key_str = cache_key("chat", question_type, req.message, req.article_id)
+    cache_hit = False
+    input_tokens = 0
+    output_tokens = 0
 
-    # 构建消息上下文
-    messages = [
-        {"role": "system", "content": SYSTEM_PROMPT}
-    ]
-
-    # 如果有关联文章，添加上下文
-    if req.article_id:
-        article = db.get_article_by_id(req.article_id)
-        if article:
-            context = ARTICLE_CONTEXT_PROMPT.format(
-                title=article.get("title", ""),
-                source=article.get("source_name", ""),
-                summary=article.get("summary", ""),
-                tags=", ".join(article.get("tags", []) or []),
-                content=(article.get("raw_content", "") or "")[:500],  # 减少内容长度
-                article_id=article.get("id", req.article_id),
-            )
-            messages.append({"role": "system", "content": context})
+    # 检查缓存
+    cached_result = cache.get(cache_key_str)
+    if cached_result:
+        cache_hit = True
+        reply = cached_result
+        print(f"[CHAT] 缓存命中: {cache_key_str[:50]}...")
     else:
-        # 首页对话：自动注入今日日报文章作为上下文
-        reports = db.get_reports(page=1, page_size=1)
-        if reports.get("items"):
-            latest = reports["items"][0]
-            report_date = latest.get("report_date", "")
-            # 获取日报详情（含文章列表）
-            report_detail = db.get_report_by_date(report_date)
-            if report_detail:
-                article_groups = report_detail.get("articles", {})
-                if isinstance(article_groups, dict):
-                    # Flatten grouped articles into a single list, high first
-                    flat = []
-                    for priority in ("high", "medium", "low"):
-                        flat.extend(article_groups.get(priority, []))
-                    article_items = flat[:3]  # 减少注入文章数量（从10篇到3篇）
-                    if article_items:
-                        articles_text = "\n".join([
-                            f"- [{a.get('title','')}](/?article={a.get('id','')})（来源: {a.get('source_name','')}）\n  {str(a.get('summary',''))[:100]}"
-                            for a in article_items
-                        ])
-                        daily_context = DAILY_CONTEXT_PROMPT.format(
-                            report_date=report_date,
-                            articles=articles_text,
-                        )
-                        messages.append({"role": "system", "content": daily_context})
-                    else:
-                        messages.append({"role": "system", "content": f"今日日期（日报日期）: {report_date}"})
+        # 构建消息上下文
+        messages = [
+            {"role": "system", "content": SYSTEM_PROMPT}
+        ]
+
+        # 如果有关联文章，添加上下文（优先级最高）
+        if req.article_id:
+            article = db.get_article_by_id(req.article_id)
+            if article:
+                context = ARTICLE_CONTEXT_PROMPT.format(
+                    title=article.get("title", ""),
+                    source=article.get("source_name", ""),
+                    summary=article.get("summary", ""),
+                    tags=", ".join(article.get("tags", []) or []),
+                    content=(article.get("raw_content", "") or "")[:500],  # 减少内容长度
+                    article_id=article.get("id", req.article_id),
+                )
+                messages.append({"role": "system", "content": context})
+                print(f"[CHAT] 注入文章上下文: {article.get('title', '')[:30]}...")
+        else:
+            # 首页对话：根据问题分类决定是否注入日报上下文
+            # 只有日报相关问题才注入日报上下文
+            if question_type in ("daily", "article"):
+                reports = db.get_reports(page=1, page_size=1)
+                if reports.get("items"):
+                    latest = reports["items"][0]
+                    report_date = latest.get("report_date", "")
+                    # 获取日报详情（含文章列表）
+                    report_detail = db.get_report_by_date(report_date)
+                    if report_detail:
+                        article_groups = report_detail.get("articles", {})
+                        if isinstance(article_groups, dict):
+                            # Flatten grouped articles into a single list, high first
+                            flat = []
+                            for priority in ("high", "medium", "low"):
+                                flat.extend(article_groups.get(priority, []))
+                            article_items = flat[:3]  # 减少注入文章数量（从10篇到3篇）
+                            if article_items:
+                                articles_text = "\n".join([
+                                    f"- [{a.get('title','')}](/?article={a.get('id','')})（来源: {a.get('source_name','')}）\n  {str(a.get('summary',''))[:100]}"
+                                    for a in article_items
+                                ])
+                                daily_context = DAILY_CONTEXT_PROMPT.format(
+                                    report_date=report_date,
+                                    articles=articles_text,
+                                )
+                                messages.append({"role": "system", "content": daily_context})
+                                print(f"[CHAT] 注入日报上下文: {report_date}, {len(article_items)} 篇文章")
+                            else:
+                                messages.append({"role": "system", "content": f"今日日期（日报日期）: {report_date}"})
+                        else:
+                            messages.append({"role": "system", "content": f"今日日期（日报日期）: {report_date}"})
+            else:
+                print(f"[CHAT] 问题类型={question_type}，跳过日报上下文注入")
+
+        # 添加历史上下文（保留最近 2 轮，减少 tokens 消耗）
+        history = chat_contexts.get(session_id, [])
+        history_count = min(len(history), 2)
+        for h in history[-2:]:  # 从6轮减少到2轮
+            messages.append(h)
+        print(f"[CHAT] 注入历史上下文: {history_count} 轮")
+
+        # 加当前消息
+        messages.append({"role": "user", "content": req.message})
+
+        # 计算输入 tokens
+        input_tokens = sum(count_tokens(msg["content"]) for msg in messages)
+        print(f"[CHAT] 输入 tokens 估算: {input_tokens}")
+
+        # 调用 AI
+        try:
+            with httpx.Client(timeout=60) as client:
+                resp = client.post(
+                    "https://api.deepseek.com/v1/chat/completions",
+                    headers={
+                        "Authorization": f"Bearer {api_key}",
+                        "Content-Type": "application/json",
+                    },
+                    json={
+                        "model": "deepseek-chat",
+                        "messages": messages,
+                        "temperature": 0.5,
+                        "max_tokens": 2000,
+                    },
+                )
+                resp.raise_for_status()
+                data = resp.json()
+                reply = data["choices"][0]["message"]["content"].strip()
+                
+                # 获取实际消耗的 tokens（如果 API 返回）
+                if "usage" in data:
+                    input_tokens = data["usage"].get("prompt_tokens", input_tokens)
+                    output_tokens = data["usage"].get("completion_tokens", count_tokens(reply))
                 else:
-                    messages.append({"role": "system", "content": f"今日日期（日报日期）: {report_date}"})
+                    output_tokens = count_tokens(reply)
+                print(f"[CHAT] API 返回 tokens - 输入: {input_tokens}, 输出: {output_tokens}")
+        except Exception as e:
+            raise HTTPException(status_code=502, detail=f"AI 服务调用失败: {e}")
 
-    # 添加历史上下文（保留最近 2 轮，减少 tokens 消耗）
-    history = chat_contexts.get(session_id, [])
-    for h in history[-2:]:  # 从6轮减少到2轮
-        messages.append(h)
+        # 保存到缓存（根据问题类型设置不同 TTL）
+        ttl_map = {
+            "general": 86400,  # 通用知识问题缓存1天
+            "chat": 3600,      # 闲聊缓存1小时
+            "daily": 3600,     # 日报问题缓存1小时（日报更新后会失效）
+            "article": 1800,   # 特定文章问题缓存30分钟
+        }
+        ttl = ttl_map.get(question_type, 3600)
+        cache.set(cache_key_str, reply, ttl)
+        print(f"[CHAT] 缓存已保存，TTL: {ttl}秒")
 
-    # 加当前消息
-    messages.append({"role": "user", "content": req.message})
+        # 保存上下文
+        chat_contexts[session_id] = history + [
+            {"role": "user", "content": req.message},
+            {"role": "assistant", "content": reply},
+        ]
 
-    # 调用 AI
-    try:
-        with httpx.Client(timeout=60) as client:
-            resp = client.post(
-                "https://api.deepseek.com/v1/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {api_key}",
-                    "Content-Type": "application/json",
-                },
-                json={
-                    "model": "deepseek-chat",
-                    "messages": messages,
-                    "temperature": 0.5,
-                    "max_tokens": 2000,
-                },
-            )
-            resp.raise_for_status()
-            data = resp.json()
-            reply = data["choices"][0]["message"]["content"].strip()
-    except Exception as e:
-        raise HTTPException(status_code=502, detail=f"AI 服务调用失败: {e}")
+        # 限制上下文大小
+        if len(chat_contexts) > 1000:
+            # 简单清理：删除最早的一半
+            keys = list(chat_contexts.keys())[:500]
+            for k in keys:
+                del chat_contexts[k]
 
-    # 保存上下文
-    chat_contexts[session_id] = history + [
-        {"role": "user", "content": req.message},
-        {"role": "assistant", "content": reply},
-    ]
+        # 异步提取标签（不阻塞响应）
+        _schedule_tag_extraction(background_tasks, authorization, req.message, db)
 
-    # 限制上下文大小
-    if len(chat_contexts) > 1000:
-        # 简单清理：删除最早的一半
-        keys = list(chat_contexts.keys())[:500]
-        for k in keys:
-            del chat_contexts[k]
-
-    # 异步提取标签（不阻塞响应）
-    _schedule_tag_extraction(background_tasks, authorization, req.message, db)
+    # 记录日志
+    log_chat_request(
+        question_type=question_type,
+        cache_hit=cache_hit,
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+        article_id=req.article_id,
+        message_len=len(req.message),
+    )
 
     return ChatResponse(reply=reply, session_id=session_id)
 
