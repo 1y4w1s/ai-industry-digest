@@ -2,7 +2,7 @@
 Signal - API 层单元测试
 测试 auth 路由（收藏/历史相关端点）
 
-运行: python -m pytest tests/test_api.py -v
+运行：python -m pytest tests/test_api.py -v
 """
 
 import sys
@@ -11,9 +11,12 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from unittest.mock import MagicMock, patch
 import pytest
-from fastapi.testclient import TestClient
 
-from api.main import app
+# 在导入 app 之前 patch 数据库初始化
+with patch('api.models.database.create_client'):
+    with patch('api.models.database.DatabaseManager._create_client'):
+        from api.main import app
+        from fastapi.testclient import TestClient
 
 
 @pytest.fixture
