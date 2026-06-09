@@ -88,6 +88,72 @@ def log_chat_request(
     chat_stats["total_output_tokens"] += output_tokens
 
 
+def normalize_question(message: str) -> str:
+    """
+    问题归一化处理 - 将相似问题映射到相同的标准化形式，提升缓存命中率
+    
+    处理步骤:
+    1. 转小写
+    2. 去除标点符号（保留中文标点）
+    3. 去除多余空格
+    4. 同义词替换
+    """
+    import re
+    
+    message_lower = message.lower().strip()
+    
+    # 去除英文标点
+    message_lower = re.sub(r'[!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~]', '', message_lower)
+    
+    # 去除多余空格
+    message_lower = re.sub(r'\s+', '', message_lower)
+    
+    # 同义词/句式归一化
+    synonym_map = {
+        "有什么新闻": "今日新闻",
+        "今天有什么": "今日新闻",
+        "最近有什么": "今日新闻",
+        "最新新闻": "今日新闻",
+        "今天新闻": "今日新闻",
+        "今日新闻": "今日新闻",
+        "新闻汇总": "今日新闻",
+        "看看新闻": "今日新闻",
+        "有哪些新闻": "今日新闻",
+        "有什么ai新闻": "今日新闻",
+        "ai新闻": "今日新闻",
+        "今日ai新闻": "今日新闻",
+        "今天的新闻": "今日新闻",
+        "今天有什么新闻": "今日新闻",
+        "最近有什么新闻": "今日新闻",
+        "最新的新闻": "今日新闻",
+        "你好": "问候",
+        "嗨": "问候",
+        "哈喽": "问候",
+        "hello": "问候",
+        "hi": "问候",
+        "谢谢": "感谢",
+        "感谢": "感谢",
+        "再见": "告别",
+        "拜拜": "告别",
+    }
+    
+    # 检查是否匹配已知模式
+    for pattern, normalized in synonym_map.items():
+        if pattern in message_lower:
+            return normalized
+    
+    # 如果问题很短（<=5字），直接返回作为缓存键
+    if len(message_lower) <= 5:
+        return message_lower
+    
+    # 对于较长的问题，提取关键特征作为缓存键
+    # 使用前3个关键词 + 后2个关键词
+    chars = list(message_lower)
+    key_features = ''.join(chars[:3] + chars[-2:])
+    
+    return key_features
+
+
 def classify_question(message: str) -> str:
     """
     分类用户问题，决定是否需要注入上下文
@@ -198,8 +264,11 @@ async def chat(
     # 分类问题（用于缓存键和日志）
     question_type = classify_question(req.message)
     
-    # 生成缓存键（基于问题类型和消息内容）
-    cache_key_str = cache_key("chat", question_type, req.message, req.article_id)
+    # 问题归一化处理 - 提升缓存命中率
+    normalized_message = normalize_question(req.message)
+    
+    # 生成缓存键（基于问题类型和归一化后的消息）
+    cache_key_str = cache_key("chat", question_type, normalized_message, req.article_id)
     cache_hit = False
     input_tokens = 0
     output_tokens = 0
