@@ -1,0 +1,18 @@
+name: Run Collection on Server
+
+on:
+  workflow_dispatch:
+
+jobs:
+  run-collection:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run daily digest on server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: 43.139.133.245
+          username: ubuntu
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /opt/ai-industry-digest
+            python3 run.py 2>&1
