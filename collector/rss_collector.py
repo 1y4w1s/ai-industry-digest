@@ -93,10 +93,11 @@ class RSSCollector(BaseCollector):
 
         # 移除所有不在允许列表中的标签（保留内容）
         def strip_tag(m):
-            tag = m.group(1).lower().split()[0].rstrip('>').rstrip('/')
+            full = m.group(0)  # 完整匹配 <tagname ...>
+            tag = full.lower().split()[0].lstrip('<').rstrip('>').rstrip('/')
             if tag in allowed:
-                return m.group(0)  # 保留
-            return ''  # 移除标签但保留内容
+                return full
+            return ''
 
         html = re.sub(r'<[^>]+>', strip_tag, html)
 

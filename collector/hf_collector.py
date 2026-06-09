@@ -74,7 +74,7 @@ class HFCollector(BaseCollector):
             author_str += " et al."
 
         # 拼接内容
-        content = f"作者: {author_str}\n{papers}" if author_str else summary
+        content = f"作者: {author_str}\n{summary}" if author_str else summary
 
         # 日期
         published_at = None

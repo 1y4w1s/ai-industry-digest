@@ -36,6 +36,20 @@ def count_tokens(text: str) -> int:
     return len(text) // 4
 
 
+# 日志文件路径
+CHAT_LOG_FILE = os.path.join(os.path.dirname(os.path.dirname(__file__)), "chat.log")
+
+
+def chat_log(msg: str):
+    """写入聊天日志到文件"""
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    try:
+        with open(CHAT_LOG_FILE, "a", encoding="utf-8") as f:
+            f.write(f"[{timestamp}] {msg}\n")
+    except Exception:
+        pass
+
+
 def log_chat_request(
     question_type: str,
     cache_hit: bool,
@@ -44,7 +58,7 @@ def log_chat_request(
     article_id: Optional[str] = None,
     message_len: int = 0,
 ):
-    """记录聊天请求日志"""
+    """记录聊天请求日志到文件"""
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     status = "HIT" if cache_hit else "MISS"
     
@@ -54,9 +68,15 @@ def log_chat_request(
         f"文章ID={article_id or 'None'} | "
         f"输入={input_tokens} tokens | "
         f"输出={output_tokens} tokens | "
-        f"消息长度={message_len}"
+        f"消息长度={message_len}\n"
     )
-    print(log_line)
+    
+    # 写入文件，确保日志持久化
+    try:
+        with open(CHAT_LOG_FILE, "a", encoding="utf-8") as f:
+            f.write(log_line)
+    except Exception:
+        pass  # 日志写入失败不阻塞
     
     # 更新统计
     chat_stats["total_requests"] += 1
@@ -123,26 +143,12 @@ class ChatResponse(BaseModel):
 
 SYSTEM_PROMPT = """你是一个专业的 AI 行业分析师助手，帮助用户理解 AI 行业新闻和趋势。
 
-重要规则:
-1. 你的知识截止于 2026 年初，但用户会提供最新的文章内容给你分析
-2. 当用户问到关于文章中提到的具体事件、数据或新闻时，请基于用户提供的文章内容回答，不要用你的训练数据来反驳
-3. 当回答一般性的 AI 行业趋势问题时，如果涉及近期事件，请优先引用用户提供的文章内容
-4. 如果你不确定某个具体事件，请坦白说「我不确定，但根据你提供的文章...」
+规则:
+1. 你的知识截止于 2026 年初，用户提供的最新文章内容优先于你的训练数据
+2. 不确定的具体事件请坦白说「我不确定，但根据你提供的文章...」
+3. 回答简洁、准确、有深度，使用中文
 
-你可以：
-1. 总结文章核心观点
-2. 解释技术概念
-3. 分析行业趋势
-4. 对比不同观点
-5. 回答关于 AI 行业的任何问题
-
-回答要简洁、准确、有深度。使用中文回答。
-
-重要输出格式规则：
-- 当推荐或引用某篇文章时，请使用 Markdown 链接格式输出： [文章标题](/?article=文章ID)
-- 例如：[GPT-5 发布引发行业震动](/?article=abc-123)
-- 不要只写文章标题不加链接，每篇推荐的文章都必须附带可点击的链接
-- 链接目标必须是本站路由 /?article=文章ID"""
+引用文章时必须使用 Markdown 链接格式：[文章标题](/?article=文章ID)"""
 
 # ⚠️ 安全隔离：知识库内容不由本接口注入
 # 知识库文档内容仅在 /knowledge 页面独立对话中使用
@@ -164,9 +170,7 @@ ARTICLE_CONTEXT_PROMPT = """以下是用户当前正在阅读的一篇文章：
 DAILY_CONTEXT_PROMPT = """以下为今天的 AI 行业日报内容（{report_date}）：
 {articles}
 
-请基于以上今日日报中的文章回答用户的问题。
-如果用户问"有什么新闻"、"今天有什么"这类问题，直接引用上面日报中的文章来回答。
-不要说你没有最新的文章内容——上面就是最新的。"""
+请基于以上日报文章回答用户的问题。直接引用文章内容，不要说你没有最新信息。"""
 
 
 @router.post("/chat", response_model=ChatResponse, tags=["AI 对话"])
@@ -205,7 +209,7 @@ async def chat(
     if cached_result:
         cache_hit = True
         reply = cached_result
-        print(f"[CHAT] 缓存命中: {cache_key_str[:50]}...")
+        chat_log(f"[CHAT] 缓存命中: {cache_key_str[:50]}...")
     else:
         # 构建消息上下文
         messages = [
@@ -225,7 +229,7 @@ async def chat(
                     article_id=article.get("id", req.article_id),
                 )
                 messages.append({"role": "system", "content": context})
-                print(f"[CHAT] 注入文章上下文: {article.get('title', '')[:30]}...")
+                chat_log(f"[CHAT] 注入文章上下文: {article.get('title', '')[:30]}...")
         else:
             # 首页对话：根据问题分类决定是否注入日报上下文
             # 只有日报相关问题才注入日报上下文
@@ -254,27 +258,27 @@ async def chat(
                                     articles=articles_text,
                                 )
                                 messages.append({"role": "system", "content": daily_context})
-                                print(f"[CHAT] 注入日报上下文: {report_date}, {len(article_items)} 篇文章")
+                                chat_log(f"[CHAT] 注入日报上下文: {report_date}, {len(article_items)} 篇文章")
                             else:
                                 messages.append({"role": "system", "content": f"今日日期（日报日期）: {report_date}"})
                         else:
                             messages.append({"role": "system", "content": f"今日日期（日报日期）: {report_date}"})
             else:
-                print(f"[CHAT] 问题类型={question_type}，跳过日报上下文注入")
+                chat_log(f"[CHAT] 问题类型={question_type}，跳过日报上下文注入")
 
         # 添加历史上下文（保留最近 2 轮，减少 tokens 消耗）
         history = chat_contexts.get(session_id, [])
         history_count = min(len(history), 2)
         for h in history[-2:]:  # 从6轮减少到2轮
             messages.append(h)
-        print(f"[CHAT] 注入历史上下文: {history_count} 轮")
+        chat_log(f"[CHAT] 注入历史上下文: {history_count} 轮")
 
         # 加当前消息
         messages.append({"role": "user", "content": req.message})
 
         # 计算输入 tokens
         input_tokens = sum(count_tokens(msg["content"]) for msg in messages)
-        print(f"[CHAT] 输入 tokens 估算: {input_tokens}")
+        chat_log(f"[CHAT] 输入 tokens 估算: {input_tokens}")
 
         # 调用 AI
         try:
@@ -288,8 +292,8 @@ async def chat(
                     json={
                         "model": "deepseek-chat",
                         "messages": messages,
-                        "temperature": 0.5,
-                        "max_tokens": 2000,
+                        "temperature": 0.3,  # 低温度保证回答一致，提升缓存命中率
+                        "max_tokens": 1000,  # 大部分回答 500 字以内，1000 足够
                     },
                 )
                 resp.raise_for_status()
@@ -302,7 +306,7 @@ async def chat(
                     output_tokens = data["usage"].get("completion_tokens", count_tokens(reply))
                 else:
                     output_tokens = count_tokens(reply)
-                print(f"[CHAT] API 返回 tokens - 输入: {input_tokens}, 输出: {output_tokens}")
+                chat_log(f"[CHAT] API 返回 tokens - 输入: {input_tokens}, 输出: {output_tokens}")
         except Exception as e:
             raise HTTPException(status_code=502, detail=f"AI 服务调用失败: {e}")
 
@@ -315,7 +319,7 @@ async def chat(
         }
         ttl = ttl_map.get(question_type, 3600)
         cache.set(cache_key_str, reply, ttl)
-        print(f"[CHAT] 缓存已保存，TTL: {ttl}秒")
+        chat_log(f"[CHAT] 缓存已保存，TTL: {ttl}秒")
 
         # 保存上下文
         chat_contexts[session_id] = history + [
