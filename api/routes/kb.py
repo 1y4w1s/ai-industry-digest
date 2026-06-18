@@ -1,5 +1,5 @@
 """
-Signal - 知识库路由
+❌ Internal Server ErrorSignal - 知识库路由
 提供文档上传、切片、知识图谱、对话等功能
 """
 

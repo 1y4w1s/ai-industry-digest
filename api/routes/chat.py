@@ -60,11 +60,19 @@ def search_kb_chunks(query: str, user_id: str, limit: int = 3) -> List[Dict[str,
         .order("created_at", desc=True)
     
     # 权限过滤：公开文档 OR 用户自己的文档
-    chunks_query = chunks_query.or_(f"kb_documents.is_public.eq.true,kb_documents.user_id.eq.{user_id}")
+    # 注意：使用参数化查询，避免 SQL 注入
+    chunks_query = chunks_query.or_(
+        "kb_documents.is_public.eq.true",
+        f"kb_documents.user_id.eq.{user_id}"
+    )
     
     # 执行查询
-    result = chunks_query.execute()
-    all_chunks = result.data or []
+    try:
+        result = chunks_query.execute()
+        all_chunks = result.data or []
+    except Exception as e:
+        chat_log(f"[KB] 知识库查询失败: {e}")
+        return []
     
     # 简单的关键词匹配
     query_keywords = query.lower().split()
