@@ -1,12 +1,12 @@
 """
 Signal - AI 对话接口
-支持文章级对话（带上下文）和全局对话
+支持文章级对话（带上下文）和全局对话，整合知识库功能
 """
 
 import os
 import httpx
 import hashlib
-from typing import Optional
+from typing import Optional, List, Dict, Any
 from pydantic import BaseModel
 from datetime import datetime
 
@@ -48,6 +48,50 @@ def chat_log(msg: str):
             f.write(f"[{timestamp}] {msg}\n")
     except Exception:
         pass
+
+
+# ── 知识库检索功能 ──────────────────────────
+
+def search_kb_chunks(query: str, user_id: str, limit: int = 3) -> List[Dict[str, Any]]:
+    """在知识库切片中搜索相关内容"""
+    # 构建基础查询
+    chunks_query = db.client.table("kb_chunks") \
+        .select("*, kb_documents!inner(id, name, file_type, is_public, user_id)") \
+        .order("created_at", desc=True)
+    
+    # 权限过滤：公开文档 OR 用户自己的文档
+    chunks_query = chunks_query.or_(f"kb_documents.is_public.eq.true,kb_documents.user_id.eq.{user_id}")
+    
+    # 执行查询
+    result = chunks_query.execute()
+    all_chunks = result.data or []
+    
+    # 简单的关键词匹配
+    query_keywords = query.lower().split()
+    scored_chunks = []
+    
+    for chunk in all_chunks:
+        content = chunk.get("content", "").lower()
+        doc = chunk.get("kb_documents", {})
+        
+        # 计算匹配分数
+        score = 0
+        for keyword in query_keywords:
+            if keyword in content:
+                score += content.count(keyword) * 2
+            if keyword in doc.get("name", "").lower():
+                score += 1
+        
+        if score > 0:
+            scored_chunks.append({
+                "chunk": chunk,
+                "document": doc,
+                "score": score
+            })
+    
+    # 按分数排序并返回前N个结果
+    scored_chunks.sort(key=lambda x: x["score"], reverse=True)
+    return scored_chunks[:limit]
 
 
 def log_chat_request(
@@ -207,19 +251,20 @@ class ChatResponse(BaseModel):
     session_id: str
 
 
-SYSTEM_PROMPT = """你是一个专业的 AI 行业分析师助手，帮助用户理解 AI 行业新闻和趋势。
+SYSTEM_PROMPT = """你是一个专业的 AI 行业分析师助手，帮助用户理解 AI 行业新闻、趋势和知识库内容。
 
 规则:
-1. 你的知识截止于 2026 年初，用户提供的最新文章内容优先于你的训练数据
-2. 不确定的具体事件请坦白说「我不确定，但根据你提供的文章...」
+1. 你的知识截止于 2026 年初，用户提供的最新文章内容和知识库内容优先于你的训练数据
+2. 不确定的具体事件请坦白说「我不确定，但根据你提供的资料...」
 3. 回答简洁、准确、有深度，使用中文
+4. 引用文章时使用 Markdown 链接格式：[文章标题](/?article=文章ID)
+5. 引用知识库文档时使用格式：[文档名称](/knowledge?doc=文档ID)"""
 
-引用文章时必须使用 Markdown 链接格式：[文章标题](/?article=文章ID)"""
+KB_CONTEXT_PROMPT = """以下是知识库中的相关内容：
 
-# ⚠️ 安全隔离：知识库内容不由本接口注入
-# 知识库文档内容仅在 /knowledge 页面独立对话中使用
-# 不在全局 AI 助手的 context 中注入 KB 内容，防止 prompt injection 扩散
-# 如需为全局助手增加 KB 感知能力，请在独立接口中实现（如 /api/kb/chat）
+{kb_content}
+
+请参考知识库内容回答用户问题。引用文档时使用格式：[文档名称](/knowledge?doc=文档ID)"""
 
 ARTICLE_CONTEXT_PROMPT = """以下是用户当前正在阅读的一篇文章：
 
@@ -244,20 +289,28 @@ async def chat(
     req: ChatRequest,
     background_tasks: BackgroundTasks,
     authorization: Optional[str] = Header(None),
+    token: Optional[str] = Header(None),
 ):
-    """AI 对话接口（带文章上下文）
+    """AI 对话接口（带文章上下文和知识库支持）
     
     上下文来源（按注入顺序）：
       1. SYSTEM_PROMPT — 角色设定
       2. 当前文章（如果 article_id 有值）
       3. 今日日报文章列表（如果 article_id 为空）
-      4. 最近 2 轮对话历史
-      
-    ⚠️ 注意：本接口不注入知识库内容。知识库对话隔离在 /kb 独立上下文中。
+      4. 知识库相关文档（智能检索）
+      5. 最近 2 轮对话历史
     """
+    from api.services.jwt_verify import verify_token, DEMO_USER_UUID
+    
     api_key = os.getenv("DEEPSEEK_API_KEY")
     if not api_key:
         raise HTTPException(status_code=503, detail="AI 服务未配置（缺少 DEEPSEEK_API_KEY）")
+
+    # 认证
+    raw = authorization or token
+    user_id = verify_token(raw) if raw else DEMO_USER_UUID
+    if not user_id:
+        user_id = DEMO_USER_UUID
 
     session_id = req.session_id or f"session_{hash(str(req.article_id))}_{os.urandom(4).hex()}"
     
@@ -334,6 +387,28 @@ async def chat(
                             messages.append({"role": "system", "content": f"今日日期（日报日期）: {report_date}"})
             else:
                 chat_log(f"[CHAT] 问题类型={question_type}，跳过日报上下文注入")
+        
+        # ── 知识库上下文注入 ──
+        # 检测知识库相关关键词（如"文档"、"知识库"、"指南"等）
+        kb_keywords = ["知识库", "文档", "指南", "手册", "资料", "文档内容", "知识"]
+        message_lower = req.message.lower()
+        if any(keyword in message_lower for keyword in kb_keywords) or question_type == "general":
+            # 搜索知识库相关内容
+            kb_chunks = search_kb_chunks(req.message, user_id, limit=3)
+            if kb_chunks:
+                kb_parts = []
+                for item in kb_chunks:
+                    chunk = item["chunk"]
+                    doc = item["document"]
+                    kb_parts.append(
+                        f"文档：{doc.get('name', '未知文档')} (ID: {doc.get('id', '')})\n"
+                        f"内容：{chunk.get('content', '')[:300]}\n"
+                    )
+                kb_context = KB_CONTEXT_PROMPT.format(kb_content="\n".join(kb_parts))
+                messages.append({"role": "system", "content": kb_context})
+                chat_log(f"[CHAT] 注入知识库上下文: {len(kb_chunks)} 个相关切片")
+            else:
+                chat_log(f"[CHAT] 知识库检索无结果")
 
         # 添加历史上下文（保留最近 2 轮，减少 tokens 消耗）
         history = chat_contexts.get(session_id, [])

@@ -2,7 +2,6 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { api } from '../api/client';
 import KnowledgeGraphDrawer from '../components/KnowledgeGraphDrawer';
 import KnowledgePreviewDrawer from '../components/KnowledgePreviewDrawer';
-import KBChatBubble from '../components/KBChatBubble';
 
 const PAGE_SIZE = 20;
 
@@ -695,9 +694,6 @@ export default function KnowledgeBasePage() {
           </div>
         </div>
       )}
-
-      {/* ── Knowledge Base Chat Bubble ── */}
-      <KBChatBubble documentIds={selected.size > 0 ? [...selected] : null} />
     </div>
   );
 }

@@ -248,12 +248,6 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ ids }),
       }),
-
-    chat: (message, documentIds = null, sessionId = null) =>
-      request('/kb/chat', {
-        method: 'POST',
-        body: JSON.stringify({ message, document_ids: documentIds, session_id: sessionId }),
-      }),
   },
 
   // 全站搜索
