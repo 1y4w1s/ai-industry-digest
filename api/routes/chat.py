@@ -54,19 +54,36 @@ def chat_log(msg: str):
 
 def search_kb_chunks(query: str, user_id: str, limit: int = 3) -> List[Dict[str, Any]]:
     """在知识库切片中搜索相关内容"""
-    # 构建基础查询
-    chunks_query = db.client.table("kb_chunks") \
-        .select("*, kb_documents!inner(id, name, file_type, is_public, user_id)") \
-        .order("created_at", desc=True)
-    
-    # 权限过滤：公开文档 OR 用户自己的文档
-    # 注意：supabase-py 的 or_ 方法接受逗号分隔的条件字符串
-    chunks_query = chunks_query.or_(f"kb_documents.is_public.eq.true,kb_documents.user_id.eq.{user_id}")
-    
-    # 执行查询
     try:
+        # 步骤1：先获取用户有权限访问的文档ID列表
+        # 公开文档 OR 用户自己的文档
+        docs_result = db.client.table("kb_documents") \
+            .select("id") \
+            .or_(f"is_public.eq.true,user_id.eq.{user_id}") \
+            .execute()
+        
+        doc_ids = set(doc["id"] for doc in (docs_result.data or []))
+        
+        if not doc_ids:
+            chat_log("[KB] 没有可访问的文档")
+            return []
+        
+        chat_log(f"[KB] 可访问文档数量: {len(doc_ids)}")
+        
+        # 步骤2：查询所有切片，然后在代码层面过滤
+        # 由于 supabase-py 的 in_ 操作符对 UUID 支持有问题，我们先获取所有切片
+        chunks_query = db.client.table("kb_chunks") \
+            .select("*, kb_documents!inner(id, name, file_type, is_public, user_id)") \
+            .order("created_at", desc=True) \
+            .limit(100)  # 限制查询数量，避免性能问题
+        
         result = chunks_query.execute()
         all_chunks = result.data or []
+        
+        # 在代码层面过滤文档ID
+        filtered_chunks = [chunk for chunk in all_chunks if chunk.get("document_id") in doc_ids]
+        chat_log(f"[KB] 查询到 {len(filtered_chunks)} 个有权限的切片")
+        
     except Exception as e:
         chat_log(f"[KB] 知识库查询失败: {e}")
         return []
@@ -75,7 +92,7 @@ def search_kb_chunks(query: str, user_id: str, limit: int = 3) -> List[Dict[str,
     query_keywords = query.lower().split()
     scored_chunks = []
     
-    for chunk in all_chunks:
+    for chunk in filtered_chunks:
         content = chunk.get("content", "").lower()
         doc = chunk.get("kb_documents", {})
         
