@@ -1,14 +1,16 @@
 """
 Signal - 知识库路由
-提供文档上传、切片、知识图谱等功能
+提供文档上传、切片、知识图谱、对话等功能
 """
 
 import os
 import uuid
+import httpx
 from typing import Optional, List, Dict, Any
 from datetime import datetime
+from pydantic import BaseModel
 
-from fastapi import APIRouter, File, UploadFile, Depends, HTTPException, Header, Query
+from fastapi import APIRouter, File, UploadFile, Depends, HTTPException, Header, Query, BackgroundTasks
 
 from api.models.database import get_db
 from api.services.jwt_verify import verify_token, DEMO_USER_UUID
@@ -16,6 +18,9 @@ from processor.ai_processor import AIProcessor
 
 router = APIRouter(prefix="/kb", tags=["知识库"])
 db = get_db()
+
+# 知识库对话上下文存储（独立存储，避免循环导入）
+kb_chat_contexts: dict = {}
 
 # ── 统一认证工具 ────────────────────────
 # 所有 KB 路由共用同一套认证逻辑，支持：
@@ -667,3 +672,207 @@ def split_into_chunks(content: str, chunk_size: int = 500, overlap: int = 50) ->
             next_start = start + 1
         start = next_start
     return chunks
+
+
+# ── 知识库对话接口 ──────────────────────────
+
+class KBChatRequest(BaseModel):
+    """知识库对话请求"""
+    message: str
+    document_ids: Optional[List[str]] = None  # 限制对话范围到特定文档
+    session_id: Optional[str] = None  # 用于保持对话上下文
+
+
+class KBChatResponse(BaseModel):
+    """知识库对话响应"""
+    reply: str
+    session_id: str
+    sources: List[Dict[str, Any]]  # 引用的知识库来源
+
+
+KB_SYSTEM_PROMPT = """你是一个专业的知识库助手，帮助用户理解和查询知识库中的文档内容。
+
+规则:
+1. 你的回答必须基于提供的知识库内容，不要编造信息
+2. 如果知识库中没有相关信息，请明确告知用户
+3. 引用文档时使用 Markdown 链接格式：[文档名称](/knowledge?doc=文档ID)
+4. 回答简洁、准确、有深度，使用中文
+5. 可以跨文档整合信息，提供综合性回答"""
+
+
+def search_kb_chunks(query: str, user_id: str, document_ids: Optional[List[str]] = None, limit: int = 5) -> List[Dict[str, Any]]:
+    """在知识库切片中搜索相关内容
+    
+    Args:
+        query: 用户查询
+        user_id: 用户ID
+        document_ids: 限制搜索的文档ID列表
+        limit: 返回结果数量限制
+    
+    Returns:
+        相关切片列表，包含文档信息和切片内容
+    """
+    # 构建基础查询
+    chunks_query = db.client.table("kb_chunks") \
+        .select("*, kb_documents!inner(id, name, file_type, is_public, user_id)") \
+        .order("created_at", desc=True)
+    
+    # 权限过滤：公开文档 OR 用户自己的文档
+    chunks_query = chunks_query.or_(f"kb_documents.is_public.eq.true,kb_documents.user_id.eq.{user_id}")
+    
+    # 文档范围过滤
+    if document_ids:
+        chunks_query = chunks_query.in_("document_id", document_ids)
+    
+    # 执行查询获取所有切片（生产环境应该使用全文搜索或向量搜索）
+    result = chunks_query.execute()
+    all_chunks = result.data or []
+    
+    # 简单的关键词匹配（生产环境应该使用更智能的检索算法）
+    query_keywords = query.lower().split()
+    scored_chunks = []
+    
+    for chunk in all_chunks:
+        content = chunk.get("content", "").lower()
+        doc = chunk.get("kb_documents", {})
+        
+        # 计算匹配分数
+        score = 0
+        for keyword in query_keywords:
+            if keyword in content:
+                score += content.count(keyword) * 2  # 内容匹配权重更高
+            if keyword in doc.get("name", "").lower():
+                score += 1  # 文件名匹配
+        
+        if score > 0:
+            scored_chunks.append({
+                "chunk": chunk,
+                "document": doc,
+                "score": score
+            })
+    
+    # 按分数排序并返回前N个结果
+    scored_chunks.sort(key=lambda x: x["score"], reverse=True)
+    return scored_chunks[:limit]
+
+
+@router.post("/chat", response_model=KBChatResponse, tags=["知识库对话"])
+async def kb_chat(
+    req: KBChatRequest,
+    background_tasks: BackgroundTasks,
+    authorization: Optional[str] = Header(None),
+    token: Optional[str] = Query(None),
+):
+    """知识库对话接口（带知识库上下文）
+    
+    上下文来源：
+      1. KB_SYSTEM_PROMPT — 角色设定
+      2. 相关知识库切片内容（基于关键词检索）
+      3. 最近 2 轮对话历史
+    
+    注意：此接口独立于全局 /api/chat，专门用于知识库对话
+    """
+    # 认证
+    raw = authorization or token
+    user_id = verify_token(raw) if raw else DEMO_USER_UUID
+    if not user_id:
+        user_id = DEMO_USER_UUID
+    
+    # 检查 API Key
+    api_key = os.getenv("DEEPSEEK_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=503, detail="AI 服务未配置（缺少 DEEPSEEK_API_KEY）")
+    
+    session_id = req.session_id or f"kb_session_{os.urandom(4).hex()}"
+    
+    # 搜索相关知识库内容
+    relevant_chunks = search_kb_chunks(
+        query=req.message,
+        user_id=user_id,
+        document_ids=req.document_ids,
+        limit=5
+    )
+    
+    # 构建知识库上下文
+    kb_context = ""
+    sources = []
+    
+    if relevant_chunks:
+        kb_context_parts = []
+        for item in relevant_chunks:
+            chunk = item["chunk"]
+            doc = item["document"]
+            
+            # 添加到上下文
+            kb_context_parts.append(
+                f"文档：{doc.get('name', '未知文档')} (ID: {doc.get('id', '')})\n"
+                f"内容：{chunk.get('content', '')}\n"
+            )
+            
+            # 记录来源（去重）
+            doc_id = doc.get('id', '')
+            if doc_id and not any(s.get('id') == doc_id for s in sources):
+                sources.append({
+                    "id": doc_id,
+                    "name": doc.get('name', ''),
+                    "file_type": doc.get('file_type', ''),
+                    "relevance": item["score"]
+                })
+        
+        kb_context = "以下是知识库中的相关内容：\n\n" + "\n".join(kb_context_parts)
+    else:
+        kb_context = "知识库中没有找到与您问题直接相关的内容。"
+    
+    # 构建消息上下文
+    messages = [
+        {"role": "system", "content": KB_SYSTEM_PROMPT},
+        {"role": "system", "content": kb_context}
+    ]
+    
+    # 添加历史上下文（使用独立的 kb_chat_contexts）
+    history = kb_chat_contexts.get(session_id, [])
+    for h in history[-2:]:
+        messages.append(h)
+    
+    # 添加当前消息
+    messages.append({"role": "user", "content": req.message})
+    
+    # 调用 AI
+    try:
+        with httpx.Client(timeout=60) as client:
+            resp = client.post(
+                "https://api.deepseek.com/v1/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": "deepseek-chat",
+                    "messages": messages,
+                    "temperature": 0.3,
+                    "max_tokens": 1000,
+                },
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            reply = data["choices"][0]["message"]["content"].strip()
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"AI 服务调用失败: {e}")
+    
+    # 保存上下文（使用独立的 kb_chat_contexts）
+    kb_chat_contexts[session_id] = history + [
+        {"role": "user", "content": req.message},
+        {"role": "assistant", "content": reply},
+    ]
+    
+    # 限制上下文大小
+    if len(kb_chat_contexts) > 1000:
+        keys = list(kb_chat_contexts.keys())[:500]
+        for k in keys:
+            del kb_chat_contexts[k]
+    
+    return KBChatResponse(
+        reply=reply,
+        session_id=session_id,
+        sources=sources
+    )
