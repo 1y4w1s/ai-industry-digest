@@ -24,7 +24,8 @@ def _get_home_cached():
     global _home_cache, _home_cache_time
     now = time.time()
     if _home_cache is None or now - _home_cache_time > _HOME_CACHE_TTL:
-        reports = db.get_reports(page=1, page_size=7)
+        # 返回最多31条日报（约一个月），支持归档浏览
+        reports = db.get_reports(page=1, page_size=31)
         sources = db.get_sources()
         tags = db.get_tags()
         # 预取首日报详情，消除前端瀑布请求
@@ -45,9 +46,9 @@ def _get_home_cached():
 @router.get("/reports", tags=["日报"])
 async def list_reports(
     page: int = Query(1, ge=1, description="页码"),
-    page_size: int = Query(7, ge=1, le=31, description="每页数量"),
+    page_size: int = Query(14, ge=1, le=50, description="每页数量"),
 ):
-    """日报列表（分页，按日期倒序）"""
+    """分页获取日报列表（支持查看所有历史数据）"""
     return db.get_reports(page=page, page_size=page_size)
 
 

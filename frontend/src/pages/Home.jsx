@@ -18,25 +18,26 @@ export default function Home() {
   const articleId = searchParams.get('article');
   const [visibleCount, setVisibleCount] = useState(10);   // 移动端分批渲染：首次只展示 10 篇
 
+  // 提前读取 URL 中的日期参数，传给 useReport 作为初始值
+  const dateParam = searchParams.get('date');
+
   const goToArticle = (id) => navigate(`/?article=${encodeURIComponent(id)}`);
 
   const {
     reports, selectedDate, setSelectedDate,
     report, loading, detailLoading,
-    page, setPage, sources, tags,
+    page, setPage, total, sources, tags,
     articles, highArticles,
     fromCache, cacheAge,
-  } = useReport();
+    loadMore, loadingMore, hasMore,
+  } = useReport(dateParam);
 
-  // Handle ?date= param from Archive navigation
+  // 清除 URL 中的 date 参数（在数据加载完成后）
   useEffect(() => {
-    const dateParam = searchParams.get('date');
-    if (dateParam && reports.some((r) => r.report_date === dateParam)) {
-      setSelectedDate(dateParam);
-      // Clear the param so it doesn't re-trigger
+    if (dateParam && selectedDate === dateParam) {
       setSearchParams({}, { replace: true });
     }
-  }, [searchParams, reports, setSelectedDate, setSearchParams]);
+  }, [dateParam, selectedDate, setSearchParams]);
 
   const {
     importance, setImportance,
@@ -106,6 +107,9 @@ export default function Home() {
                   reports={reports}
                   selectedDate={selectedDate}
                   onSelect={(date) => { setSelectedDate(date); setPage(1); setVisibleCount(10); }}
+                  hasMore={hasMore}
+                  onLoadMore={loadMore}
+                  loadingMore={loadingMore}
                 />
               </>
             )}

@@ -2,9 +2,9 @@ import { useState, useRef, useEffect } from 'react';
 import { getDateLabel } from '../utils/date';
 
 const VISIBLE_DEFAULT = 3;
-const VISIBLE_EXPANDED = 7;
+const VISIBLE_EXPANDED = 14;  // 从7改为14，显示更多历史日期
 
-export default function DateNav({ reports, selectedDate, onSelect }) {
+export default function DateNav({ reports, selectedDate, onSelect, hasMore = false, onLoadMore = () => {}, loadingMore = false }) {
   const [showAll, setShowAll] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef(null);
@@ -159,6 +159,31 @@ export default function DateNav({ reports, selectedDate, onSelect }) {
                     </button>
                   );
                 })}
+                
+                {/* 加载更多按钮 */}
+                {hasMore && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onLoadMore(); }}
+                    disabled={loadingMore}
+                    style={{
+                      display: 'block',
+                      width: '100%',
+                      textAlign: 'center',
+                      padding: '10px 14px',
+                      fontSize: 'var(--fs-xs)',
+                      color: 'var(--color-blue-link)',
+                      background: 'transparent',
+                      border: 'none',
+                      cursor: loadingMore ? 'default' : 'pointer',
+                      transition: 'background 0.1s',
+                    }}
+                    onMouseEnter={(e) => { if (!loadingMore) e.target.style.background = 'var(--color-bg-off)'; }}
+                    onMouseLeave={(e) => { e.target.style.background = 'transparent'; }}
+                  >
+                    {loadingMore ? '加载中...' : '加载更多历史日报'}
+                  </button>
+                )}
+                
                 <div style={{ padding: '6px 14px 2px', fontSize: 'var(--fs-xs)', color: 'var(--color-text-label)', borderTop: '1px solid var(--color-border-light)', marginTop: '4px', paddingTop: '6px' }}>
                   共 {reports.length} 期
                 </div>
