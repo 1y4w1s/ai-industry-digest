@@ -6,6 +6,7 @@ Signal - AI 对话接口
 import os
 import httpx
 import hashlib
+import jieba
 from typing import Optional, List, Dict, Any
 from pydantic import BaseModel
 from datetime import datetime
@@ -14,6 +15,7 @@ from fastapi import APIRouter, HTTPException, BackgroundTasks, Header
 from api.models.database import get_db
 from api.services.tag_extractor import TagExtractor
 from api.services.cache import cache, cache_key
+from api.services.intent_classifier import classify_intent, get_classifier
 
 router = APIRouter()
 db = get_db()
@@ -117,7 +119,13 @@ def search_kb_chunks(query: str, user_id: str, limit: int = 3) -> List[Dict[str,
             return []
     
     # 有具体关键词的查询
-    query_keywords = query_clean.split()
+    # 使用 jieba 分词，支持中英文混合
+    # 例如："AI融资新闻" → ["ai", "融资", "新闻"]
+    query_keywords = jieba.lcut(query_clean)
+    # 过滤掉单字（通常没有意义）和停用词
+    query_keywords = [w for w in query_keywords if len(w) > 1]
+    
+    chat_log(f"[KB] 分词结果: {query_keywords}")
     
     # 步骤2：查询所有切片，然后在代码层面过滤
     try:
@@ -348,42 +356,26 @@ def classify_question(message: str) -> str:
     """
     分类用户问题，决定是否需要注入上下文
     
+    使用配置化的意图分类器，支持：
+    1. 规则 + 权重打分
+    2. 置信度判断
+    3. 兜底策略（不确定时返回 daily）
+    
     返回值:
-    - "general": 通用知识问题，不需要上下文
+    - "chat": 闲聊对话，不需要上下文
+    - "general": 通用知识问题，查知识库
     - "daily": 日报/新闻相关，需要注入日报上下文
     - "article": 特定文章相关，需要注入文章上下文
-    - "chat": 闲聊对话，不需要上下文
+    - "kb": 知识库查询，需要注入知识库上下文
     """
-    message_lower = message.lower().strip()
+    # 使用新的意图分类器
+    result = classify_intent(message)
     
-    # 闲聊类
-    chat_keywords = ["你好", "嗨", "哈喽", "hello", "hi", "谢谢", "感谢", "再见", "拜拜"]
-    if any(keyword in message_lower for keyword in chat_keywords):
-        return "chat"
-    
-    # 通用知识类（询问定义、原理、概念）
-    general_keywords = [
-        "什么是", "解释一下", "原理", "概念", "什么意思", "如何",
-        "怎么", "为什么", "区别", "对比", "优缺点", "好处", "坏处"
-    ]
-    # 排除包含文章/新闻相关关键词的情况
-    content_keywords = ["文章", "新闻", "报道", "日报", "今天", "最近", "最新"]
-    if (any(keyword in message_lower for keyword in general_keywords) and
-        not any(keyword in message_lower for keyword in content_keywords)):
-        return "general"
-    
-    # 日报相关类
-    daily_keywords = ["日报", "新闻", "今天", "最近", "最新", "汇总", "有什么"]
-    if any(keyword in message_lower for keyword in daily_keywords):
+    # 如果分类器返回 None（置信度太低），默认返回 daily
+    if result is None:
         return "daily"
     
-    # 特定文章类（包含文章ID或文章相关关键词）
-    article_keywords = ["文章", "这篇", "那篇", "详情", "内容", "链接"]
-    if any(keyword in message_lower for keyword in article_keywords):
-        return "article"
-    
-    # 默认：需要上下文
-    return "daily"
+    return result
 
 
 class ChatRequest(BaseModel):
