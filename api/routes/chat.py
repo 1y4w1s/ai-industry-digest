@@ -527,10 +527,11 @@ async def chat(
                 chat_log(f"[CHAT] 问题类型={question_type}，跳过日报上下文注入")
         
         # ── 知识库上下文注入 ──
-        # 检测知识库相关关键词（如"文档"、"知识库"、"指南"等）
-        kb_keywords = ["知识库", "文档", "指南", "手册", "资料", "文档内容", "知识"]
-        message_lower = req.message.lower()
-        if any(keyword in message_lower for keyword in kb_keywords) or question_type == "general":
+        # 根据意图类型判断是否注入知识库上下文
+        # 注入条件：kb类型 或 general类型 或 置信度低时让LLM自己判断
+        should_inject_kb = question_type in ("kb", "general")
+        
+        if should_inject_kb:
             # 搜索知识库相关内容
             kb_chunks = search_kb_chunks(req.message, user_id, limit=3)
             if kb_chunks:
