@@ -19,6 +19,7 @@ from api.services.cache import cache, cache_key
 from api.services.intent_classifier import classify_intent, get_classifier
 from api.services.embedding import get_embedding_service
 from api.services.retrieval import get_retrieval_service
+from api.services.agent import get_agent_service
 
 router = APIRouter()
 db = get_db()
@@ -57,11 +58,12 @@ def chat_log(msg: str):
 
 # ── 知识库检索功能 ──────────────────────────
 
-def search_kb_chunks(query: str, user_id: str, limit: int = 3) -> List[Dict[str, Any]]:
+async def search_kb_chunks(query: str, user_id: str, limit: int = 3) -> List[Dict[str, Any]]:
     """在知识库切片中搜索相关内容（使用高级检索）"""
     try:
         retrieval_service = get_retrieval_service()
-        results = asyncio.run(retrieval_service.search(query, user_id, limit))
+        # 直接 await 异步方法，不再使用 asyncio.run()
+        results = await retrieval_service.search(query, user_id, limit)
         
         chat_log(f"[KB] 高级检索返回 {len(results)} 个结果")
         return results
@@ -434,7 +436,7 @@ async def chat(
         
         if should_inject_kb:
             # 搜索知识库相关内容
-            kb_chunks = search_kb_chunks(req.message, user_id, limit=3)
+            kb_chunks = await search_kb_chunks(req.message, user_id, limit=3)
             if kb_chunks:
                 kb_parts = []
                 for item in kb_chunks:
