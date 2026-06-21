@@ -14,6 +14,7 @@ from fastapi import APIRouter, File, UploadFile, Depends, HTTPException, Header,
 
 from api.models.database import get_db
 from api.services.jwt_verify import verify_token, DEMO_USER_UUID
+from api.services.embedding import get_embedding_service
 from processor.ai_processor import AIProcessor
 
 router = APIRouter(prefix="/kb", tags=["知识库"])
@@ -482,13 +483,20 @@ async def process_document(
         # 切片处理
         chunks = split_into_chunks(content)
         
-        # 保存切片
+        # 获取 Embedding 服务
+        embedding_service = get_embedding_service()
+        
+        # 保存切片（带 Embedding）
         for i, chunk in enumerate(chunks):
+            # 生成 Embedding
+            embedding = await embedding_service.get_embedding(chunk)
+            
             db.client.table("kb_chunks").insert({
                 "id": str(uuid.uuid4()),
                 "document_id": document_id,
                 "content": chunk,
                 "chunk_index": i,
+                "embedding": embedding,
                 "metadata": {"length": len(chunk)},
                 "created_at": datetime.now().isoformat(),
             }).execute()

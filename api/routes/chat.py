@@ -16,6 +16,7 @@ from api.models.database import get_db
 from api.services.tag_extractor import TagExtractor
 from api.services.cache import cache, cache_key
 from api.services.intent_classifier import classify_intent, get_classifier
+from api.services.embedding import get_embedding_service
 
 router = APIRouter()
 db = get_db()
@@ -55,10 +56,10 @@ def chat_log(msg: str):
 # ── 知识库检索功能 ──────────────────────────
 
 def search_kb_chunks(query: str, user_id: str, limit: int = 3) -> List[Dict[str, Any]]:
-    """在知识库切片中搜索相关内容"""
+    """在知识库切片中搜索相关内容（使用向量检索）"""
+    import asyncio
+    
     try:
-        # 步骤1：先获取用户有权限访问的文档ID列表
-        # 公开文档 OR 用户自己的文档
         docs_result = db.client.table("kb_documents") \
             .select("id") \
             .or_(f"is_public.eq.true,user_id.eq.{user_id}") \
@@ -76,16 +77,12 @@ def search_kb_chunks(query: str, user_id: str, limit: int = 3) -> List[Dict[str,
         chat_log(f"[KB] 获取文档列表失败: {e}")
         return []
     
-    # 预处理查询
     query_clean = query.lower().strip()
     
-    # 检查是否是通用推荐请求
     recommend_keywords = ["推荐", "看看", "有什么", "什么内容", "内容", "文档", "资料"]
     is_recommend = any(keyword in query_clean for keyword in recommend_keywords)
     
     if is_recommend and len(query_clean) < 10:
-        # 用户只是要求推荐，没有特定关键词
-        # 返回最新的文档
         try:
             docs_result = db.client.table("kb_documents") \
                 .select("id", "name", "file_type", "is_public", "user_id", "created_at") \
@@ -96,7 +93,6 @@ def search_kb_chunks(query: str, user_id: str, limit: int = 3) -> List[Dict[str,
             
             result = []
             for doc in docs_result.data or []:
-                # 获取该文档的第一个切片
                 chunk_result = db.client.table("kb_chunks") \
                     .select("content") \
                     .eq("document_id", doc["id"]) \
@@ -108,7 +104,7 @@ def search_kb_chunks(query: str, user_id: str, limit: int = 3) -> List[Dict[str,
                 result.append({
                     "chunk": {"content": content, "document_id": doc["id"]},
                     "document": doc,
-                    "score": 100  # 推荐模式给高分
+                    "score": 100
                 })
             
             chat_log(f"[KB] 推荐模式: 返回 {len(result)} 个最新文档")
@@ -118,108 +114,105 @@ def search_kb_chunks(query: str, user_id: str, limit: int = 3) -> List[Dict[str,
             chat_log(f"[KB] 推荐查询失败: {e}")
             return []
     
-    # 有具体关键词的查询
-    # 使用 jieba 分词，支持中英文混合
-    # 例如："AI融资新闻" → ["ai", "融资", "新闻"]
-    query_keywords = jieba.lcut(query_clean)
-    # 过滤掉单字（通常没有意义）和停用词
-    query_keywords = [w for w in query_keywords if len(w) > 1]
-    
-    chat_log(f"[KB] 分词结果: {query_keywords}")
-    
-    # 步骤2：查询所有切片，然后在代码层面过滤
     try:
+        embedding_service = get_embedding_service()
+        query_embedding = asyncio.run(embedding_service.get_embedding(query_clean))
+        
+        if not query_embedding:
+            chat_log("[KB] 生成查询向量失败，回退到关键词检索")
+            return _keyword_search(query_clean, user_id, limit)
+        
+        chat_log(f"[KB] 查询向量生成成功，维度: {len(query_embedding)}")
+        
+        embedding_str = "[" + ",".join(str(x) for x in query_embedding) + "]"
+        
+        result = db.client.rpc(
+            'search_kb_by_embedding',
+            {
+                'query_embedding': embedding_str,
+                'user_id': user_id,
+                'limit': limit
+            }
+        ).execute()
+        
+        if result.data:
+            chat_log(f"[KB] 向量检索返回 {len(result.data)} 个结果")
+            scored_chunks = []
+            for item in result.data:
+                scored_chunks.append({
+                    "chunk": {
+                        "content": item.get("content", ""),
+                        "document_id": item.get("document_id", ""),
+                        "id": item.get("id", "")
+                    },
+                    "document": {
+                        "id": item.get("document_id", ""),
+                        "name": item.get("document_name", ""),
+                        "file_type": item.get("file_type", ""),
+                        "is_public": item.get("is_public", False),
+                        "user_id": item.get("doc_user_id", "")
+                    },
+                    "score": item.get("similarity", 0) * 100
+                })
+            return scored_chunks
+        
+        chat_log("[KB] 向量检索无结果，回退到关键词检索")
+        return _keyword_search(query_clean, user_id, limit)
+        
+    except Exception as e:
+        chat_log(f"[KB] 向量检索失败: {e}，回退到关键词检索")
+        return _keyword_search(query_clean, user_id, limit)
+
+
+def _keyword_search(query: str, user_id: str, limit: int = 3) -> List[Dict[str, Any]]:
+    """关键词检索（作为向量检索的回退）"""
+    try:
+        docs_result = db.client.table("kb_documents") \
+            .select("id") \
+            .or_(f"is_public.eq.true,user_id.eq.{user_id}") \
+            .execute()
+        
+        doc_ids = set(doc["id"] for doc in (docs_result.data or []))
+        
+        if not doc_ids:
+            return []
+        
+        query_keywords = jieba.lcut(query.lower())
+        query_keywords = [w for w in query_keywords if len(w) > 1]
+        
         chunks_query = db.client.table("kb_chunks") \
             .select("*, kb_documents!inner(id, name, file_type, is_public, user_id)") \
             .order("created_at", desc=True) \
-            .limit(200)  # 增加查询数量
+            .limit(200)
         
         result = chunks_query.execute()
         all_chunks = result.data or []
-        
-        # 在代码层面过滤文档ID
         filtered_chunks = [chunk for chunk in all_chunks if chunk.get("document_id") in doc_ids]
-        chat_log(f"[KB] 查询到 {len(filtered_chunks)} 个有权限的切片")
         
-    except Exception as e:
-        chat_log(f"[KB] 查询切片失败: {e}")
-        return []
-    
-    # 智能关键词匹配
-    scored_chunks = []
-    
-    # 增加常见AI领域关键词的同义词映射
-    keyword_synonyms = {
-        "ai": ["人工智能", "ai", "大模型", "机器学习", "深度学习"],
-        "llm": ["llm", "大语言模型", "语言模型", "transformer"],
-        "gpt": ["gpt", "chatgpt", "openai"],
-        "融资": ["融资", "投资", "估值", "募资", "上市"],
-        "芯片": ["芯片", "半导体", "gpu", "cpu"],
-        "自动驾驶": ["自动驾驶", "智驾", "无人车"],
-        "机器人": ["机器人", "具身智能", "人形机器人"],
-        "量子": ["量子", "量子计算"],
-        "微信": ["微信", "微信支付", "wechat"],
-        "腾讯": ["腾讯", "tencent"],
-        "字节": ["字节", "字节跳动", "bytedance"],
-        "阿里": ["阿里", "阿里巴巴", "alibaba"],
-        "百度": ["百度", "baidu"],
-        "华为": ["华为", "huawei"],
-        "微软": ["微软", "microsoft"],
-        "谷歌": ["谷歌", "google"],
-        "亚马逊": ["亚马逊", "amazon"],
-        "spacex": ["spacex", "太空探索", "马斯克"],
-    }
-    
-    for chunk in filtered_chunks:
-        content = chunk.get("content", "").lower()
-        doc = chunk.get("kb_documents", {})
-        doc_name = doc.get("name", "").lower()
+        scored_chunks = []
         
-        # 计算匹配分数
-        score = 0
-        
-        for keyword in query_keywords:
-            # 检查同义词匹配
-            matched = False
+        for chunk in filtered_chunks:
+            content = chunk.get("content", "").lower()
+            doc = chunk.get("kb_documents", {})
+            doc_name = doc.get("name", "").lower()
             
-            # 先检查精确匹配
-            if keyword in content:
-                score += content.count(keyword) * 3
-                matched = True
-            if keyword in doc_name:
-                score += 2
-                matched = True
+            score = 0
+            for keyword in query_keywords:
+                if keyword in content:
+                    score += content.count(keyword) * 3
+                if keyword in doc_name:
+                    score += 2
             
-            # 检查同义词匹配
-            for main_key, synonyms in keyword_synonyms.items():
-                if keyword in synonyms:
-                    for syn in synonyms:
-                        if syn in content:
-                            score += content.count(syn) * 2
-                            matched = True
-                        if syn in doc_name:
-                            score += 1
-                            matched = True
-            
-            # 如果是重要术语，额外加分
-            important_terms = ["gpt", "llm", "transformer", "ai", "芯片", "融资"]
-            if keyword in important_terms:
-                score += 5
+            if score > 0:
+                scored_chunks.append({
+                    "chunk": chunk,
+                    "document": doc,
+                    "score": score
+                })
         
-        if score > 0:
-            scored_chunks.append({
-                "chunk": chunk,
-                "document": doc,
-                "score": score
-            })
-    
-    # 按分数排序并返回前N个结果
-    scored_chunks.sort(key=lambda x: x["score"], reverse=True)
-    
-    # 如果没有匹配结果，返回最新文档作为推荐
-    if not scored_chunks:
-        chat_log("[KB] 没有匹配结果，返回推荐")
-        try:
+        scored_chunks.sort(key=lambda x: x["score"], reverse=True)
+        
+        if not scored_chunks:
             docs_result = db.client.table("kb_documents") \
                 .select("id", "name", "file_type", "is_public", "user_id", "created_at") \
                 .or_(f"is_public.eq.true,user_id.eq.{user_id}") \
@@ -241,11 +234,12 @@ def search_kb_chunks(query: str, user_id: str, limit: int = 3) -> List[Dict[str,
                     "document": doc,
                     "score": 50
                 })
-        except Exception as e:
-            chat_log(f"[KB] 备用推荐失败: {e}")
-    
-    chat_log(f"[KB] 返回 {len(scored_chunks[:limit])} 个结果")
-    return scored_chunks[:limit]
+        
+        return scored_chunks[:limit]
+        
+    except Exception as e:
+        chat_log(f"[KB] 关键词检索失败: {e}")
+        return []
 
 
 def log_chat_request(
