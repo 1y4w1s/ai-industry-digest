@@ -66,6 +66,12 @@ class AgentService:
         except Exception as e:
             print(f"[Agent] 初始化默认工具失败: {e}")
     
+    def register_tool(self, name: str, description: str, parameters: Dict, func: Callable):
+        """注册工具"""
+        tool = ToolDefinition(name, description, parameters, func)
+        self.tools.append(tool)
+        print(f"[Agent] 已注册工具: {name}")
+    
     def get_tools_description(self) -> str:
         """获取所有工具的描述（用于提示词）"""
         if not self.tools:
