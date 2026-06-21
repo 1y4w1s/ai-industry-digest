@@ -31,7 +31,7 @@ class AdvancedRetrievalService:
         返回:
             改写后的查询
         """
-        from api.services.llm_service import call_llm
+        import httpx
         
         history_str = ""
         if history:
@@ -57,9 +57,28 @@ class AdvancedRetrievalService:
         """
         
         try:
-            response = call_llm(prompt, model="deepseek-chat")
-            rewritten = response.strip()
-            return rewritten if rewritten else query
+            api_key = os.getenv("DEEPSEEK_API_KEY")
+            if not api_key:
+                return query
+            
+            with httpx.Client(timeout=30) as client:
+                resp = client.post(
+                    "https://api.deepseek.com/v1/chat/completions",
+                    headers={
+                        "Authorization": f"Bearer {api_key}",
+                        "Content-Type": "application/json",
+                    },
+                    json={
+                        "model": "deepseek-chat",
+                        "messages": [{"role": "user", "content": prompt}],
+                        "temperature": 0.1,
+                        "max_tokens": 100,
+                    },
+                )
+                if resp.status_code == 200:
+                    response = resp.json()["choices"][0]["message"]["content"].strip()
+                    return response if response else query
+                return query
         except Exception as e:
             print(f"Query 改写失败: {e}")
             return query
