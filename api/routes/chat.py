@@ -131,7 +131,7 @@ def search_kb_chunks(query: str, user_id: str, limit: int = 3) -> List[Dict[str,
             {
                 'query_embedding': embedding_str,
                 'user_id': user_id,
-                'limit': limit
+                'limit_count': limit
             }
         ).execute()
         
