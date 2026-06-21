@@ -133,7 +133,8 @@ async def agent_chat(
             parameters["user_id"] = user_id
         
         tool_used = tool_name
-        tool_result = agent.call_tool(tool_name, parameters)
+        # 使用 await 调用异步工具
+        tool_result = await agent.call_tool(tool_name, parameters)
         
         # 第二步：总结回答
         summary_prompt = f"""

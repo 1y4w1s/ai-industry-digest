@@ -5,17 +5,19 @@ Agent 服务
 
 import json
 import asyncio
-from typing import List, Dict, Any, Optional, Callable
+import inspect
+from typing import List, Dict, Any, Optional, Callable, Awaitable
 
 
 class ToolDefinition:
     """工具定义"""
     
-    def __init__(self, name: str, description: str, parameters: Dict, func: Callable):
+    def __init__(self, name: str, description: str, parameters: Dict, func: Callable, is_async: bool = False):
         self.name = name
         self.description = description
         self.parameters = parameters
         self.func = func
+        self.is_async = is_async
     
     def to_dict(self) -> Dict:
         """转换为字典格式，用于传递给 LLM"""
@@ -36,12 +38,13 @@ class AgentService:
     def _initialize_default_tools(self):
         """初始化默认工具"""
         try:
-            def search_knowledge_base(query: str, user_id: str = "default") -> str:
+            async def search_knowledge_base(query: str, user_id: str = "default") -> str:
                 """搜索知识库"""
                 try:
                     from api.services.retrieval import get_retrieval_service
                     retrieval_service = get_retrieval_service()
-                    results = asyncio.run(retrieval_service.search(query, user_id, limit=3))
+                    # 直接 await 异步方法，不再使用 asyncio.run()
+                    results = await retrieval_service.search(query, user_id, limit=3)
                     if results:
                         summaries = []
                         for i, result in enumerate(results[:3], 1):
@@ -51,8 +54,10 @@ class AgentService:
                         return "\n".join(summaries)
                     return "知识库中未找到相关信息"
                 except Exception as e:
+                    print(f"[Agent] 搜索知识库失败: {e}")
                     return f"搜索失败: {e}"
             
+            # 注册异步工具
             self.register_tool(
                 name="search_knowledge_base",
                 description="在知识库中搜索相关信息，用于回答用户关于文档、资料的问题",
@@ -60,17 +65,18 @@ class AgentService:
                     "query": {"type": "string", "description": "搜索关键词"},
                     "user_id": {"type": "string", "description": "用户ID，可选，默认为default"}
                 },
-                func=search_knowledge_base
+                func=search_knowledge_base,
+                is_async=True
             )
             
         except Exception as e:
             print(f"[Agent] 初始化默认工具失败: {e}")
     
-    def register_tool(self, name: str, description: str, parameters: Dict, func: Callable):
+    def register_tool(self, name: str, description: str, parameters: Dict, func: Callable, is_async: bool = False):
         """注册工具"""
-        tool = ToolDefinition(name, description, parameters, func)
+        tool = ToolDefinition(name, description, parameters, func, is_async)
         self.tools.append(tool)
-        print(f"[Agent] 已注册工具: {name}")
+        print(f"[Agent] 已注册工具: {name} (异步: {is_async})")
     
     def get_tools_description(self) -> str:
         """获取所有工具的描述（用于提示词）"""
@@ -133,12 +139,17 @@ class AgentService:
             print(f"[Agent] 解析工具调用失败: {e}")
             return None
     
-    def call_tool(self, tool_name: str, parameters: Dict[str, Any]) -> Any:
-        """调用指定工具"""
+    async def call_tool(self, tool_name: str, parameters: Dict[str, Any]) -> Any:
+        """调用指定工具（支持异步工具）"""
         for tool in self.tools:
             if tool.name == tool_name:
                 try:
-                    result = tool.func(**parameters)
+                    if tool.is_async:
+                        # 异步工具，使用 await
+                        result = await tool.func(**parameters)
+                    else:
+                        # 同步工具，直接调用
+                        result = tool.func(**parameters)
                     print(f"[Agent] 工具 {tool_name} 调用成功")
                     return result
                 except Exception as e:
