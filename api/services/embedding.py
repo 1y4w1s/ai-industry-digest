@@ -128,3 +128,60 @@ def get_embedding_service() -> EmbeddingService:
     if _embedding_service is None:
         _embedding_service = EmbeddingService()
     return _embedding_service
+
+
+# ============================================================
+# 同步版本方法（供 Celery 定时任务使用）
+# ============================================================
+
+def get_embeddings_sync(texts: List[str]) -> List[Optional[List[float]]]:
+    """
+    同步版本：批量获取文本向量
+
+    Celery 定时任务使用同步版本
+    """
+    import httpx
+    
+    api_key = os.getenv("ALIBABA_API_KEY")
+    if not api_key:
+        logger.error("ALIBABA_API_KEY 未配置")
+        return [None] * len(texts)
+    
+    base_url = "https://dashscope.aliyuncs.com/api/v1/services/embeddings/text-embedding/text-embedding"
+    model = "text-embedding-v3"
+    
+    BATCH_SIZE = 10
+    results: List[Optional[List[float]]] = []
+    
+    try:
+        with httpx.Client(timeout=60) as client:
+            for i in range(0, len(texts), BATCH_SIZE):
+                batch = texts[i:i + BATCH_SIZE]
+                
+                response = client.post(
+                    base_url,
+                    headers={
+                        "Authorization": f"Bearer {api_key}",
+                        "Content-Type": "application/json"
+                    },
+                    json={
+                        "model": model,
+                        "input": {"texts": batch},
+                        "parameters": {"text_type": "document"}
+                    }
+                )
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    batch_embeddings = [item["embedding"] for item in data["output"]["embeddings"]]
+                    results.extend(batch_embeddings)
+                else:
+                    logger.error(f"Embedding API 错误: {response.status_code}")
+                    results.extend([None] * len(batch))
+        
+        logger.info(f"批量 Embedding 生成成功, 数量: {len(results)}")
+        return results
+        
+    except Exception as e:
+        logger.error(f"批量 Embedding 生成失败: {e}")
+        return [None] * len(texts)

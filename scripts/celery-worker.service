@@ -1,0 +1,18 @@
+[Unit]
+Description=Celery Worker for AI Industry Digest
+After=network.target redis.service
+Wants=redis.service
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/opt/ai-industry-digest
+Environment="PYTHONPATH=/opt/ai-industry-digest"
+Environment="CELERY_BROKER_URL=redis://localhost:6379/0"
+Environment="CELERY_RESULT_BACKEND=redis://localhost:6379/0"
+ExecStart=/opt/ai-industry-digest/venv/bin/celery -A tasks worker --loglevel=info --concurrency=4 --logfile=/var/log/celeryworker.log
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
