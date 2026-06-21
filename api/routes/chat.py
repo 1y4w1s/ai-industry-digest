@@ -7,6 +7,7 @@ import os
 import httpx
 import hashlib
 import jieba
+import asyncio
 from typing import Optional, List, Dict, Any
 from pydantic import BaseModel
 from datetime import datetime
@@ -17,6 +18,7 @@ from api.services.tag_extractor import TagExtractor
 from api.services.cache import cache, cache_key
 from api.services.intent_classifier import classify_intent, get_classifier
 from api.services.embedding import get_embedding_service
+from api.services.retrieval import get_retrieval_service
 
 router = APIRouter()
 db = get_db()
@@ -56,112 +58,17 @@ def chat_log(msg: str):
 # ── 知识库检索功能 ──────────────────────────
 
 def search_kb_chunks(query: str, user_id: str, limit: int = 3) -> List[Dict[str, Any]]:
-    """在知识库切片中搜索相关内容（使用向量检索）"""
-    import asyncio
-    
+    """在知识库切片中搜索相关内容（使用高级检索）"""
     try:
-        docs_result = db.client.table("kb_documents") \
-            .select("id") \
-            .or_(f"is_public.eq.true,user_id.eq.{user_id}") \
-            .execute()
+        retrieval_service = get_retrieval_service()
+        results = asyncio.run(retrieval_service.search(query, user_id, limit))
         
-        doc_ids = set(doc["id"] for doc in (docs_result.data or []))
-        
-        if not doc_ids:
-            chat_log("[KB] 没有可访问的文档")
-            return []
-        
-        chat_log(f"[KB] 可访问文档数量: {len(doc_ids)}")
+        chat_log(f"[KB] 高级检索返回 {len(results)} 个结果")
+        return results
         
     except Exception as e:
-        chat_log(f"[KB] 获取文档列表失败: {e}")
-        return []
-    
-    query_clean = query.lower().strip()
-    
-    recommend_keywords = ["推荐", "看看", "有什么", "什么内容", "内容", "文档", "资料"]
-    is_recommend = any(keyword in query_clean for keyword in recommend_keywords)
-    
-    if is_recommend and len(query_clean) < 10:
-        try:
-            docs_result = db.client.table("kb_documents") \
-                .select("id", "name", "file_type", "is_public", "user_id", "created_at") \
-                .or_(f"is_public.eq.true,user_id.eq.{user_id}") \
-                .order("created_at", desc=True) \
-                .limit(limit) \
-                .execute()
-            
-            result = []
-            for doc in docs_result.data or []:
-                chunk_result = db.client.table("kb_chunks") \
-                    .select("content") \
-                    .eq("document_id", doc["id"]) \
-                    .limit(1) \
-                    .execute()
-                
-                content = chunk_result.data[0]["content"] if chunk_result.data else ""
-                
-                result.append({
-                    "chunk": {"content": content, "document_id": doc["id"]},
-                    "document": doc,
-                    "score": 100
-                })
-            
-            chat_log(f"[KB] 推荐模式: 返回 {len(result)} 个最新文档")
-            return result
-            
-        except Exception as e:
-            chat_log(f"[KB] 推荐查询失败: {e}")
-            return []
-    
-    try:
-        embedding_service = get_embedding_service()
-        query_embedding = asyncio.run(embedding_service.get_embedding(query_clean))
-        
-        if not query_embedding:
-            chat_log("[KB] 生成查询向量失败，回退到关键词检索")
-            return _keyword_search(query_clean, user_id, limit)
-        
-        chat_log(f"[KB] 查询向量生成成功，维度: {len(query_embedding)}")
-        
-        embedding_str = "[" + ",".join(str(x) for x in query_embedding) + "]"
-        
-        result = db.client.rpc(
-            'search_kb_by_embedding',
-            {
-                'query_embedding': embedding_str,
-                'user_id': user_id,
-                'limit_count': limit
-            }
-        ).execute()
-        
-        if result.data:
-            chat_log(f"[KB] 向量检索返回 {len(result.data)} 个结果")
-            scored_chunks = []
-            for item in result.data:
-                scored_chunks.append({
-                    "chunk": {
-                        "content": item.get("content", ""),
-                        "document_id": item.get("document_id", ""),
-                        "id": item.get("id", "")
-                    },
-                    "document": {
-                        "id": item.get("document_id", ""),
-                        "name": item.get("document_name", ""),
-                        "file_type": item.get("file_type", ""),
-                        "is_public": item.get("is_public", False),
-                        "user_id": item.get("doc_user_id", "")
-                    },
-                    "score": item.get("similarity", 0) * 100
-                })
-            return scored_chunks
-        
-        chat_log("[KB] 向量检索无结果，回退到关键词检索")
-        return _keyword_search(query_clean, user_id, limit)
-        
-    except Exception as e:
-        chat_log(f"[KB] 向量检索失败: {e}，回退到关键词检索")
-        return _keyword_search(query_clean, user_id, limit)
+        chat_log(f"[KB] 高级检索失败: {e}")
+        return _keyword_search(query.lower().strip(), user_id, limit)
 
 
 def _keyword_search(query: str, user_id: str, limit: int = 3) -> List[Dict[str, Any]]:
