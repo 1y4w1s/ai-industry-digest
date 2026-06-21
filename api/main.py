@@ -6,6 +6,10 @@ import time
 import os
 from pathlib import Path
 
+# 优先加载环境变量
+from dotenv import load_dotenv
+load_dotenv()
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
