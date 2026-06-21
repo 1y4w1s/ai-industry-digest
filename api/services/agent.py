@@ -36,13 +36,11 @@ class AgentService:
     def _initialize_default_tools(self):
         """初始化默认工具"""
         try:
-            from api.services.retrieval import get_retrieval_service
-            
-            retrieval_service = get_retrieval_service()
-            
             def search_knowledge_base(query: str, user_id: str = "default") -> str:
                 """搜索知识库"""
                 try:
+                    from api.services.retrieval import get_retrieval_service
+                    retrieval_service = get_retrieval_service()
                     results = asyncio.run(retrieval_service.search(query, user_id, limit=3))
                     if results:
                         summaries = []
