@@ -65,7 +65,7 @@ class EmbeddingService:
     
     async def get_embeddings(self, texts: List[str]) -> List[Optional[List[float]]]:
         """
-        批量获取文本向量
+        批量获取文本向量（阿里云 API 限制每次最多 10 个）
 
         参数:
             texts: 文本列表
@@ -77,33 +77,43 @@ class EmbeddingService:
             logger.error("ALIBABA_API_KEY 未配置")
             return [None] * len(texts)
         
+        # 阿里云 API 限制每次最多 10 个
+        BATCH_SIZE = 10
+        results: List[Optional[List[float]]] = []
+        
         try:
             async with httpx.AsyncClient(timeout=60) as client:
-                response = await client.post(
-                    self.base_url,
-                    headers={
-                        "Authorization": f"Bearer {self.api_key}",
-                        "Content-Type": "application/json"
-                    },
-                    json={
-                        "model": self.model,
-                        "input": {
-                            "texts": texts
+                # 分批处理
+                for i in range(0, len(texts), BATCH_SIZE):
+                    batch = texts[i:i + BATCH_SIZE]
+                    
+                    response = await client.post(
+                        self.base_url,
+                        headers={
+                            "Authorization": f"Bearer {self.api_key}",
+                            "Content-Type": "application/json"
                         },
-                        "parameters": {
-                            "text_type": "document"  # 文档类型
+                        json={
+                            "model": self.model,
+                            "input": {
+                                "texts": batch
+                            },
+                            "parameters": {
+                                "text_type": "document"
+                            }
                         }
-                    }
-                )
+                    )
 
-                if response.status_code == 200:
-                    data = response.json()
-                    embeddings = [item["embedding"] for item in data["output"]["embeddings"]]
-                    logger.info(f"批量 Embedding 生成成功, 数量: {len(embeddings)}")
-                    return embeddings
-                else:
-                    logger.error(f"Embedding API 错误: {response.status_code} - {response.text}")
-                    return [None] * len(texts)
+                    if response.status_code == 200:
+                        data = response.json()
+                        batch_embeddings = [item["embedding"] for item in data["output"]["embeddings"]]
+                        results.extend(batch_embeddings)
+                    else:
+                        logger.error(f"Embedding API 错误: {response.status_code} - {response.text}")
+                        results.extend([None] * len(batch))
+                
+                logger.info(f"批量 Embedding 生成成功, 数量: {len(results)}")
+                return results
                 
         except Exception as e:
             logger.error(f"批量 Embedding 生成失败: {e}")
