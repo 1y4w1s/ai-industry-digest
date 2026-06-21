@@ -123,8 +123,8 @@ class AgentService:
             name_end = response.find('">', name_start)
             tool_name = response[name_start:name_end]
             
-            # 提取参数
-            params_start = response.find('>', name_end + 2) + 1
+            # 提取参数：找到 "> 之后到 </function> 之前的内容
+            params_start = name_end + 2  # 跳过 ">
             params_str = response[params_start:end_tag].strip()
             
             # 解析 JSON 参数
