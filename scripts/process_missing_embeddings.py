@@ -89,8 +89,7 @@ class EmbeddingProcessor:
                     # 更新数据库
                     self.db.client.table("kb_chunks") \
                         .update({
-                            "embedding": embedding,
-                            "updated_at": datetime.now().isoformat()
+                            "embedding": embedding
                         }) \
                         .eq("id", chunk["id"]) \
                         .execute()
