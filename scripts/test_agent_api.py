@@ -8,6 +8,10 @@ sys.path.insert(0, '/opt/ai-industry-digest')
 import os
 import httpx
 
+# 加载环境变量
+from dotenv import load_dotenv
+load_dotenv('/opt/ai-industry-digest/.env')
+
 print("=" * 60)
 print("    Agent 接口测试")
 print("=" * 60)
