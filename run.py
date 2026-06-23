@@ -5,7 +5,9 @@ Signal - 全流程运行入口
 
 import os
 import sys
+import time
 import yaml
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, date, timedelta
 from typing import List
 
@@ -50,43 +52,108 @@ def create_collector(source_config: dict, collector_type: str = None):
     return None
 
 
+def _collect_single_source(source_config: dict) -> tuple:
+    """采集单个信息源（含 fallback 逻辑），供并发调用"""
+    name = source_config.get("name", "unknown")
+    print(f"\n--- {name} ---")
+    collectors = source_config.get("collectors", [])
+
+    for idx, coll_cfg in enumerate(collectors):
+        if idx > 0:
+            print(f"  [FALLBACK] 尝试备用方式: {coll_cfg.get('type')}")
+        collector = create_collector(source_config, coll_cfg.get("type"))
+        if not collector:
+            continue
+
+        try:
+            articles = collector.collect()
+            if articles:
+                print(f"  ✅ 采集到 {len(articles)} 篇")
+                return (name, articles, True)
+            else:
+                print(f"  [EMPTY] 未采集到文章")
+        except Exception as e:
+            print(f"  [ERROR] 采集异常: {e}")
+            continue
+
+    return (name, [], False)
+
+
 def collect_all(sources: List[dict]) -> List[Article]:
-    """采集所有信息源"""
+    """并发采集所有信息源"""
+    worker_count = min(len(sources), 4)
+    print(f"\n🚀 并发采集: {len(sources)} 个信息源 (max_workers={worker_count})")
+
     all_articles: List[Article] = []
     stats = {"success": 0, "failed": 0}
+    start_ts = time.time()
 
-    for source_config in sources:
-        name = source_config.get("name", "unknown")
-        print(f"\n--- {name} ---")
-        collectors = source_config.get("collectors", [])
-        success = False
-
-        for idx, coll_cfg in enumerate(collectors):
-            if idx > 0:
-                print(f"  [FALLBACK] 尝试备用方式: {coll_cfg.get('type')}")
-            collector = create_collector(source_config, coll_cfg.get("type"))
-            if not collector:
-                continue
-
+    with ThreadPoolExecutor(max_workers=worker_count) as executor:
+        futures = {executor.submit(_collect_single_source, src): src for src in sources}
+        for fut in as_completed(futures):
             try:
-                articles = collector.collect()
-                if articles:
+                name, articles, success = fut.result()
+                if success:
                     all_articles.extend(articles)
-                    success = True
-                    break
+                    stats["success"] += 1
                 else:
-                    print(f"  [EMPTY] 未采集到文章")
+                    stats["failed"] += 1
             except Exception as e:
-                print(f"  [ERROR] 采集异常: {e}")
-                continue
+                name = futures[fut].get("name", "unknown")
+                print(f"\n  [ERROR] {name} 采集线程异常: {e}")
+                stats["failed"] += 1
 
-        if success:
-            stats["success"] += 1
-        else:
-            stats["failed"] += 1
-
-    print(f"\n📊 采集: {stats['success']} 源成功, {stats['failed']} 源失败, 共 {len(all_articles)} 篇")
+    elapsed = time.time() - start_ts
+    print(f"\n📊 采集: {stats['success']} 源成功, {stats['failed']} 源失败, 共 {len(all_articles)} 篇 (耗时 {elapsed:.1f}s)")
     return all_articles
+
+
+def _process_with_retry(ai: AIProcessor, articles: List[Article], max_retries: int = 2) -> List[Article]:
+    """带指数退避重试的 AI 处理
+    确保即使 AI 处理完全崩溃，也能继续后续入库流程
+    """
+    article_count = len(articles)
+    print(f"\n--- AI 处理重试模块 ---")
+    print(f"  待处理: {article_count} 篇 | 最大重试: {max_retries} 次")
+
+    for attempt in range(max_retries + 1):
+        attempt_label = f"第 {attempt + 1} 次"
+        if attempt > 0:
+            attempt_label += "（重试）"
+        print(f"  ▶ 开始{attempt_label}尝试...")
+        start_ts = time.time()
+
+        try:
+            result = ai.process_articles(articles)
+            elapsed = time.time() - start_ts
+            if attempt > 0:
+                print(f"  ✅ 重试成功! 耗时 {elapsed:.1f}s，处理 {len(result)} 篇")
+            else:
+                print(f"  ✅ 首次处理完成，耗时 {elapsed:.1f}s，处理 {len(result)} 篇")
+            return result
+        except Exception as e:
+            elapsed = time.time() - start_ts
+            print(f"  ❌ 第 {attempt + 1} 次尝试失败 (耗时 {elapsed:.1f}s)")
+            print(f"    异常类型: {type(e).__name__}")
+            print(f"    异常信息: {e}")
+            if attempt < max_retries:
+                wait = 2 ** (attempt + 2)  # 4s, 8s
+                print(f"  ⏳ 等待 {wait}s 后进行第 {attempt + 2} 次重试...")
+                time.sleep(wait)
+            else:
+                print(f"  ⚠️  重试次数已耗尽（共尝试 {max_retries + 1} 次）")
+                print(f"  ⚠️  跳过 AI 处理，为 {article_count} 篇文章设置默认值后继续入库")
+                for article in articles:
+                    if article.summary is None:
+                        article.summary = f"[AI处理失败] {article.title}"
+                    if not article.tags:
+                        article.tags = ["其他"]
+                    if article.importance is None:
+                        article.importance = "low"
+                    if article.importance_reason is None:
+                        article.importance_reason = "AI 处理失败，使用默认值"
+                print(f"  📝  已为 {article_count} 篇填充默认摘要/标签/重要性")
+    return articles
 
 
 def main():
@@ -119,9 +186,9 @@ def main():
     dedup = Deduplicator(ai_processor=ai if ai else None)
     articles = dedup.deduplicate(all_articles)
 
-    # 4. AI 处理
+    # 4. AI 处理（带重试兜底）
     if ai:
-        articles = ai.process_articles(articles)
+        articles = _process_with_retry(ai, articles)
     else:
         print("\n⚠️  跳过 AI 处理（未配置 API Key）")
 
