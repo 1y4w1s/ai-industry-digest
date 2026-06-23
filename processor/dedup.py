@@ -132,9 +132,13 @@ class Deduplicator:
                     # 标记新文章已被合并
                     if new_article in articles:
                         merged_indices.add(articles.index(new_article))
+                # else: AI认为不重复 → 都保留（默认行为，无需处理）
             except Exception as e:
                 print(f"  [WARN] AI 去重判断失败: {e}")
-                continue
+                # 保守策略：AI无法判断时都保留，但标记为"疑似重复"
+                existing.suspected_duplicate = True
+                new_article.suspected_duplicate = True
+                print(f"  [INFO] 已标记疑似重复: [{existing.title}] <-> [{new_article.title}]")
 
         # 过滤掉已被合并的文章
         result = [

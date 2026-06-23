@@ -22,6 +22,7 @@ class Article:
     importance: Optional[str] = None       # 重要性（后续填充）
     importance_reason: Optional[str] = None
     source_refs: List[str] = field(default_factory=list)  # 同事件其他来源
+    suspected_duplicate: bool = False      # AI去重失败时标记为"疑似重复"
     created_at: datetime = field(default_factory=datetime.utcnow)
 
 
