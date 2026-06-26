@@ -48,6 +48,31 @@ pip install -r requirements.txt -q 2>/dev/null && echo "   ✅ Python 依赖已�
 echo ""
 echo "📦 [4/5] 构建前端..."
 cd frontend
+
+# 检查并切换 Node.js 版本
+echo "   🔍 当前 Node.js: $(node -v 2>/dev/null || echo '未安装')"
+if ! node -v 2>/dev/null | grep -qE '^v(2[0-9]\.)'; then
+    # 尝试 nvm
+    export NVM_DIR="$HOME/.nvm"
+    if [ -s "$NVM_DIR/nvm.sh" ]; then
+        \. "$NVM_DIR/nvm.sh" 2>/dev/null
+        nvm install 20.19.0 2>/dev/null && nvm use 20.19.0 && echo "   ✅ nvm 切换 Node.js 20.19.0"
+    fi
+    # 如果 nvm 没生效，尝试 fnm
+    if ! node -v 2>/dev/null | grep -qE '^v(2[0-9]\.)'; then
+        export PATH="$HOME/.local/share/fnm:$PATH"
+        if command -v fnm &>/dev/null; then
+            eval "$(fnm env)" 2>/dev/null
+            fnm install 20.19.0 2>/dev/null && fnm use 20.19.0 && echo "   ✅ fnm 切换 Node.js 20.19.0"
+        fi
+    fi
+    # 最终检查
+    if ! node -v 2>/dev/null | grep -qE '^v(2[0-9]\.)'; then
+        echo "   ❌ Node.js 版本过低，需要 >= 20.19。请手动安装: nvm install 20.19.0"
+        exit 1
+    fi
+fi
+
 npm install --silent 2>/dev/null
 npm run build
 echo "   ✅ 前端构建完成"
