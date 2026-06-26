@@ -132,9 +132,16 @@ async def upload_document(
         "updated_at": datetime.now().isoformat(),
     }).execute()
 
-    # 保存文件到本地（临时）
+    # 数据清洗与去重检测
+    from api.services.data_cleaner import get_data_cleaner
     from api.services.document_tracker import get_document_tracker
     file_content_str = content.decode("utf-8", errors="replace")
+    
+    cleaner = get_data_cleaner()
+    dup = cleaner.check_duplicate(file_content_str, user_id)
+    if dup["is_duplicate"]:
+        print(f"[KB] ⚠️ 重复文档: {file.filename} 与 {dup['duplicate_name']} 内容一致")
+    
     get_document_tracker().init_document(document_id, file_content_str)
 
     upload_dir = os.path.join(os.path.dirname(__file__), "..", "uploads")
@@ -600,6 +607,7 @@ async def _sync_process_document(document_id: str, force_reprocess: bool = False
     from api.services.embedding import get_embedding_service
     from api.services.metadata import get_metadata_enricher
     from api.services.document_tracker import get_document_tracker
+    from api.services.data_cleaner import get_data_cleaner
     from processor.ai_processor import AIProcessor
     
     doc_result = db.client.table("kb_documents") \
@@ -617,8 +625,8 @@ async def _sync_process_document(document_id: str, force_reprocess: bool = False
     try:
         file_path = _safe_file_path(document_id, file_type)
         content = read_file_content(file_path, file_type)
-        
-        # F-11 增量更新：检测内容是否变更
+
+        # F-11 增量更新：检测内容是否变更（对比原始内容的 hash）
         if not force_reprocess:
             tracker = get_document_tracker()
             change = tracker.detect_change(document_id, content)
@@ -631,7 +639,17 @@ async def _sync_process_document(document_id: str, force_reprocess: bool = False
                     "entities_count": 0,
                     "relations_count": 0,
                 }
-        
+
+        # ── 数据清洗 ──────────────────────────────────
+        cleaner = get_data_cleaner()
+        content = cleaner.clean_document(content)
+
+        # 质量评估（仅记录日志，不做拦截）
+        quality = cleaner.check_quality(content)
+        if quality.is_low_quality:
+            reasons = "; ".join(quality.reasons)
+            print(f"[KB] ⚠️ 文档 {document_name} 质量偏低: {reasons}")
+
         # F-13 多模态支持：从 PDF/DOCX 提取图片并生成描述
         if file_type in ("pdf", "docx"):
             try:
@@ -659,7 +677,17 @@ async def _sync_process_document(document_id: str, force_reprocess: bool = False
                 print(f"[KB] 图片处理失败（非致命）: {e}")
         
         chunks = split_into_chunks(content)
-        
+
+        # 过滤低质量切片（过短、噪音过多）
+        chunks = cleaner.filter_chunks(chunks)
+        if not chunks:
+            print(f"[KB] ⚠️ 文档 {document_name} 清洗后无有效切片，标记为失败")
+            db.client.table("kb_documents") \
+                .update({"status": "failed", "updated_at": datetime.now().isoformat()}) \
+                .eq("id", document_id) \
+                .execute()
+            raise HTTPException(status_code=400, detail="文档清洗后无有效内容")
+
         embedding_service = get_embedding_service()
         enricher = get_metadata_enricher()
         
@@ -676,7 +704,10 @@ async def _sync_process_document(document_id: str, force_reprocess: bool = False
         for i, (chunk, embedding) in enumerate(zip(chunks, all_embeddings)):
             chunk_id = str(uuid.uuid4())
             chunk_ids.append(chunk_id)
-            
+
+            # 切片级轻量清洗
+            chunk = cleaner.clean_chunk(chunk)
+
             meta = enricher.enrich(
                 chunk,
                 chunk_index=i,
