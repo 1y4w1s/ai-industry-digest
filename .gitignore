@@ -21,6 +21,12 @@ venv/
 *.log
 backup_*.json
 
+# 覆盖率数据
+.coverage
+
+# IDE / Trae 配置
+.trae/
+
 # 前端
 frontend/dist/
 frontend/node_modules/

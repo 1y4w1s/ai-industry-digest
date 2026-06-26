@@ -23,6 +23,7 @@ from api.routes.recommend import router as recommend_router
 from api.routes.admin import router as admin_router
 from api.routes.websocket import router as websocket_router
 from api.routes.agent_router import router as agent_router
+from api.routes.monitor import router as monitor_router
 
 app = FastAPI(
     title="Signal API",
@@ -152,6 +153,7 @@ app.include_router(recommend_router, prefix="/api")
 app.include_router(admin_router, prefix="/api")
 app.include_router(agent_router, prefix="/api")
 app.include_router(websocket_router)  # WebSocket 不需要前缀
+app.include_router(monitor_router)    # monitor 已有 /api/monitor 前缀
 
 # 静态文件托管（测试前端）
 test_dir = Path(__file__).resolve().parent.parent / "test"

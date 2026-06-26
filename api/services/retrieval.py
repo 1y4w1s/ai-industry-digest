@@ -4,11 +4,18 @@
 """
 
 import os
+import json
 from typing import List, Dict, Any, Optional
+from datetime import datetime
 import jieba
 from api.models.database import get_db
 from api.services.embedding import get_embedding_service
+from api.services.reranker import get_reranker_service
+from api.services.compression import get_compression_service
+from api.services.router import get_router_service, QueryIntent
+from api.services.graph_retrieval import get_graph_retrieval_service
 import asyncio
+import time
 
 # 初始化
 db = get_db()
@@ -82,6 +89,76 @@ class AdvancedRetrievalService:
         except Exception as e:
             print(f"Query 改写失败: {e}")
             return query
+    
+    def _log_search(self, query: str, rewritten_query: str,
+                    use_rewrite: bool, use_hybrid: bool,
+                    mode: str, results: List[Dict],
+                    vector_count: int = 0, keyword_count: int = 0,
+                    latency_ms: int = 0) -> None:
+        """记录检索日志到文件（文件日志 + F-15 监控指标）"""
+        try:
+            log_entry = {
+                "timestamp": datetime.now().isoformat(),
+                "query": query,
+                "rewritten_query": rewritten_query if use_rewrite else None,
+                "use_rewrite": use_rewrite,
+                "use_hybrid": use_hybrid,
+                "mode": mode,
+                "vector_results_count": vector_count,
+                "keyword_results_count": keyword_count,
+                "final_results_count": len(results),
+                "top_scores": [
+                    r.get("fused_score", r.get("score", 0))
+                    for r in results[:5]
+                ]
+            }
+            log_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "retrieval.log")
+            with open(log_path, "a", encoding="utf-8") as f:
+                f.write(json.dumps(log_entry, ensure_ascii=False) + "\n")
+        except Exception as e:
+            print(f"[检索日志] 写入失败: {e}")
+        
+        # F-15 监控指标采集
+        try:
+            from api.services.monitor import get_metric_collector
+            collector = get_metric_collector()
+            collector.collect("search", {
+                "query": query,
+                "latency_ms": latency_ms,
+                "vector_count": vector_count,
+                "final_count": len(results),
+                "top_scores": [
+                    r.get("fused_score", r.get("score", 0))
+                    for r in results[:5]
+                ],
+                "route": mode,
+                "mode": "hybrid" if use_hybrid else "vector_only",
+            })
+        except Exception:
+            pass
+    
+    async def compress_context(
+        self,
+        query: str,
+        chunks: List[Dict[str, Any]],
+        *,
+        max_chars: int = 800,
+        mode: str = "extract",
+    ) -> str:
+        """
+        对检索结果做上下文压缩（减少 LLM token 消耗）
+        
+        参数:
+            query: 用户查询
+            chunks: 检索结果列表
+            max_chars: 压缩后的最大字符数
+            mode: 压缩模式（extract / summarize / truncate）
+        
+        返回:
+            压缩后的文本字符串
+        """
+        compressor = get_compression_service()
+        return await compressor.compress(query, chunks, max_chars=max_chars, mode=mode)
     
     def keyword_search(self, query: str, user_id: str, limit: int = 10) -> List[Dict[str, Any]]:
         """
@@ -210,13 +287,15 @@ class AdvancedRetrievalService:
             print(f"向量检索失败: {e}")
             return []
     
-    def rrf_fusion(self, vector_results: List[Dict], keyword_results: List[Dict], k: int = 60) -> List[Dict]:
+    def rrf_fusion(self, vector_results: List[Dict], keyword_results: List[Dict],
+                   graph_results: Optional[List[Dict]] = None, k: int = 60) -> List[Dict]:
         """
         RRF (Reciprocal Rank Fusion) 融合算法
         
         参数:
             vector_results: 向量检索结果（已按分数排序）
             keyword_results: 关键词检索结果（已按分数排序）
+            graph_results: 图谱检索结果（可选，第三路信号）
             k: 常数参数，通常取 60
         
         返回:
@@ -233,6 +312,12 @@ class AdvancedRetrievalService:
             chunk_id = item["chunk"]["id"]
             keyword_ranks[chunk_id] = rank
         
+        graph_ranks = {}
+        if graph_results:
+            for rank, item in enumerate(graph_results, start=1):
+                chunk_id = item["chunk"]["id"]
+                graph_ranks[chunk_id] = rank
+        
         # 合并所有结果
         all_results = {}
         for item in vector_results:
@@ -244,24 +329,39 @@ class AdvancedRetrievalService:
             if chunk_id not in all_results:
                 all_results[chunk_id] = item
         
+        if graph_results:
+            for item in graph_results:
+                chunk_id = item["chunk"]["id"]
+                if chunk_id not in all_results:
+                    all_results[chunk_id] = item
+        
         # 计算融合分数
+        has_graph = graph_results is not None and len(graph_results) > 0
         fused_results = []
         for chunk_id, item in all_results.items():
             vector_rank = vector_ranks.get(chunk_id, float('inf'))
             keyword_rank = keyword_ranks.get(chunk_id, float('inf'))
+            graph_rank = graph_ranks.get(chunk_id, float('inf')) if has_graph else float('inf')
             
             # RRF 分数计算
             vector_score = 1 / (k + vector_rank) if vector_rank != float('inf') else 0
             keyword_score = 1 / (k + keyword_rank) if keyword_rank != float('inf') else 0
+            graph_score = 1 / (k + graph_rank) if graph_rank != float('inf') else 0
             
-            # 加权融合（向量占 60%，关键词占 40%）
-            fused_score = 0.6 * vector_score + 0.4 * keyword_score
+            # 三路加权融合
+            if has_graph:
+                # 向量 50%，关键词 30%，图谱 20%
+                fused_score = 0.50 * vector_score + 0.30 * keyword_score + 0.20 * graph_score
+            else:
+                # 向量 60%，关键词 40%（向后兼容）
+                fused_score = 0.60 * vector_score + 0.40 * keyword_score
             
             fused_results.append({
                 **item,
                 "fused_score": fused_score,
                 "vector_rank": vector_rank,
-                "keyword_rank": keyword_rank
+                "keyword_rank": keyword_rank,
+                "graph_rank": graph_rank if has_graph else None,
             })
         
         # 按融合分数排序
@@ -270,7 +370,8 @@ class AdvancedRetrievalService:
         return fused_results
     
     async def search(self, query: str, user_id: str, limit: int = 5, 
-                    use_rewrite: bool = True, use_hybrid: bool = True) -> List[Dict[str, Any]]:
+                    use_rewrite: bool = True, use_hybrid: bool = True,
+                    use_reranker: bool = True, use_routing: bool = True) -> List[Dict[str, Any]]:
         """
         高级检索入口
         
@@ -278,27 +379,39 @@ class AdvancedRetrievalService:
             query: 用户查询
             user_id: 用户ID
             limit: 返回结果数量
-            use_rewrite: 是否启用 Query 改写
-            use_hybrid: 是否启用混合检索
+            use_rewrite: 是否启用 Query 改写（当 use_routing=True 时由路由覆盖）
+            use_hybrid: 是否启用混合检索（当 use_routing=True 时由路由覆盖）
+            use_reranker: 是否启用 Cross-encoder 精排（当 use_routing=True 时由路由覆盖）
+            use_routing: 是否启用查询意图路由自动选择策略
         
         返回:
             检索结果列表
         """
+        start_time = time.time()
         print(f"[高级检索] 原始查询: {query}")
         
-        # 1. Query 改写
+        # 1. 查询意图路由
+        if use_routing:
+            router = get_router_service()
+            strategy = router.route(query)
+            print(f"[高级检索] 路由策略: {strategy.intent_label}")
+            effective_limit = max(1, int(limit * strategy.limit_multiplier))
+            use_rewrite = strategy.use_rewrite
+            use_hybrid = strategy.use_hybrid
+            use_reranker = strategy.use_reranker
+        else:
+            strategy = None
+            effective_limit = limit
+        
+        # 2. Query 改写
         if use_rewrite:
             rewritten_query = self.rewrite_query(query)
             print(f"[高级检索] 改写后: {rewritten_query}")
         else:
             rewritten_query = query
         
-        # 2. 检查是否是推荐请求
-        recommend_keywords = ["推荐", "看看", "有什么", "什么内容", "内容", "文档", "资料"]
-        is_recommend = any(keyword in rewritten_query.lower() for keyword in recommend_keywords)
-        
-        if is_recommend and len(rewritten_query) < 10:
-            # 推荐模式：返回最新文档
+        # 3. 推荐模式：按时间排序返回最新文档
+        if strategy and strategy.intent == QueryIntent.RECOMMEND:
             print("[高级检索] 推荐模式")
             result = db.client.table("kb_chunks") \
                 .select("*, kb_documents!inner(id, name, file_type, is_public, user_id)") \
@@ -308,7 +421,7 @@ class AdvancedRetrievalService:
                 .execute()
             
             if result.data:
-                return [{
+                results = [{
                     "chunk": {
                         "content": item.get("content", ""),
                         "document_id": item.get("document_id", ""),
@@ -323,21 +436,42 @@ class AdvancedRetrievalService:
                     },
                     "score": 0
                 } for item in result.data]
-            return []
+                self._log_search(query, rewritten_query, use_rewrite, use_hybrid,
+                                "recommend", results, vector_count=0, keyword_count=0,
+                                latency_ms=int((time.time() - start_time) * 1000))
+                return results
+            self._log_search(query, rewritten_query, use_rewrite, use_hybrid,
+                            "recommend", [], vector_count=0, keyword_count=0,
+                            latency_ms=int((time.time() - start_time) * 1000))
+            
+            # F-14 Query Suggestion：推荐模式下也提供建议
+            from api.services.query_suggestion import get_query_suggestion_service
+            suggester = get_query_suggestion_service()
+            return self._enrich_with_suggestions([], suggester.suggest(query, user_id))
         
         # 3. 混合检索
         if use_hybrid:
             print("[高级检索] 混合检索模式")
             
-            # 并行执行两种检索
-            vector_results = await self.vector_search(rewritten_query, user_id, limit * 2)
-            keyword_results = self.keyword_search(rewritten_query, user_id, limit * 2)
+            # 并行执行检索（向量 + 关键词 + 图谱）
+            vector_results = await self.vector_search(rewritten_query, user_id, effective_limit)
+            keyword_results = self.keyword_search(rewritten_query, user_id, effective_limit)
             
             print(f"[高级检索] 向量检索: {len(vector_results)} 条")
             print(f"[高级检索] 关键词检索: {len(keyword_results)} 条")
             
-            # RRF 融合
-            fused = self.rrf_fusion(vector_results, keyword_results)
+            # 图谱检索（第三路信号）
+            graph_results = None
+            try:
+                graph_service = get_graph_retrieval_service()
+                graph_results = graph_service.graph_search(rewritten_query, user_id, limit=effective_limit)
+                if graph_results:
+                    print(f"[高级检索] 图谱检索: {len(graph_results)} 条")
+            except Exception as e:
+                print(f"[高级检索] 图谱检索失败（跳过）: {e}")
+            
+            # RRF 三路融合
+            fused = self.rrf_fusion(vector_results, keyword_results, graph_results)
             
             # 去重并返回
             seen = set()
@@ -347,14 +481,87 @@ class AdvancedRetrievalService:
                 if chunk_id not in seen:
                     seen.add(chunk_id)
                     final_results.append(item)
-                    if len(final_results) >= limit:
+                    if len(final_results) >= effective_limit:
                         break
             
-            return final_results
+            # Re-ranker 二次精排
+            if use_reranker and final_results:
+                try:
+                    reranker = get_reranker_service()
+                    final_results = await reranker.rerank(rewritten_query, final_results, top_k=limit)
+                    print(f"[高级检索] 精排后: {len(final_results)} 条")
+                except Exception as e:
+                    print(f"[高级检索] 精排失败（跳过）: {e}")
+            else:
+                final_results = final_results[:limit]
+            
+            self._log_search(query, rewritten_query, use_rewrite, use_hybrid,
+                            "hybrid", final_results,
+                            vector_count=len(vector_results), keyword_count=len(keyword_results),
+                            latency_ms=int((time.time() - start_time) * 1000))
+            
+            # F-14 Query Suggestion：结果不足时提供建议
+            from api.services.query_suggestion import get_query_suggestion_service
+            suggester = get_query_suggestion_service()
+            suggestions = suggester.suggest(query, user_id) if len(final_results) < 3 else {}
+            return self._enrich_with_suggestions(final_results, suggestions)
         else:
             # 仅向量检索
             print("[高级检索] 仅向量检索")
-            return (await self.vector_search(rewritten_query, user_id, limit))[:limit]
+            vector_results = (await self.vector_search(rewritten_query, user_id, effective_limit))[:effective_limit]
+            
+            vector_results_final = [dict(item) for item in vector_results]  # 浅拷贝避免副作用
+            
+            # Re-ranker 二次精排
+            if use_reranker and vector_results_final:
+                try:
+                    reranker = get_reranker_service()
+                    vector_results_final = await reranker.rerank(rewritten_query, vector_results_final, top_k=limit)
+                    print(f"[高级检索] 精排后: {len(vector_results_final)} 条")
+                except Exception as e:
+                    print(f"[高级检索] 精排失败（跳过）: {e}")
+                    vector_results_final = vector_results[:limit]
+            else:
+                vector_results_final = vector_results[:limit]
+            
+            self._log_search(query, rewritten_query, use_rewrite, use_hybrid,
+                            "vector_only", vector_results_final,
+                            vector_count=len(vector_results_final), keyword_count=0,
+                            latency_ms=int((time.time() - start_time) * 1000))
+            
+            # F-14 Query Suggestion：结果不足时提供建议
+            from api.services.query_suggestion import get_query_suggestion_service
+            suggester = get_query_suggestion_service()
+            suggestions = suggester.suggest(query, user_id) if len(vector_results_final) < 3 else {}
+            return self._enrich_with_suggestions(vector_results_final, suggestions)
+
+
+    def _enrich_with_suggestions(self, results: list, suggestions: dict) -> list:
+        """将建议注入到检索结果中"""
+        # 检查是否有实际建议（而非空字段的默认 dict）
+        has_real_suggestions = bool(
+            suggestions.get("correction")
+            or suggestions.get("topics")
+            or suggestions.get("related_queries")
+        )
+        if not has_real_suggestions:
+            return results
+        
+        # 如果是空结果，创建一个包含建议的包装结果
+        if not results:
+            return [{
+                "chunk": {"content": "", "document_id": "", "id": "_suggestion_"},
+                "document": {"id": "", "name": "建议", "file_type": ""},
+                "score": 0,
+                "fused_score": 0,
+                "_suggestions": suggestions,
+            }]
+        
+        # 非空结果，将建议附加到每个结果上
+        enriched = []
+        for r in results:
+            enriched.append({**r, "_suggestions": suggestions})
+        return enriched
 
 
 # 单例
