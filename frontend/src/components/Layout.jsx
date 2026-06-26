@@ -4,14 +4,23 @@ import { useAuth } from '../context/AuthContext';
 import AIChatBubble from './AIChatBubble';
 import ErrorBoundary from './ErrorBoundary';
 
-const NAV_ITEMS = [
-  { path: '/', label: '今日日报' },
-  { path: '/archive', label: '日报归档' },
-  { path: '/bookmarks', label: '收藏' },
-  { path: '/history', label: '浏览历史' },
-  { path: '/knowledge', label: '知识库' },
-  { path: '/settings', label: '设置' },
-];
+const ADMIN_USER = '1y4w1s';
+
+function useNavItems(user) {
+  const base = [
+    { path: '/', label: '今日日报' },
+    { path: '/archive', label: '日报归档' },
+    { path: '/bookmarks', label: '收藏' },
+    { path: '/history', label: '浏览历史' },
+    { path: '/knowledge', label: '知识库' },
+    { path: '/settings', label: '设置' },
+  ];
+  const isAdmin = user?.user_metadata?.nickname === ADMIN_USER || user?.email?.startsWith(ADMIN_USER);
+  if (isAdmin) {
+    base.splice(5, 0, { path: '/admin', label: '管理后台' });
+  }
+  return base;
+}
 
 export default function Layout() {
   const { isLoggedIn, user, login, logout } = useAuth();
@@ -22,6 +31,7 @@ export default function Layout() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const isReading = !!searchParams.get('article');
+  const NAV_ITEMS = useNavItems(user);
 
   useEffect(() => {
     if (searchOpen) {
