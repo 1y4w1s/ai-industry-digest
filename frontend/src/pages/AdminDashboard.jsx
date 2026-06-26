@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   BarChart3, Users, FileText, Bookmark, TrendingUp, Activity,
-  Search, Clock, AlertTriangle, Target, Zap, Route, Compress, List
+  Search, Clock, AlertTriangle, Target, Zap, Route, Minimize2, List
 } from 'lucide-react';
 import { getToken } from '../lib/token';
 import { useAuth } from '../context/AuthContext';
@@ -155,7 +155,7 @@ function CompressionStats({ compression }) {
   return (
     <div className="bg-white rounded-xl p-6 shadow-sm border">
       <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-        <Compress className="w-5 h-5 text-cyan-500" />
+        <Minimize2 className="w-5 h-5 text-cyan-500" />
         上下文压缩效果
       </h3>
       <div className="grid grid-cols-2 gap-4 mb-4">
