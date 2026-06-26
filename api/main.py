@@ -155,18 +155,35 @@ app.include_router(agent_router, prefix="/api")
 app.include_router(websocket_router)  # WebSocket 不需要前缀
 app.include_router(monitor_router)    # monitor 已有 /api/monitor 前缀
 
-# 静态文件托管（测试前端）
+# ── 静态文件托管 ────────────────────────────
+
+# 1. 测试前端
 test_dir = Path(__file__).resolve().parent.parent / "test"
 if test_dir.exists():
     app.mount("/test", StaticFiles(directory=str(test_dir), html=True), name="test")
 
+# 2. 生产前端（位于 frontend/dist）
+frontend_dist = Path(__file__).resolve().parent.parent / "frontend" / "dist"
+if frontend_dist.exists():
+    app.mount("/assets", StaticFiles(directory=str(frontend_dist / "assets")), name="frontend_assets")
 
+    from fastapi.responses import FileResponse
 
-@app.get("/")
-async def root():
-    return {
-        "name": "Signal",
-        "version": "2.0.0",
-        "docs": "/docs",
-        "test_frontend": "/test/",
-    }
+    @app.get("/favicon.ico")
+    async def favicon():
+        fav = frontend_dist / "favicon.svg"
+        if fav.exists():
+            return FileResponse(fav, media_type="image/svg+xml")
+        return JSONResponse(status_code=204)
+
+    @app.get("/{full_path:path}")
+    async def serve_spa(full_path: str):
+        """SPA fallback：非 API 路径返回 index.html"""
+        # 放行 API、WebSocket、文档路径
+        if full_path.startswith(("api/", "ws", "docs", "openapi", "health", "test")):
+            return JSONResponse(status_code=404, content={"detail": "Not found"})
+
+        html_path = frontend_dist / "index.html"
+        if html_path.exists():
+            return FileResponse(str(html_path), media_type="text/html")
+        return JSONResponse(content={"name": "Signal", "version": "2.0.0"})

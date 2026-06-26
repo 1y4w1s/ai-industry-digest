@@ -77,6 +77,13 @@ npm install --silent 2>/dev/null
 npm run build
 echo "   ✅ 前端构建完成"
 
+# 3b. 修复产物权限（Nginx 的 www-data 用户可读）
+echo ""
+sudo chmod -R 755 "$PROJECT_DIR/frontend/dist" 2>/dev/null && echo "   ✅ 前端产物权限已修复" || echo "   ⚠️ 权限修复失败（请手动执行: sudo chmod -R 755 frontend/dist）"
+
+# 3c. 重启 Nginx
+sudo systemctl restart nginx 2>/dev/null && echo "   ✅ Nginx 已重启" || echo "   ⚠️ Nginx 重启失败（跳过）"
+
 # 4. 重启后端
 echo ""
 echo "📦 [5/5] 重启后端服务..."
