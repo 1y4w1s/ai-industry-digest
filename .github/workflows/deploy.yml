@@ -9,10 +9,11 @@
 #   - 服务器只做重启，部署更快更稳定
 #
 # 需要的 Secrets（GitHub → Settings → Secrets and variables → Actions）：
-#   - SSH_PRIVATE_KEY   服务器 SSH 私钥（必填）
-#   - DATABASE_URL      Supabase 数据库连接字符串（可选，未配置时跳过迁移）
-#                       postgresql://postgres:密码@db.xxx.supabase.co:5432/postgres
-#   - (可选) SUPABASE_SERVICE_KEY  如果后续需要 service_role 操作
+#   - SSH_PRIVATE_KEY          服务器 SSH 私钥（必填）
+#   - VITE_SUPABASE_URL        前端 Supabase 项目 URL（必填，用于构建）
+#   - VITE_SUPABASE_ANON_KEY   前端 Supabase 匿名 key（必填，用于构建）
+#   - DATABASE_URL             Supabase 数据库连接字符串（可选，未配置时跳过迁移）
+#                              postgresql://postgres:密码@db.xxx.supabase.co:5432/postgres
 # ============================================================
 
 name: 🚀 Deploy
@@ -119,6 +120,9 @@ jobs:
       - name: 构建生产版本
         working-directory: frontend
         run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
       - name: 上传构建产物
         uses: actions/upload-artifact@v4
