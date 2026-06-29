@@ -144,6 +144,11 @@ jobs:
           name: frontend-dist
           path: frontend/dist/
 
+      - name: 配置 SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
       - name: 确保目录结构完整
         run: |
           mkdir -p frontend/dist
@@ -164,47 +169,13 @@ jobs:
           echo "  run.py  $(test -f run.py && echo '✅' || echo '❌')"
 
       - name: 同步代码到服务器（SCP）
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: 43.139.133.245
-          username: ubuntu
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: 22
-          source: |
-            api/
-            config/
-            collector/
-            processor/
-            scripts/
-            frontend/dist/
-            requirements.txt
-            run.py
-          target: /opt/ai-industry-digest
-          strip_components: 0
-          rm: false
-          # .env 在服务端保留，不同步仓库中的版本
-          debug: true
-
-      - name: SCP 失败时通过 SSH 逐个同步
-        if: failure()
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: 43.139.133.245
-          username: ubuntu
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            set -e
-            cd /opt/ai-industry-digest
-            echo "⚠️ SCP 失败，尝试 tar 直传..."
-            # 在 CI 中打包代码，通过 SSH 管道传输
-            tar czf - \
-              --exclude='.env' \
-              --exclude='__pycache__' \
-              --exclude='node_modules' \
-              --exclude='.git' \
-              api/ config/ collector/ processor/ scripts/ \
-              frontend/dist/ requirements.txt run.py \
-              | ssh ubuntu@43.139.133.245 "cd /opt/ai-industry-digest && tar xzf -"
+        run: |
+          echo "📤 同步代码到服务器..."
+          rsync -avz --delete --exclude='.env' --exclude='__pycache__' --exclude='node_modules' \
+            -e "ssh -o StrictHostKeyChecking=no -p 22" \
+            api/ config/ collector/ processor/ scripts/ frontend/dist/ requirements.txt run.py \
+            ubuntu@43.139.133.245:/opt/ai-industry-digest/
+          echo "✅ 同步完成"
 
       - name: 在服务器上安装依赖 + 重启服务
         uses: appleboy/ssh-action@v1.0.3
