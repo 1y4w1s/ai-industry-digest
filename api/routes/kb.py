@@ -184,8 +184,6 @@ async def upload_document(
     dup = cleaner.check_duplicate(file_content_str, user_id)
     if dup["is_duplicate"]:
         print(f"[KB] ⚠️ 重复文档: {file.filename} 与 {dup['duplicate_name']} 内容一致")
-    
-    get_document_tracker().init_document(document_id, file_content_str)
 
     upload_dir = os.path.join(os.path.dirname(__file__), "..", "uploads")
     os.makedirs(upload_dir, exist_ok=True)
