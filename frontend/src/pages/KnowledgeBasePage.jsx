@@ -137,6 +137,7 @@ export default function KnowledgeBasePage() {
   const handleProgressDone = () => {
     setProcessingFiles([]);
     setUploadOpen(false);
+    fetchDocuments();
   };
 
   // 处理文档
