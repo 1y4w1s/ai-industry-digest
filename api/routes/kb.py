@@ -150,6 +150,15 @@ async def upload_document(
     with open(file_path, "wb") as f:
         f.write(content)
 
+    # 上传完成后自动触发后台处理（切片 + Embedding + 实体识别）
+    # 处理失败不影响上传成功，用户可以稍后手动重试
+    try:
+        await _sync_process_document(document_id)
+    except Exception as e:
+        print(f"[KB] 上传后自动处理失败: {e}")
+        # 保持 status 为 "pending"，用户稍后可手动重试
+        print(f"[KB] 文档已保存，可稍后手动触发处理: {document_id}")
+
     return {
         "id": document_id,
         "name": file.filename,
