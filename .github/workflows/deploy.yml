@@ -212,23 +212,13 @@ jobs:
             sudo chmod -R 755 frontend/dist/ 2>/dev/null || true
             sudo systemctl restart nginx 2>/dev/null && echo "   ✅ Nginx 已重启" || echo "   ⚠️ Nginx 重启失败（跳过）"
 
-            echo "📦 [3/3] 重启后端服务..."
-            pkill -f "uvicorn api.main:app" 2>/dev/null || true
-            sleep 1
-
-            nohup /home/ubuntu/.local/bin/uvicorn api.main:app \
-              --host 0.0.0.0 --port 8000 \
-              > /opt/ai-industry-digest/backend.log 2>&1 &
-
-            sleep 3
-
-            if pgrep -f "uvicorn api.main:app" > /dev/null; then
-              echo "   ✅ 后端服务已启动 (PID: $(pgrep -f 'uvicorn api.main:app'))"
-            else
-              echo "   ❌ 后端启动失败，查看日志："
-              tail -20 /opt/ai-industry-digest/backend.log
-              exit 1
-            fi
+            echo "📦 [3/3] 重启后端服务（PM2）..."
+            cd /opt/ai-industry-digest && pm2 restart signal-backend 2>/dev/null || \
+              pm2 start /home/ubuntu/.local/bin/uvicorn \
+                --name signal-backend \
+                --interpreter python3 \
+                -- api.main:app --host 0.0.0.0 --port 8000
+            echo "   ✅ 后端服务已重启"
 
             echo ""
             echo "=============================="

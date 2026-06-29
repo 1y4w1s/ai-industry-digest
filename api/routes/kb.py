@@ -680,6 +680,11 @@ async def _sync_process_document(document_id: str, force_reprocess: bool = False
             change = tracker.detect_change(document_id, content)
             if not change["changed"]:
                 print(f"[KB] {change['skip_reason']}")
+                # 更新状态为已完成（虽然跳过了处理，但文档本身无需处理）
+                db.client.table("kb_documents") \
+                    .update({"status": "completed", "updated_at": datetime.now().isoformat()}) \
+                    .eq("id", document_id) \
+                    .execute()
                 set_progress(document_id, "completed", 100, "内容无变更，跳过处理")
                 return {
                     "message": change["skip_reason"],
