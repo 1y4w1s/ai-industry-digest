@@ -9,8 +9,9 @@
 #   - 服务器只做重启，部署更快更稳定
 #
 # 需要的 Secrets（GitHub → Settings → Secrets and variables → Actions）：
-#   - SSH_PRIVATE_KEY   服务器 SSH 私钥
-#   - DATABASE_URL      Supabase 数据库连接字符串（格式：postgresql://postgres:密码@db.xxx.supabase.co:5432/postgres）
+#   - SSH_PRIVATE_KEY   服务器 SSH 私钥（必填）
+#   - DATABASE_URL      Supabase 数据库连接字符串（可选，未配置时跳过迁移）
+#                       postgresql://postgres:密码@db.xxx.supabase.co:5432/postgres
 #   - (可选) SUPABASE_SERVICE_KEY  如果后续需要 service_role 操作
 # ============================================================
 
@@ -57,19 +58,42 @@ jobs:
           echo "找到以下迁移文件："
           ls -1 scripts/migration_*.sql 2>/dev/null | sort || echo "(无迁移文件)"
 
-      - name: 按顺序执行数据库迁移
+      - name: 按顺序执行数据库迁移（尝试多种端口）
         run: |
-          set -e
-          for f in $(ls scripts/migration_*.sql 2>/dev/null | sort); do
-            echo ""
-            echo "▶▶▶ 执行: $f"
-            psql "${{ secrets.DATABASE_URL }}" -f "$f"
-            echo "✅ $f 完成"
+          DB_URL="${{ secrets.DATABASE_URL }}"
+          # 如果没配 DATABASE_URL，跳过
+          if [ -z "$DB_URL" ]; then
+            echo "⚠️ DATABASE_URL 未配置，跳过迁移"
+            echo "  请手动在 Supabase SQL Editor 中执行迁移文件"
+            exit 0
+          fi
+
+          # 尝试多种连接方式：直接(5432) → 连接池(6543)
+          for port in 5432 6543; do
+            TRIAL_URL=$(echo "$DB_URL" | sed "s/:5432\b/:$port/")
+            echo "尝试连接端口 $port ..."
+            if psql "$TRIAL_URL" -c "SELECT 1" > /dev/null 2>&1; then
+              echo "✅ 端口 $port 连接成功"
+              for f in $(ls scripts/migration_*.sql 2>/dev/null | sort); do
+                echo ""
+                echo "▶▶▶ 执行: $f"
+                psql "$TRIAL_URL" -f "$f"
+                echo "✅ $f 完成"
+              done
+              echo ""
+              echo "=============================="
+              echo "  所有迁移执行完毕"
+              echo "=============================="
+              exit 0
+            else
+              echo "  端口 $port 连接失败，尝试下一个..."
+            fi
           done
-          echo ""
-          echo "=============================="
-          echo "  所有迁移执行完毕"
-          echo "=============================="
+
+          echo "⚠️ 数据库连接失败，跳过迁移"
+          echo "  请手动在 Supabase SQL Editor 中执行迁移文件"
+          echo "  迁移文件列表："
+          ls -1 scripts/migration_*.sql 2>/dev/null | sort || echo "  (无迁移文件)"
 
   # ── Job 2: 构建前端 ──────────────────────────────────
   build-frontend:
@@ -106,7 +130,7 @@ jobs:
   # ── Job 3: 部署到服务器 ──────────────────────────────
   deploy:
     name: 部署到服务器
-    needs: [migrate, build-frontend]
+    needs: [build-frontend]
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
