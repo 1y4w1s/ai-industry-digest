@@ -188,7 +188,15 @@ jobs:
             cd /opt/ai-industry-digest
 
             echo "📦 [1/3] 安装 Python 依赖..."
-            pip install -r requirements.txt -q
+            # 创建 swap 防止内存不足（pip install 可能 OOM）
+            if ! swapon --show | grep -q /swapfile; then
+              echo "  创建 swap 文件（1GB）..."
+              sudo fallocate -l 1G /swapfile 2>/dev/null || sudo dd if=/dev/zero of=/swapfile bs=1M count=1024
+              sudo chmod 600 /swapfile
+              sudo mkswap /swapfile
+              sudo swapon /swapfile
+            fi
+            pip install --no-cache-dir -r requirements.txt -q
             echo "   ✅ 依赖已更新"
 
             echo "📦 [2/3] 修复前端产物权限..."
