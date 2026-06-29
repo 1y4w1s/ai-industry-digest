@@ -168,13 +168,18 @@ jobs:
           echo "  requirements.txt  $(test -f requirements.txt && echo '✅' || echo '❌')"
           echo "  run.py  $(test -f run.py && echo '✅' || echo '❌')"
 
-      - name: 同步代码到服务器（SCP）
+      - name: 同步代码到服务器
         run: |
           echo "📤 同步代码到服务器..."
-          rsync -avz --delete --exclude='.env' --exclude='__pycache__' --exclude='node_modules' \
-            -e "ssh -o StrictHostKeyChecking=no -p 22" \
-            api/ config/ collector/ processor/ scripts/ frontend/dist/ requirements.txt run.py \
-            ubuntu@43.139.133.245:/opt/ai-industry-digest/
+          tar czf - \
+            --exclude='.env' \
+            --exclude='__pycache__' \
+            --exclude='node_modules' \
+            --exclude='.git' \
+            api/ config/ collector/ processor/ scripts/ \
+            frontend/dist/ requirements.txt run.py \
+            | ssh -o StrictHostKeyChecking=no ubuntu@43.139.133.245 \
+              "cd /opt/ai-industry-digest && tar xzf -"
           echo "✅ 同步完成"
 
       - name: 在服务器上安装依赖 + 重启服务
