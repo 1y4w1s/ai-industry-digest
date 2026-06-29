@@ -144,15 +144,26 @@ jobs:
           name: frontend-dist
           path: frontend/dist/
 
-      - name: 确认产物结构
+      - name: 确保目录结构完整
         run: |
-          echo "前端 dist 目录："
-          ls -la frontend/dist/
+          mkdir -p frontend/dist
           echo ""
-          echo "后端代码结构："
-          ls -d api/ config/ collector/ processor/ scripts/ requirements.txt 2>/dev/null
+          echo "=============================="
+          echo "  确认产物结构"
+          echo "=============================="
+          echo ""
+          echo "📁 前端 dist 目录（共 $(find frontend/dist -type f 2>/dev/null | wc -l) 个文件）："
+          ls -la frontend/dist/ 2>/dev/null || echo "(空)"
+          echo ""
+          echo "📁 后端代码结构："
+          for d in api config collector processor scripts; do
+            COUNT=$(find $d -type f 2>/dev/null | wc -l)
+            echo "  $d/  ($COUNT 个文件)"
+          done
+          echo "  requirements.txt  $(test -f requirements.txt && echo '✅' || echo '❌')"
+          echo "  run.py  $(test -f run.py && echo '✅' || echo '❌')"
 
-      - name: 同步代码到服务器
+      - name: 同步代码到服务器（SCP）
         uses: appleboy/scp-action@v0.1.7
         with:
           host: 43.139.133.245
@@ -172,6 +183,28 @@ jobs:
           strip_components: 0
           rm: false
           # .env 在服务端保留，不同步仓库中的版本
+          debug: true
+
+      - name: SCP 失败时通过 SSH 逐个同步
+        if: failure()
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: 43.139.133.245
+          username: ubuntu
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            cd /opt/ai-industry-digest
+            echo "⚠️ SCP 失败，尝试 tar 直传..."
+            # 在 CI 中打包代码，通过 SSH 管道传输
+            tar czf - \
+              --exclude='.env' \
+              --exclude='__pycache__' \
+              --exclude='node_modules' \
+              --exclude='.git' \
+              api/ config/ collector/ processor/ scripts/ \
+              frontend/dist/ requirements.txt run.py \
+              | ssh ubuntu@43.139.133.245 "cd /opt/ai-industry-digest && tar xzf -"
 
       - name: 在服务器上安装依赖 + 重启服务
         uses: appleboy/ssh-action@v1.0.3
