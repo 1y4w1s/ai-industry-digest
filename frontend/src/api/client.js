@@ -220,6 +220,8 @@ export const api = {
 
     process: (id) => request(`/kb/documents/${id}/process`, { method: 'POST' }),
 
+    getProgressUrl: (id) => `${API_BASE}/kb/documents/${id}/progress`,
+
     getChunks: (id) => request(`/kb/documents/${id}/chunks`),
 
     getGraph: (id) => request(`/kb/documents/${id}/graph`),

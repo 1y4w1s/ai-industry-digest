@@ -4,13 +4,16 @@
 """
 
 import os
+import json
 import uuid
 import httpx
+import asyncio
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 from pydantic import BaseModel
 
 from fastapi import APIRouter, File, UploadFile, Depends, HTTPException, Header, Query, BackgroundTasks
+from fastapi.responses import StreamingResponse
 
 from api.models.database import get_db
 from api.services.jwt_verify import verify_token, DEMO_USER_UUID
@@ -23,6 +26,23 @@ db = get_db()
 
 # 知识库对话上下文存储（独立存储，避免循环导入）
 kb_chat_contexts: dict = {}
+
+# ── 文档处理进度存储（方案 B：SSE 实时进度） ────────────
+_doc_progress: Dict[str, dict] = {}
+
+
+def set_progress(document_id: str, stage: str, percent: int, detail: str = ""):
+    """更新文档处理进度"""
+    _doc_progress[document_id] = {
+        "stage": stage,
+        "percent": percent,
+        "detail": detail,
+    }
+
+
+def get_progress(document_id: str) -> dict:
+    """获取文档当前进度"""
+    return _doc_progress.get(document_id, {"stage": "pending", "percent": 0, "detail": ""})
 
 # ── 统一认证工具 ────────────────────────
 # 所有 KB 路由共用同一套认证逻辑，支持：
@@ -82,12 +102,35 @@ def _doc_access_filter(query, document_id: str, user_id: str):
         .or_(f"is_public.eq.true,user_id.eq.{user_id}")
 
 
+@router.get("/documents/{document_id}/progress")
+async def stream_document_progress(document_id: str):
+    """SSE 端点：实时推送文档处理进度"""
+    async def event_generator():
+        while True:
+            p = get_progress(document_id)
+            yield f"data: {json.dumps(p)}\n\n"
+            if p.get("stage") in ("completed", "failed"):
+                break
+            await asyncio.sleep(0.5)
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        }
+    )
+
+
 @router.post("/documents")
 async def upload_document(
     file: UploadFile = File(...),
     tags: Optional[str] = "",
     is_public: bool = True,
-    user_id: str = Depends(get_current_user)
+    user_id: str = Depends(get_current_user),
+    background_tasks: BackgroundTasks = BackgroundTasks()
 ):
     """上传文档"""
     # 验证文件类型
@@ -150,21 +193,16 @@ async def upload_document(
     with open(file_path, "wb") as f:
         f.write(content)
 
-    # 上传完成后自动触发后台处理（切片 + Embedding + 实体识别）
-    # 处理失败不影响上传成功，用户可以稍后手动重试
-    try:
-        await _sync_process_document(document_id)
-    except Exception as e:
-        print(f"[KB] 上传后自动处理失败: {e}")
-        # 保持 status 为 "pending"，用户稍后可手动重试
-        print(f"[KB] 文档已保存，可稍后手动触发处理: {document_id}")
+    # 上传后立即返回，后台异步处理（切片 + Embedding + 实体识别）
+    set_progress(document_id, "pending", 0, "文件已保存，排队处理中")
+    asyncio.create_task(_sync_process_document(document_id))
 
     return {
         "id": document_id,
         "name": file.filename,
         "file_type": SUPPORTED_EXTENSIONS[ext],
         "file_size": file_size,
-        "status": "pending",
+        "status": "processing",
         "tags": tag_list,
         "created_at": datetime.now().isoformat(),
     }
@@ -632,6 +670,7 @@ async def _sync_process_document(document_id: str, force_reprocess: bool = False
     document_name = document.get("name", "")
     
     try:
+        set_progress(document_id, "reading", 5, "读取文件内容中")
         file_path = _safe_file_path(document_id, file_type)
         content = read_file_content(file_path, file_type)
 
@@ -641,6 +680,7 @@ async def _sync_process_document(document_id: str, force_reprocess: bool = False
             change = tracker.detect_change(document_id, content)
             if not change["changed"]:
                 print(f"[KB] {change['skip_reason']}")
+                set_progress(document_id, "completed", 100, "内容无变更，跳过处理")
                 return {
                     "message": change["skip_reason"],
                     "document_id": document_id,
@@ -650,6 +690,7 @@ async def _sync_process_document(document_id: str, force_reprocess: bool = False
                 }
 
         # ── 数据清洗 ──────────────────────────────────
+        set_progress(document_id, "cleaning", 8, "数据清洗中")
         cleaner = get_data_cleaner()
         content = cleaner.clean_document(content)
 
@@ -662,6 +703,7 @@ async def _sync_process_document(document_id: str, force_reprocess: bool = False
         # F-13 多模态支持：从 PDF/DOCX 提取图片并生成描述
         if file_type in ("pdf", "docx"):
             try:
+                set_progress(document_id, "extracting_images", 10, "提取图片中")
                 from api.services.image_extractor import get_image_extractor
                 from api.services.image_caption import get_image_caption_service
                 
@@ -685,6 +727,7 @@ async def _sync_process_document(document_id: str, force_reprocess: bool = False
             except Exception as e:
                 print(f"[KB] 图片处理失败（非致命）: {e}")
         
+        set_progress(document_id, "chunking", 15, "切片中")
         chunks = split_into_chunks(content)
 
         # 过滤低质量切片（过短、噪音过多）
@@ -695,6 +738,7 @@ async def _sync_process_document(document_id: str, force_reprocess: bool = False
                 .update({"status": "failed", "updated_at": datetime.now().isoformat()}) \
                 .eq("id", document_id) \
                 .execute()
+            set_progress(document_id, "failed", 0, "文档清洗后无有效内容")
             raise HTTPException(status_code=400, detail="文档清洗后无有效内容")
 
         embedding_service = get_embedding_service()
@@ -702,11 +746,16 @@ async def _sync_process_document(document_id: str, force_reprocess: bool = False
         
         # 批量生成 Embedding
         BATCH_SIZE = 10
+        total_chunks = len(chunks)
         all_embeddings = []
-        for i in range(0, len(chunks), BATCH_SIZE):
+        for i in range(0, total_chunks, BATCH_SIZE):
             batch = chunks[i:i + BATCH_SIZE]
+            batch_end = min(i + BATCH_SIZE, total_chunks)
+            set_progress(document_id, "embedding", 20 + int(50 * batch_end / total_chunks), f"向量化 {batch_end}/{total_chunks}")
             batch_embeddings = await embedding_service.get_embeddings(batch)
             all_embeddings.extend(batch_embeddings)
+
+        set_progress(document_id, "saving_chunks", 70, "保存切片到数据库")
         
         # 保存切片（第一轮：基础元数据，不含实体）
         chunk_ids = []
@@ -737,9 +786,12 @@ async def _sync_process_document(document_id: str, force_reprocess: bool = False
             }).execute()
 
         # 实体识别和关系抽取
+        set_progress(document_id, "extracting", 75, "实体识别中")
         ai_processor = AIProcessor()
         entities, relations = await ai_processor.extract_knowledge(content)
         
+        set_progress(document_id, "saving_entities", 90, "保存实体关系到数据库")
+
         entity_map = {}
         for entity in entities:
             entity_id = str(uuid.uuid4())
@@ -765,6 +817,7 @@ async def _sync_process_document(document_id: str, force_reprocess: bool = False
                 }).execute()
 
         # 第二轮：更新切片元数据，补充实体信息
+        set_progress(document_id, "enriching", 95, "完善切片元数据中")
         entity_names = list(entity_map.keys())
         if entity_names:
             for chunk_id in chunk_ids:
@@ -804,6 +857,8 @@ async def _sync_process_document(document_id: str, force_reprocess: bool = False
         # F-11 增量更新：成功处理后递增版本号
         get_document_tracker().bump_version(document_id, content)
 
+        set_progress(document_id, "completed", 100, "处理完成")
+
         return {
             "message": "处理完成",
             "chunks_count": len(chunks),
@@ -816,6 +871,7 @@ async def _sync_process_document(document_id: str, force_reprocess: bool = False
             .update({"status": "failed", "updated_at": datetime.now().isoformat()}) \
             .eq("id", document_id) \
             .execute()
+        set_progress(document_id, "failed", 0, f"处理失败: {str(e)[:60]}")
         raise HTTPException(status_code=500, detail=f"处理失败: {str(e)}")
 
 
