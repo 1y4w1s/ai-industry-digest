@@ -1,16 +1,132 @@
-name: Auto Deploy
+# ============================================================
+# Signal - GitHub Actions 自动化部署
+#
+# 流程：push master → 并发执行 迁移 + 前端构建 → 同步到服务器 → 重启服务
+#
+# 相比旧版 deploy.sh 的改进：
+#   - 数据库迁移在 CI 中执行，错误立即可见（不再被 2>/dev/null 吞掉）
+#   - 前端在 CI 中构建，利用缓存加速（避免服务器 Node.js 版本问题）
+#   - 服务器只做重启，部署更快更稳定
+#
+# 需要的 Secrets（GitHub → Settings → Secrets and variables → Actions）：
+#   - SSH_PRIVATE_KEY   服务器 SSH 私钥
+#   - DATABASE_URL      Supabase 数据库连接字符串（格式：postgresql://postgres:密码@db.xxx.supabase.co:5432/postgres）
+#   - (可选) SUPABASE_SERVICE_KEY  如果后续需要 service_role 操作
+# ============================================================
+
+name: 🚀 Deploy
 
 on:
   push:
     branches: [master]
+  workflow_dispatch:
+    inputs:
+      skip_migration:
+        description: '跳过数据库迁移'
+        required: false
+        type: boolean
+        default: false
+
+# 防止同时部署：如果有新的 push，取消当前正在进行的部署
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '20'
 
 jobs:
-  deploy:
+  # ── Job 1: 数据库迁移（可选跳过） ──────────────────────
+  migrate:
+    name: 数据库迁移
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 5
+    if: ${{ !inputs.skip_migration }}
 
     steps:
-      - uses: actions/checkout@v4
+      - name: 拉取代码
+        uses: actions/checkout@v4
+
+      - name: 安装 PostgreSQL 客户端
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client
+
+      - name: 列出待执行的迁移文件
+        run: |
+          echo "找到以下迁移文件："
+          ls -1 scripts/migration_*.sql 2>/dev/null | sort || echo "(无迁移文件)"
+
+      - name: 按顺序执行数据库迁移
+        run: |
+          set -e
+          for f in $(ls scripts/migration_*.sql 2>/dev/null | sort); do
+            echo ""
+            echo "▶▶▶ 执行: $f"
+            psql "${{ secrets.DATABASE_URL }}" -f "$f"
+            echo "✅ $f 完成"
+          done
+          echo ""
+          echo "=============================="
+          echo "  所有迁移执行完毕"
+          echo "=============================="
+
+  # ── Job 2: 构建前端 ──────────────────────────────────
+  build-frontend:
+    name: 构建前端
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: 拉取代码
+        uses: actions/checkout@v4
+
+      - name: 设置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: 安装依赖
+        working-directory: frontend
+        run: npm ci
+
+      - name: 构建生产版本
+        working-directory: frontend
+        run: npm run build
+
+      - name: 上传构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist/
+          retention-days: 1
+
+  # ── Job 3: 部署到服务器 ──────────────────────────────
+  deploy:
+    name: 部署到服务器
+    needs: [migrate, build-frontend]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: 拉取代码
+        uses: actions/checkout@v4
+
+      - name: 下载前端构建产物
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist/
+
+      - name: 确认产物结构
+        run: |
+          echo "前端 dist 目录："
+          ls -la frontend/dist/
+          echo ""
+          echo "后端代码结构："
+          ls -d api/ config/ collector/ processor/ scripts/ requirements.txt 2>/dev/null
 
       - name: 同步代码到服务器
         uses: appleboy/scp-action@v0.1.7
@@ -19,18 +135,80 @@ jobs:
           username: ubuntu
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
-          source: "."
-          target: "/opt/ai-industry-digest"
+          source: |
+            api/
+            config/
+            collector/
+            processor/
+            scripts/
+            frontend/dist/
+            requirements.txt
+            run.py
+          target: /opt/ai-industry-digest
           strip_components: 0
           rm: false
-          exclude: "node_modules,frontend/node_modules,.git,.venv,__pycache__"
+          # .env 在服务端保留，不同步仓库中的版本
 
-      - name: 在服务器上执行部署
+      - name: 在服务器上安装依赖 + 重启服务
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: 43.139.133.245
           username: ubuntu
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
+            set -e
             cd /opt/ai-industry-digest
-            bash scripts/deploy.sh
+
+            echo "📦 [1/3] 安装 Python 依赖..."
+            pip install -r requirements.txt -q
+            echo "   ✅ 依赖已更新"
+
+            echo "📦 [2/3] 修复前端产物权限..."
+            sudo chmod -R 755 frontend/dist/ 2>/dev/null || true
+            sudo systemctl restart nginx 2>/dev/null && echo "   ✅ Nginx 已重启" || echo "   ⚠️ Nginx 重启失败（跳过）"
+
+            echo "📦 [3/3] 重启后端服务..."
+            pkill -f "uvicorn api.main:app" 2>/dev/null || true
+            sleep 1
+
+            nohup /home/ubuntu/.local/bin/uvicorn api.main:app \
+              --host 0.0.0.0 --port 8000 \
+              > /opt/ai-industry-digest/backend.log 2>&1 &
+
+            sleep 3
+
+            if pgrep -f "uvicorn api.main:app" > /dev/null; then
+              echo "   ✅ 后端服务已启动 (PID: $(pgrep -f 'uvicorn api.main:app'))"
+            else
+              echo "   ❌ 后端启动失败，查看日志："
+              tail -20 /opt/ai-industry-digest/backend.log
+              exit 1
+            fi
+
+            echo ""
+            echo "=============================="
+            echo "  部署完成"
+            echo "  验证: curl http://localhost:8000/health"
+            echo "=============================="
+
+      - name: 健康检查
+        run: |
+          echo "等待服务启动..."
+          sleep 3
+          for i in 1 2 3; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://43.139.133.245:8080/health 2>/dev/null || echo "000")
+            if [ "$STATUS" = "200" ]; then
+              echo "✅ 服务健康检查通过"
+              exit 0
+            fi
+            echo "  第 $i 次尝试，状态码: $STATUS，等待5秒..."
+            sleep 5
+          done
+          echo "❌ 健康检查失败"
+          curl -s http://43.139.133.245:8080/health || true
+          exit 1
+
+      - name: 清理 GitHub Actions 缓存
+        run: |
+          echo "🧹 清理构建产物缓存..."
+          # artifact 设置 retention-days: 1，由 GitHub 自动清理

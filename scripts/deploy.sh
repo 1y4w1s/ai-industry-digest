@@ -1,8 +1,17 @@
 #!/bin/bash
 # ============================================================
-# Signal - 一键部署脚本
+# Signal - 一键部署脚本（备用，推荐用 GitHub Actions）
+#
+# ⚠️ 注意：此脚本已由 .github/workflows/deploy.yml 替代
+#   推送到 master 后自动触发 CI/CD 部署，不建议手动执行。
+#
+# 如果确实需要手动部署，请确保：
+#   1. scripts/migration_*.sql 已在 Supabase SQL Editor 执行
+#   2. 前端 npm run build 在本地或服务器执行
+#   3. 确认前端构建产物在 frontend/dist/
+#
 # 用法: bash scripts/deploy.sh
-# 功能: git pull → pip 更新 → 前端构建 → 重启后端
+# 功能: pip 更新 → 前端构建 → 重启后端
 # ============================================================
 
 set -e
@@ -28,25 +37,20 @@ if [[ "$REMOTE_URL" == https://github.com/* ]]; then
 fi
 echo "   ✅ 远程仓库: $(git remote get-url origin)"
 
-# 1. 拉取最新代码
-echo ""
-echo "📦 [1/4] 拉取最新代码..."
-git pull origin master
-echo "   ✅ 代码已更新"
-
 # 1b. 执行数据库 migration
 echo ""
-echo "📦 [2/5] 执行数据库 migration..."
-python scripts/migrate.py 2>/dev/null && echo "   ✅ Migration 完成" || echo "   ⚠️ 部分 migration 需人工执行（见 scripts/migration_*.sql）"
+echo "📦 [1/4] 执行数据库 migration..."
+echo "   ⚠️ 建议在 GitHub Actions 或 Supabase SQL Editor 执行 migration"
+echo "   SQL 文件: scripts/migration_*.sql"
 
 # 2. 更新 Python 依赖
 echo ""
-echo "📦 [3/5] 更新 Python 依赖..."
-pip install -r requirements.txt -q 2>/dev/null && echo "   ✅ Python 依赖已更新" || echo "   ⏭  Python 依赖无变更"
+echo "📦 [2/4] 更新 Python 依赖..."
+pip install -r requirements.txt -q && echo "   ✅ Python 依赖已更新" || echo "   ⏭  Python 依赖无变更"
 
 # 3. 构建前端
 echo ""
-echo "📦 [4/5] 构建前端..."
+echo "📦 [3/4] 构建前端..."
 cd frontend
 
 # 检查并切换 Node.js 版本
@@ -86,7 +90,7 @@ sudo systemctl restart nginx 2>/dev/null && echo "   ✅ Nginx 已重启" || ech
 
 # 4. 重启后端
 echo ""
-echo "📦 [5/5] 重启后端服务..."
+echo "📦 [4/4] 重启后端服务..."
 cd "$PROJECT_DIR"
 
 pkill -f "uvicorn api.main:app" 2>/dev/null || true
