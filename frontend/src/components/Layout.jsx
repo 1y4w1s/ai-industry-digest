@@ -180,6 +180,18 @@ export default function Layout() {
           <ErrorBoundary>
             <Outlet />
           </ErrorBoundary>
+          <div style={{
+            flexShrink: 0,
+            textAlign: 'center',
+            fontSize: '10px',
+            color: 'var(--color-text-label)',
+            opacity: 0.4,
+            lineHeight: '20px',
+            height: '20px',
+            letterSpacing: '0.3px',
+          }}>
+            闽ICP备2026020386号-1
+          </div>
         </main>
       </div>
 
