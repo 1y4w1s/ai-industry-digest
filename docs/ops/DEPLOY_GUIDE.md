@@ -163,15 +163,6 @@ nohup /home/ubuntu/.local/bin/uvicorn api.main:app --host 0.0.0.0 --port 8000 > 
 # 手动运行采集
 cd /opt/ai-industry-digest && python3 run.py
 
-# 手动导入文章到知识库
-cd /opt/ai-industry-digest && python3 scripts/import_to_kb.py --all
-
-# 预览要导入的文章（不实际执行）
-cd /opt/ai-industry-digest && python3 scripts/import_to_kb.py --dry-run --all
-
-# 查看知识库导入统计
-cd /opt/ai-industry-digest && python3 scripts/import_to_kb.py --stats
-
 # 重启 Nginx
 sudo systemctl restart nginx
 ```
@@ -185,8 +176,8 @@ sudo systemctl restart nginx
 在服务器上执行以下两条命令即可完成配置：
 
 ```bash
-# 1. 配置定时任务（每天凌晨 3:00 全流程 + 自动导入知识库）
-(crontab -l 2>/dev/null; echo "0 3 * * * cd /opt/ai-industry-digest && KB_IMPORT=true python3 run.py >> /opt/ai-industry-digest/daily.log 2>&1") | crontab -
+# 1. 配置定时任务（每天凌晨 3:00 自动采集 + 生成日报）
+(crontab -l 2>/dev/null; echo "0 3 * * * cd /opt/ai-industry-digest && python3 run.py >> /opt/ai-industry-digest/daily.log 2>&1") | crontab -
 
 # 2. 验证配置
 crontab -l
@@ -200,34 +191,28 @@ crontab -e
 
 # 在文件末尾添加以下行：
 # ─────────────────────────────────
-# Signal 自动采集 + 知识库导入 - 每天凌晨 3:00
-0 3 * * * cd /opt/ai-industry-digest && KB_IMPORT=true python3 run.py >> /opt/ai-industry-digest/daily.log 2>&1
-
-# 如果只需要知识库导入（不采集），每天 4:00 执行
-0 4 * * * cd /opt/ai-industry-digest && python3 scripts/import_to_kb.py >> /opt/ai-industry-digest/kb_import.log 2>&1
+# Signal 自动采集 - 每天凌晨 3:00
+0 3 * * * cd /opt/ai-industry-digest && python3 run.py >> /opt/ai-industry-digest/daily.log 2>&1
 ```
 
 ### 流程说明
 
 ```
-03:00  采集（RSS/Arxiv/HF）→ AI处理 → 日报生成 → 知识库导入
+03:00  采集（RSS/Arxiv/HF）→ AI 处理 → 日报生成
   ↓
 03:15~03:20  全部完成
   ↓
-你起床 → 打开页面 → 日报最新 ✅ + 知识库已更新 ✅
+你起床 → 打开页面 → 日报最新 ✅
 ```
 
 ### 查看定时任务日志
 
 ```bash
-# 查看每日采集+导入日志
+# 查看每日采集日志
 tail -f /opt/ai-industry-digest/daily.log
 
 # 查看最近一次运行情况
 tail -20 /opt/ai-industry-digest/daily.log
-
-# 知识库导入日志（单独）
-tail -f /opt/ai-industry-digest/kb_import.log
 ```
 
 ### 管理定时任务

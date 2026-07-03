@@ -4,7 +4,7 @@
 > **版本**: 2.0.0 | **许可证**: MIT
 
 自动采集 → AI 处理 → 日报生成 → 阅读与搜索。  
-知识库 / RAG 能力已拆至独立项目 [`rag-knowledge-platform`](../rag-knowledge-platform)，详见 [`docs/SPLIT_PLAN.md`](docs/SPLIT_PLAN.md)。
+**独立产品**：仅日报业务，不含知识库 / RAG / 文档上传。
 
 ---
 
@@ -106,12 +106,12 @@ frontend/ (5173)  →  api/ (8000)  ──────────┘
 
 ## 部署
 
-见 [`docs/ops/DEPLOY_GUIDE.md`](docs/ops/DEPLOY_GUIDE.md) 与 [`docs/ops/SIGNAL_SPLIT_DEPLOY.md`](docs/ops/SIGNAL_SPLIT_DEPLOY.md)。
+见 [`docs/ops/DEPLOY_GUIDE.md`](docs/ops/DEPLOY_GUIDE.md)。
 
 ---
 
 ## 文档
 
 - 产品边界：[`docs/PRODUCT_CORE.md`](docs/PRODUCT_CORE.md)
-- 拆分计划：[`docs/SPLIT_PLAN.md`](docs/SPLIT_PLAN.md)
 - 协作规则：[`AGENTS.md`](AGENTS.md)
+- 历史拆分记录（已归档）：[`docs/archive/SPLIT_PLAN.md`](docs/archive/SPLIT_PLAN.md)

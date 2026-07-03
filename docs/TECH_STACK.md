@@ -67,8 +67,6 @@ Supabase DB (articles → daily_reports)
     ↓ API  →  api/routes/content.py   (FastAPI)
     ↓ client → 前端展示
          ↓
-知识库自动导入:  import_to_kb.py → kb_documents → kb_chunks → kb_entities/relations
-         ↓
 AI 个性化推荐:   chat.py → TagExtractor → user_tags → recommend.py → RecommendationWidget
 ```
 
@@ -99,7 +97,6 @@ ai-industry-digest/
 │   │   ├── content.py     # 文章/日报/搜索/代理
 │   │   ├── auth.py        # 用户/收藏/历史/画像/统计
 │   │   ├── chat.py        # AI 对话 + 标签提取
-│   │   ├── kb.py          # 知识库 CRUD + 预览/下载/图谱
 │   │   └── recommend.py   # 个性化推荐
 │   └── services/          # 服务层
 │       ├── jwt_verify.py  # JWT 验证工具
@@ -120,6 +117,6 @@ ai-industry-digest/
 │   ├── TECH_STACK.md      # ← 你现在在这
 │   ├── ops/               # 部署与运维
 │   └── design/            # 设计文档
-├── tests/                  # 42 项测试（41 passed, 1 skipped）
+├── tests/                  # 61 项 pytest
 └── 任务书.md              # 整改任务跟踪
 ```

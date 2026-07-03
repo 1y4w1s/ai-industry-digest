@@ -33,7 +33,7 @@ class IntentClassifier:
         分类用户意图
         
         返回：(意图类型, 置信度)
-        - 意图类型: "chat", "kb", "article", "daily", "general", "unknown"
+        - 意图类型: "chat", "article", "daily", "general", "unknown"
         - 置信度: 0.0 - 1.0
         """
         message_lower = message.lower().strip()

@@ -1,7 +1,7 @@
-# Signal 拆分 — 云服务器部署清单
+# Signal 拆分 — 云服务器部署清单（历史归档）
 
 > 2026-07-03：Signal 已下线知识库 API 与前端入口，仅保留日报能力。  
-> 知识库后续在 `rag-knowledge-platform` 单独部署。
+> 状态: **已完成**；日常部署见 `docs/ops/DEPLOY_GUIDE.md`。
 
 ## 部署状态
 
@@ -14,11 +14,11 @@
 - [x] 访问 `/knowledge` 重定向首页
 - [ ] 服务器 cron 清理 `KB_IMPORT` / `import_to_kb`（需 SSH 确认，见 §3）
 
-### 阶段 D（物理删除孤儿文件）
+### 阶段 D（物理删除孤儿文件）— 已完成
 
 - [x] 本地删除 KB/RAG 孤儿文件
 - [x] 61 项 pytest 通过
-- [ ] push + GitHub Actions 部署绿（本 commit）
+- [x] push + GitHub Actions 部署绿（commit `3ca55e6`）
 
 ## 1. 推送代码
 
@@ -91,5 +91,4 @@ pm2 restart signal-backend
 
 ## 6. 本地仓库清理（阶段 D 已完成）
 
-Signal 仓库内 KB/RAG 孤儿文件已物理删除（2026-07-03）。  
-RAG 相关能力请在 `rag-knowledge-platform` 单独部署。
+Signal 仓库内 KB/RAG 孤儿文件已物理删除（2026-07-03，commit `3ca55e6`）。

@@ -1,7 +1,7 @@
 # Signal — 产品内核
 
 > 最后更新: 2026-07-03  
-> 状态: 生效中
+> 状态: 生效中（独立日报产品）
 
 ## 1. 一句话定位
 
@@ -19,24 +19,20 @@
 - 文章搜索、收藏、浏览历史
 - 用户登录（Supabase Auth）
 
-## 4. 可以有但不再扩展（迁出或冻结）
+## 4. 明确不做
 
-- 知识库上传 / RAG 问答 → **已迁至 [rag-knowledge-platform](../rag-knowledge-platform)**，Signal 内仅保留外链或后续 ingest 对接
-- Agent、知识图谱、F-15 监控 → 属 RAG 项目，Signal 不再开发
-
-## 5. 明确不做
-
-- 不做文档上传与向量检索产品（独立项目负责）
-- 不在 Signal 内继续堆 RAG / Agent 新功能
+- 不做文档上传、向量检索、RAG 问答、知识图谱
+- 不做 Agent 编排、KB 监控仪表盘
 - 不做多租户 SaaS（现阶段）
 - 不做 Java 后端栈
+- 不维护与其它产品的采集→知识库集成
 
-## 6. 与 RAG 项目的边界
+## 5. 数据域
 
-| Signal 负责 | RAG 项目负责 |
-|-------------|--------------|
-| `articles`、`daily_reports` | `kb_*` 表 |
-| 采集管道 `run.py` | 文档处理、检索、KB 对话 |
-| 日报前端页面 | 知识库前端页面 |
+| 本仓库负责 | 说明 |
+|------------|------|
+| `articles`、`daily_reports` | 资讯与日报 |
+| `bookmarks`、`reading_history` | 用户阅读行为 |
+| `user_profiles`、`user_tags` | 用户画像与标签 |
 
-可选集成：采集完成后 `POST` 文章到 RAG 的 `/api/v1/ingest`（尚未实现，见 `docs/SPLIT_PLAN.md`）。
+Supabase 中若仍存在 `kb_*` 表，**不由本仓库读写**；属历史数据或其它独立产品范畴。

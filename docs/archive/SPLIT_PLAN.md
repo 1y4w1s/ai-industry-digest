@@ -1,8 +1,8 @@
-# Signal ↔ RAG 项目拆分计划
+# Signal ↔ RAG 项目拆分计划（历史归档）
 
 > 创建日期: 2026-07-03  
-> 状态: **执行中**（阶段 A/B）  
-> RAG 目标仓库: `D:\MyPrograms\rag-knowledge-platform`（Python 重做）
+> 状态: **已完成**（阶段 A–D，2026-07-03）  
+> 说明: 拆分已结束，Signal 现为独立日报产品。本文仅供追溯，**非当前开发依据**。
 
 ---
 

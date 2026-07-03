@@ -647,17 +647,11 @@ class Tables:
     """数据库表名常量（集中管理，避免硬编码）"""
     ARTICLES = "articles"
     DAILY_REPORTS = "daily_reports"
-    KB_DOCUMENTS = "kb_documents"
-    KB_CHUNKS = "kb_chunks"
-    KB_ENTITIES = "kb_entities"
-    KB_RELATIONS = "kb_relations"
-    KB_ENTITY_CHUNKS = "kb_entity_chunks"
     BOOKMARKS = "bookmarks"
     READING_HISTORY = "reading_history"
     ARTICLE_FEEDBACK = "article_feedback"
     USER_PROFILES = "user_profiles"
     USER_TAGS = "user_tags"
-    KB_IMPORTED_ARTICLES = "kb_imported_articles"
 
 
 # ── 单例导出 ────────────────────────────

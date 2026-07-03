@@ -2,17 +2,19 @@
 
 ## 产品边界
 
-- **Signal 只做 AI 行业日报**，不做知识库/RAG 新功能。
-- 知识库已迁至 `rag-knowledge-platform`，见 `docs/SPLIT_PLAN.md`。
+- **Signal 是独立的 AI 行业日报产品**：采集 → AI 处理 → 日报 → 阅读 / 搜索 / 收藏。
+- 本仓库**不包含**知识库、RAG、向量检索、文档上传；与任何其它项目**无代码、无运行时、无部署耦合**。
+- 历史拆分记录见 `docs/archive/SPLIT_PLAN.md`（已完成，仅供追溯）。
 
 ## 协作规则
 
 1. 一个对话只做一个极小任务。
 2. 动手前先看 `docs/PRODUCT_CORE.md`，不擅自扩展范围。
 3. 改功能逻辑必须同步更新相关文档。
-4. 不动 `rag-knowledge-platform` 里的代码（除非任务 explicitly 涉及集成）。
+4. 不在本仓库引入 KB/RAG 能力或跨仓库集成代码。
 
 ## 当前状态
 
-- **Signal（本仓库）**：阶段 D 物理清理已完成（KB/RAG 孤儿文件已删，61 项测试通过）；阶段 C 云部署已验收（commit 22500ff）
-- **RAG 项目**：bootstrap 已完成，完善与部署留待下一阶段
+- **生产**：http://43.139.133.245:8080
+- **测试**：61 项 pytest 全绿
+- **范围**：仅日报业务（`articles`、`daily_reports` 等）
