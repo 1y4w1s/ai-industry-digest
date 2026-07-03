@@ -3,6 +3,23 @@
 > 2026-07-03：Signal 已下线知识库 API 与前端入口，仅保留日报能力。  
 > 知识库后续在 `rag-knowledge-platform` 单独部署。
 
+## 部署状态
+
+### 阶段 C（路由/入口下线）— 已完成
+
+- [x] push `master`（commit `22500ff`）
+- [x] GitHub Actions 部署绿
+- [x] `/api/kb/documents` 返回 404
+- [x] 侧栏无「知识库」入口
+- [x] 访问 `/knowledge` 重定向首页
+- [ ] 服务器 cron 清理 `KB_IMPORT` / `import_to_kb`（需 SSH 确认，见 §3）
+
+### 阶段 D（物理删除孤儿文件）
+
+- [x] 本地删除 KB/RAG 孤儿文件
+- [x] 61 项 pytest 通过
+- [ ] push + GitHub Actions 部署绿（本 commit）
+
 ## 1. 推送代码
 
 ```bash
@@ -72,9 +89,7 @@ git checkout <拆分前的 commit>
 pm2 restart signal-backend
 ```
 
-## 6. 未删除的内容（ intentional ）
+## 6. 本地仓库清理（阶段 D 已完成）
 
-仓库里 `api/routes/kb.py` 等文件 **仍在磁盘上**，只是 `main.py` 不再注册路由。  
-等 RAG 项目上线验证后，再做阶段 D 物理删除。
-
-RAG 监控（原 `/api/monitor`）已随 KB 一起下线；需要时在 RAG 项目单独部署。
+Signal 仓库内 KB/RAG 孤儿文件已物理删除（2026-07-03）。  
+RAG 相关能力请在 `rag-knowledge-platform` 单独部署。

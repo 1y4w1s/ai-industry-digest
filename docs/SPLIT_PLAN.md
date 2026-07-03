@@ -144,19 +144,21 @@ frontend: Home, Archive, Search, Bookmarks, History, Profile, Settings, Admin（
 - [ ] 本地 8001 / 5174 跑通上传与搜索（需你配 `.env` 后验证）
 - [ ] RAG 测试跑绿
 
-### 阶段 C — 剪 Signal（代码已完成，待云部署）
+### 阶段 C — 剪 Signal ✅
 
 - [x] `chat.py` 去 KB 注入
 - [x] 前端移除 `/knowledge` 与侧栏「知识库」
 - [x] `main.py` 下线 kb / agent / monitor 路由
 - [x] `run.py` 移除 `KB_IMPORT`
 - [x] 搜索 / 管理后台去掉 KB 与 F-15 监控
-- [ ] 云服务器 push + cron 清理（见 `docs/ops/SIGNAL_SPLIT_DEPLOY.md`）
+- [x] 云服务器 push + 部署验收（commit `22500ff`，见 `docs/ops/SIGNAL_SPLIT_DEPLOY.md`）
+- [ ] 服务器 cron 清理 `KB_IMPORT` / `import_to_kb`（需 SSH）
 
 ### 阶段 D — 清理
 
-- [ ] Signal 物理删除已迁文件
-- [ ] 更新两边 README
+- [x] Signal 物理删除已迁文件（2026-07-03，61 项日报测试通过）
+- [x] 更新 Signal README
+- [ ] 更新 RAG 项目 README
 
 ---
 

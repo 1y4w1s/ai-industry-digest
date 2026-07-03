@@ -4,8 +4,8 @@ Signal - JWT 验证工具
 
 认证链路：
   1. demo-user → 返回 demo UUID（仅未登录浏览公开内容）
-  2. JWT → 先尝试 Supabase auth.get_user() → 失败则直接解析 JWT payload
-  3. 全部失败 → 返回 None
+  2. JWT → 使用 Supabase auth.get_user() 验证 → 返回 user_id
+  3. 全部失败 → 返回 None，上层调用方兜底为匿名用户
 """
 
 import os
@@ -72,11 +72,5 @@ def verify_token(token: str) -> Optional[str]:
             return response.user.id
     except Exception as e:
         print(f"[JWT] Supabase 验证失败: {type(e).__name__}: {str(e)[:100]}")
-    
-    # 3. Fallback: 直接解码 JWT 获取 user_id（不验证签名）
-    payload = _decode_jwt_without_verification(token)
-    if payload and payload.get("sub"):
-        print(f"[JWT] 使用 fallback 方式获取 user_id: {payload['sub'][:10]}...")
-        return payload["sub"]
     
     return None  # 验证失败
