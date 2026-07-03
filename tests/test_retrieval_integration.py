@@ -349,32 +349,23 @@ from api.main import app
 
 
 class TestMonitorAPI:
+    """Monitor 已迁出 Signal，端点应不存在。"""
 
-    def test_dashboard_200(self):
-        with patch("api.services.monitor.aggregator.get_db", side_effect=Exception("DB error")):
-            resp = TestClient(app).get("/api/monitor/dashboard")
-            assert resp.status_code == 200
-            assert "period" in resp.json()
+    def test_dashboard_404(self):
+        resp = TestClient(app).get("/api/monitor/dashboard")
+        assert resp.status_code == 404
 
-    def test_dashboard_days_30(self):
-        with patch("api.services.monitor.aggregator.get_db", side_effect=Exception("DB error")):
-            resp = TestClient(app).get("/api/monitor/dashboard?days=30")
-            assert resp.status_code == 200
+    def test_dashboard_days_404(self):
+        resp = TestClient(app).get("/api/monitor/dashboard?days=30")
+        assert resp.status_code == 404
 
-    def test_dashboard_invalid_days(self):
-        resp = TestClient(app).get("/api/monitor/dashboard?days=-1")
-        assert resp.status_code == 422
+    def test_metrics_404(self):
+        resp = TestClient(app).get("/api/monitor/metrics")
+        assert resp.status_code == 404
 
-    def test_metrics_200(self):
-        with patch("api.services.monitor.aggregator.get_db", side_effect=Exception("DB error")):
-            resp = TestClient(app).get("/api/monitor/metrics")
-            assert resp.status_code == 200
-            assert isinstance(resp.json(), list)
-
-    def test_metrics_limit(self):
-        with patch("api.services.monitor.aggregator.get_db", side_effect=Exception("DB error")):
-            resp = TestClient(app).get("/api/monitor/metrics?limit=5")
-            assert resp.status_code == 200
+    def test_metrics_limit_404(self):
+        resp = TestClient(app).get("/api/monitor/metrics?limit=5")
+        assert resp.status_code == 404
 
 
 # ============================================================
