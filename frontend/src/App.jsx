@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -47,6 +47,7 @@ function PrivateRoute({ children }) {
 function AppContent() {
   return (
     <Routes>
+      <Route path="/knowledge" element={<Navigate to="/" replace />} />
       <Route path="/login" element={<Suspense fallback={<SuspenseFallback />}><LoginPage /></Suspense>} />
       <Route element={<Layout />}>
         <Route index element={<Home />} />
