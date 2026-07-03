@@ -208,9 +208,9 @@ jobs:
             pip install --no-cache-dir -r requirements.txt -q
             echo "   ✅ 依赖已更新"
 
-            echo "📦 [2/3] 修复前端产物权限..."
+            echo "📦 [2/3] 更新 Nginx 配置 + 修复前端产物权限..."
             sudo chmod -R 755 frontend/dist/ 2>/dev/null || true
-            sudo systemctl restart nginx 2>/dev/null && echo "   ✅ Nginx 已重启" || echo "   ⚠️ Nginx 重启失败（跳过）"
+            sudo python3 scripts/fix_nginx_gzip_v2.py || echo "   ⚠️ Nginx 配置更新失败（跳过）"
 
             echo "📦 [3/3] 重启后端服务（PM2）..."
             cd /opt/ai-industry-digest && pm2 restart signal-backend 2>/dev/null || \

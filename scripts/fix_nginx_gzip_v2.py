@@ -41,6 +41,16 @@ def main():
     gzip_http_version 1.1;
     gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript application/x-javascript application/font-woff2 image/svg+xml;
 
+    # 健康检查 — 代理到 FastAPI（避免落入 SPA）
+    location = /health {
+        proxy_pass http://localhost:8000/health;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
     # 前端静态文件 — index.html 不可缓存（确保新部署立即生效）
     location / {
         root /opt/ai-industry-digest/frontend/dist;
