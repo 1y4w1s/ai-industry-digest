@@ -167,22 +167,6 @@ async def search_all(
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=50, description="每页数量"),
 ):
-    """全站搜索：同时搜索文章标题 + 知识库文档名"""
+    """全站搜索：文章标题与摘要"""
     articles = db.get_articles(page=page, page_size=page_size, keyword=q)
-    
-    # 搜索知识库文档
-    kb_result = db.client.table("kb_documents") \
-        .select("id, name, file_type, created_at", count="exact") \
-        .or_(f"is_public.eq.true") \
-        .ilike("name", f"%{q}%") \
-        .order("created_at", desc=True) \
-        .range(0, page_size - 1) \
-        .execute()
-    
-    return {
-        "articles": articles,
-        "kb_documents": {
-            "items": kb_result.data or [],
-            "total": kb_result.count or 0,
-        },
-    }
+    return {"articles": articles}

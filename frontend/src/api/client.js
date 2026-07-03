@@ -182,77 +182,7 @@ export const api = {
   // 个性化推荐
   getRecommend: (limit = 5) => request(`/recommend?limit=${limit}`),
 
-  // 知识库
-  kb: {
-    list: (params = {}) => {
-      const q = new URLSearchParams();
-      if (params.page) q.set('page', params.page);
-      if (params.page_size) q.set('page_size', params.page_size);
-      if (params.tag) q.set('tag', params.tag);
-      if (params.status) q.set('status', params.status);
-      if (params.file_type) q.set('file_type', params.file_type);
-      if (params.source) q.set('source', params.source);
-      if (params.q) q.set('q', params.q);
-      return request(`/kb/documents?${q}`);
-    },
-
-    get: (id) => request(`/kb/documents/${id}`),
-
-    upload: async (file, tags = '', isPublic = true) => {
-      const auth = getAuthHeader();
-      const formData = new FormData();
-      formData.append('file', file);
-      if (tags) formData.append('tags', tags);
-      formData.append('is_public', isPublic ? 'true' : 'false');
-      const res = await fetch(`${API_BASE}/kb/documents`, {
-        method: 'POST',
-        headers: auth ? { 'Authorization': auth } : {},
-        body: formData,
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ detail: res.statusText }));
-        throw new Error(err.detail || '上传失败');
-      }
-      return res.json();
-    },
-
-    delete: (id) => request(`/kb/documents/${id}`, { method: 'DELETE' }),
-
-    process: (id) => request(`/kb/documents/${id}/process`, { method: 'POST' }),
-
-    getProgressUrl: (id) => `${API_BASE}/kb/documents/${id}/progress`,
-
-    getChunks: (id) => request(`/kb/documents/${id}/chunks`),
-
-    getGraph: (id) => request(`/kb/documents/${id}/graph`),
-
-    preview: (id) => request(`/kb/documents/${id}/preview`),
-
-    download: (id) => {
-      const token = getToken() || DEMO_TOKEN;
-      window.open(`${API_BASE}/kb/documents/${id}/download?token=${token}`, '_blank');
-    },
-
-    updateTags: (id, tags) =>
-      request(`/kb/documents/${id}/tags`, {
-        method: 'PUT',
-        body: JSON.stringify({ tags }),
-      }),
-
-    batchDelete: (ids) =>
-      request('/kb/batch/delete', {
-        method: 'POST',
-        body: JSON.stringify({ ids }),
-      }),
-
-    batchProcess: (ids) =>
-      request('/kb/batch/process', {
-        method: 'POST',
-        body: JSON.stringify({ ids }),
-      }),
-  },
-
-  // 全站搜索
+  // 全站搜索（仅文章）
   searchAll: (q, page = 1, page_size = 50) =>
     request(`/search?q=${encodeURIComponent(q)}&page=${page}&page_size=${page_size}`),
 };

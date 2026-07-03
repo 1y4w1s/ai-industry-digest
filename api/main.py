@@ -18,12 +18,9 @@ from fastapi.staticfiles import StaticFiles
 from api.routes.content import router as content_router
 from api.routes.auth import router as auth_router
 from api.routes.chat import router as chat_router
-from api.routes.kb import router as kb_router
 from api.routes.recommend import router as recommend_router
 from api.routes.admin import router as admin_router
 from api.routes.websocket import router as websocket_router
-from api.routes.agent_router import router as agent_router
-from api.routes.monitor import router as monitor_router
 
 app = FastAPI(
     title="Signal API",
@@ -148,12 +145,36 @@ async def health():
 app.include_router(content_router, prefix="/api")
 app.include_router(auth_router, prefix="/api/auth")
 app.include_router(chat_router, prefix="/api")
-app.include_router(kb_router, prefix="/api")
 app.include_router(recommend_router, prefix="/api")
 app.include_router(admin_router, prefix="/api")
-app.include_router(agent_router, prefix="/api")
 app.include_router(websocket_router)  # WebSocket 不需要前缀
-app.include_router(monitor_router)    # monitor 已有 /api/monitor 前缀
+
+# ── 优雅关闭 ────────────────────────────
+
+@app.on_event("shutdown")
+async def shutdown():
+    """服务关闭时：通知 WebSocket 用户 + 等待请求完成 + 释放资源"""
+    print("[Shutdown] 开始优雅关闭...")
+    # 1. 通知所有在线用户
+    try:
+        from api.services.websocket_manager import ws_manager
+        await ws_manager.broadcast({
+            "type": "shutdown",
+            "message": "服务正在维护，请稍后重新连接"
+        })
+    except Exception:
+        pass
+    # 2. 等待 3 秒让已有请求完成
+    import asyncio
+    await asyncio.sleep(3)
+    # 3. 释放 Redis 连接
+    try:
+        from api.services.cache import cache
+        if cache._redis:
+            cache._redis.close()
+    except Exception:
+        pass
+    print("[Shutdown] 优雅关闭完成")
 
 # ── 静态文件托管 ────────────────────────────
 

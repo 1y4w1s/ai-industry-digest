@@ -4,7 +4,9 @@
 > **版本**: 2.0.0 | **许可证**: MIT
 > **项目类型**: 个人独立开发
 
-自动采集 → AI 处理 → 日报生成 → 知识库 → 个性化推荐，全链路自动化。
+> **2026-07-03** 知识库/RAG 能力正在拆至独立项目 [`rag-knowledge-platform`](../rag-knowledge-platform)。Signal 内 KB 功能进入**冻结期**（只修 Bug），详见 [`docs/SPLIT_PLAN.md`](docs/SPLIT_PLAN.md) 与 [`docs/PRODUCT_CORE.md`](docs/PRODUCT_CORE.md)。
+
+自动采集 → AI 处理 → 日报生成 → 阅读与搜索，日报链路自动化。
 
 ---
 

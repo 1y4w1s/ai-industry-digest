@@ -1,13 +1,13 @@
 """
 Signal - AI 对话接口
-支持文章级对话（带上下文）和全局对话，整合知识库功能
+支持文章级对话（带上下文）和基于日报的全局对话
 """
 
 import os
+import re
+import time
 import httpx
 import hashlib
-import jieba
-import asyncio
 from typing import Optional, List, Dict, Any
 from pydantic import BaseModel
 from datetime import datetime
@@ -17,15 +17,36 @@ from api.models.database import get_db
 from api.services.tag_extractor import TagExtractor
 from api.services.cache import cache, cache_key
 from api.services.intent_classifier import classify_intent, get_classifier
-from api.services.embedding import get_embedding_service
-from api.services.retrieval import get_retrieval_service
-from api.services.agent import get_agent_service
 
 router = APIRouter()
 db = get_db()
 
 # 对话上下文存储（生产环境建议用 Redis，这里用内存简化）
 chat_contexts: dict = {}
+
+# 上下文访问时间记录，用于清理过期上下文
+_context_access: dict = {}
+_CONTEXT_TTL = 1800 # 30 分钟无访问自动清理
+
+def _cleanup_stale_contexts():
+    """清理超过 30 分钟未活跃的对话上下文,防止内存泄漏"""
+    now = time.time()
+    stale_keys = [
+        key for key, last_access in _context_access.items()
+        if now - last_access > _CONTEXT_TTL
+    ]
+    for key in stale_keys:
+        chat_contexts.pop(key, None)
+        _context_access.pop(key, None)
+    if stale_keys:
+        print(f"[Chat] 清理了 {len(stale_keys)} 个过期对话上下文")
+
+def _touch_context(session_id: str):
+    """更新上下文访问时间戳"""
+    _context_access[session_id] = time.time()
+    # 每更新 50 次触发一次全局清理
+    if len(_context_access) % 50 == 0:
+        _cleanup_stale_contexts()
 
 # 统计信息（内存存储，生产环境建议用 Redis）
 chat_stats = {
@@ -54,101 +75,6 @@ def chat_log(msg: str):
             f.write(f"[{timestamp}] {msg}\n")
     except Exception:
         pass
-
-
-# ── 知识库检索功能 ──────────────────────────
-
-async def search_kb_chunks(query: str, user_id: str, limit: int = 3) -> List[Dict[str, Any]]:
-    """在知识库切片中搜索相关内容（使用高级检索）"""
-    try:
-        retrieval_service = get_retrieval_service()
-        # 直接 await 异步方法，不再使用 asyncio.run()
-        results = await retrieval_service.search(query, user_id, limit)
-        
-        chat_log(f"[KB] 高级检索返回 {len(results)} 个结果")
-        return results
-        
-    except Exception as e:
-        chat_log(f"[KB] 高级检索失败: {e}")
-        return _keyword_search(query.lower().strip(), user_id, limit)
-
-
-def _keyword_search(query: str, user_id: str, limit: int = 3) -> List[Dict[str, Any]]:
-    """关键词检索（作为向量检索的回退）"""
-    try:
-        docs_result = db.client.table("kb_documents") \
-            .select("id") \
-            .or_(f"is_public.eq.true,user_id.eq.{user_id}") \
-            .execute()
-        
-        doc_ids = set(doc["id"] for doc in (docs_result.data or []))
-        
-        if not doc_ids:
-            return []
-        
-        query_keywords = jieba.lcut(query.lower())
-        query_keywords = [w for w in query_keywords if len(w) > 1]
-        
-        chunks_query = db.client.table("kb_chunks") \
-            .select("*, kb_documents!inner(id, name, file_type, is_public, user_id)") \
-            .order("created_at", desc=True) \
-            .limit(200)
-        
-        result = chunks_query.execute()
-        all_chunks = result.data or []
-        filtered_chunks = [chunk for chunk in all_chunks if chunk.get("document_id") in doc_ids]
-        
-        scored_chunks = []
-        
-        for chunk in filtered_chunks:
-            content = chunk.get("content", "").lower()
-            doc = chunk.get("kb_documents", {})
-            doc_name = doc.get("name", "").lower()
-            
-            score = 0
-            for keyword in query_keywords:
-                if keyword in content:
-                    score += content.count(keyword) * 3
-                if keyword in doc_name:
-                    score += 2
-            
-            if score > 0:
-                scored_chunks.append({
-                    "chunk": chunk,
-                    "document": doc,
-                    "score": score
-                })
-        
-        scored_chunks.sort(key=lambda x: x["score"], reverse=True)
-        
-        if not scored_chunks:
-            docs_result = db.client.table("kb_documents") \
-                .select("id", "name", "file_type", "is_public", "user_id", "created_at") \
-                .or_(f"is_public.eq.true,user_id.eq.{user_id}") \
-                .order("created_at", desc=True) \
-                .limit(limit) \
-                .execute()
-            
-            for doc in docs_result.data or []:
-                chunk_result = db.client.table("kb_chunks") \
-                    .select("content") \
-                    .eq("document_id", doc["id"]) \
-                    .limit(1) \
-                    .execute()
-                
-                content = chunk_result.data[0]["content"] if chunk_result.data else ""
-                
-                scored_chunks.append({
-                    "chunk": {"content": content, "document_id": doc["id"]},
-                    "document": doc,
-                    "score": 50
-                })
-        
-        return scored_chunks[:limit]
-        
-    except Exception as e:
-        chat_log(f"[KB] 关键词检索失败: {e}")
-        return []
 
 
 def log_chat_request(
@@ -266,10 +192,8 @@ def classify_question(message: str) -> str:
     
     返回值:
     - "chat": 闲聊对话，不需要上下文
-    - "general": 通用知识问题，查知识库
     - "daily": 日报/新闻相关，需要注入日报上下文
     - "article": 特定文章相关，需要注入文章上下文
-    - "kb": 知识库查询，需要注入知识库上下文
     """
     # 使用新的意图分类器
     result = classify_intent(message)
@@ -292,20 +216,13 @@ class ChatResponse(BaseModel):
     session_id: str
 
 
-SYSTEM_PROMPT = """你是一个专业的 AI 行业分析师助手，帮助用户理解 AI 行业新闻、趋势和知识库内容。
+SYSTEM_PROMPT = """你是一个专业的 AI 行业分析师助手，帮助用户理解 AI 行业新闻与趋势。
 
 规则:
-1. 你的知识截止于 2026 年初，用户提供的最新文章内容和知识库内容优先于你的训练数据
+1. 你的知识截止于 2026 年初，用户提供的最新文章内容优先于你的训练数据
 2. 不确定的具体事件请坦白说「我不确定，但根据你提供的资料...」
 3. 回答简洁、准确、有深度，使用中文
-4. 引用文章时使用 Markdown 链接格式：[文章标题](/?article=文章ID)
-5. 引用知识库文档时使用格式：[文档名称](/knowledge?doc=文档ID)"""
-
-KB_CONTEXT_PROMPT = """以下是知识库中的相关内容：
-
-{kb_content}
-
-请参考知识库内容回答用户问题。引用文档时使用格式：[文档名称](/knowledge?doc=文档ID)"""
+4. 引用文章时使用 Markdown 链接格式：[文章标题](/?article=文章ID)"""
 
 ARTICLE_CONTEXT_PROMPT = """以下是用户当前正在阅读的一篇文章：
 
@@ -332,14 +249,13 @@ async def chat(
     authorization: Optional[str] = Header(None),
     token: Optional[str] = Header(None),
 ):
-    """AI 对话接口（带文章上下文和知识库支持）
+    """AI 对话接口（带文章或日报上下文）
     
     上下文来源（按注入顺序）：
       1. SYSTEM_PROMPT — 角色设定
       2. 当前文章（如果 article_id 有值）
-      3. 今日日报文章列表（如果 article_id 为空）
-      4. 知识库相关文档（智能检索）
-      5. 最近 2 轮对话历史
+      3. 今日日报文章列表（如果 article_id 为空且问题与日报相关）
+      4. 最近 2 轮对话历史
     """
     from api.services.jwt_verify import verify_token, DEMO_USER_UUID
     
@@ -428,31 +344,9 @@ async def chat(
                             messages.append({"role": "system", "content": f"今日日期（日报日期）: {report_date}"})
             else:
                 chat_log(f"[CHAT] 问题类型={question_type}，跳过日报上下文注入")
-        
-        # ── 知识库上下文注入 ──
-        # 根据意图类型判断是否注入知识库上下文
-        # 注入条件：kb类型 或 general类型 或 置信度低时让LLM自己判断
-        should_inject_kb = question_type in ("kb", "general")
-        
-        if should_inject_kb:
-            # 搜索知识库相关内容
-            kb_chunks = await search_kb_chunks(req.message, user_id, limit=3)
-            if kb_chunks:
-                kb_parts = []
-                for item in kb_chunks:
-                    chunk = item["chunk"]
-                    doc = item["document"]
-                    kb_parts.append(
-                        f"文档：{doc.get('name', '未知文档')} (ID: {doc.get('id', '')})\n"
-                        f"内容：{chunk.get('content', '')[:300]}\n"
-                    )
-                kb_context = KB_CONTEXT_PROMPT.format(kb_content="\n".join(kb_parts))
-                messages.append({"role": "system", "content": kb_context})
-                chat_log(f"[CHAT] 注入知识库上下文: {len(kb_chunks)} 个相关切片")
-            else:
-                chat_log(f"[CHAT] 知识库检索无结果")
 
         # 添加历史上下文（保留最近 2 轮，减少 tokens 消耗）
+        _touch_context(session_id)
         history = chat_contexts.get(session_id, [])
         history_count = min(len(history), 2)
         for h in history[-2:]:  # 从6轮减少到2轮
@@ -512,6 +406,7 @@ async def chat(
             {"role": "user", "content": req.message},
             {"role": "assistant", "content": reply},
         ]
+        _touch_context(session_id)
 
         # 限制上下文大小
         if len(chat_contexts) > 1000:

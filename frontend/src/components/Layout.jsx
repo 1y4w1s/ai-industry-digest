@@ -12,12 +12,11 @@ function useNavItems(user) {
     { path: '/archive', label: '日报归档' },
     { path: '/bookmarks', label: '收藏' },
     { path: '/history', label: '浏览历史' },
-    { path: '/knowledge', label: '知识库' },
     { path: '/settings', label: '设置' },
   ];
   const isAdmin = user?.user_metadata?.nickname === ADMIN_USER || user?.email?.startsWith(ADMIN_USER);
   if (isAdmin) {
-    base.splice(5, 0, { path: '/admin', label: '管理后台' });
+    base.splice(4, 0, { path: '/admin', label: '管理后台' });
   }
   return base;
 }
