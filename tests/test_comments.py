@@ -100,7 +100,7 @@ def test_route_get_comments_empty_article():
     """无评论的文章返回空列表"""
     client = _make_app_client()
     fake_db = _make_mock_db_chain([])
-    with patch("api.routes.comments.db", fake_db):
+    with patch("api.routes.comments.get_db", return_value=fake_db):
         resp = client.get("/api/comments/art-001")
     assert resp.status_code == 200
     data = resp.json()
@@ -136,7 +136,7 @@ def test_route_get_comments_with_content():
 
     client = _make_app_client()
     fake_db = _make_mock_db_chain(rows)
-    with patch("api.routes.comments.db", fake_db):
+    with patch("api.routes.comments.get_db", return_value=fake_db):
         resp = client.get("/api/comments/art-001")
     assert resp.status_code == 200
     data = resp.json()
@@ -190,7 +190,7 @@ def test_route_post_comment_success():
 
     client = _make_app_client()
     fake_db = _make_mock_db_chain(inserted)
-    with patch("api.routes.comments.db", fake_db):
+    with patch("api.routes.comments.get_db", return_value=fake_db):
         resp = client.post("/api/comments", json={
             "article_id": "art-001",
             "content": "好评论",
@@ -209,7 +209,7 @@ def test_route_report_comment_success():
     client = _make_app_client()
     # 模拟"评论存在"查询 → 返回有数据
     fake_db = _make_mock_db_chain([{"id": comment_id, "is_reported": False}])
-    with patch("api.routes.comments.db", fake_db):
+    with patch("api.routes.comments.get_db", return_value=fake_db):
         resp = client.post("/api/comments/report", json={
             "comment_id": comment_id,
             "reason": "广告内容",
@@ -224,7 +224,7 @@ def test_route_report_nonexistent_comment():
     """举报不存在的评论返回 404"""
     client = _make_app_client()
     fake_db = _make_mock_db_chain([])  # 评论不存在 → 空列表
-    with patch("api.routes.comments.db", fake_db):
+    with patch("api.routes.comments.get_db", return_value=fake_db):
         resp = client.post("/api/comments/report", json={
             "comment_id": "nonexistent",
             "reason": "垃圾内容",
@@ -246,7 +246,7 @@ def test_route_report_duplicate():
 
     fake_db.client.table.return_value.insert.return_value.execute.side_effect = _raise_duplicate
 
-    with patch("api.routes.comments.db", fake_db):
+    with patch("api.routes.comments.get_db", return_value=fake_db):
         resp = client.post("/api/comments/report", json={
             "comment_id": "c-001",
             "reason": "广告",
@@ -262,9 +262,8 @@ def test_route_report_duplicate():
 def test_route_comments_db_unreachable():
     """DB 不可达时返回空列表（降级）"""
     client = _make_app_client()
-    # 直接让 real_db 抛异常
-    with patch("api.routes.comments.db") as mg:
-        mg.client.table.side_effect = RuntimeError("db down")
+    # 让 get_db 抛异常
+    with patch("api.routes.comments.get_db", side_effect=RuntimeError("db down")):
         resp = client.get("/api/comments/art-001")
     assert resp.status_code == 200  # 降级不 500
     data = resp.json()
@@ -285,7 +284,7 @@ def test_route_comments_with_auth_header():
     # mock 掉 verify_token 绕过真实 JWT 验证
     with patch("api.routes.comments.verify_token", return_value="user-001"):
         fake_db = _make_mock_db_chain(inserted)
-        with patch("api.routes.comments.db", fake_db):
+        with patch("api.routes.comments.get_db", return_value=fake_db):
             resp = client.post(
                 "/api/comments",
                 json={"article_id": "art-001", "content": "登录用户评论"},

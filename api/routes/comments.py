@@ -20,12 +20,11 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, Header
 from pydantic import BaseModel
 
-from api.models.database import get_db, DatabaseManager
+from api.models.database import get_db
 from api.services.jwt_verify import verify_token
 from api.services.cache import invalidate_cache
 
 router = APIRouter()
-db = get_db()
 
 
 # ── 敏感词列表（内置基础防垃圾） ──────────────
@@ -119,6 +118,8 @@ async def create_comment(
         "user_id": user_id,
     }
 
+    db = get_db()
+
     # 检查父评论存在
     if req.parent_id:
         try:
@@ -153,6 +154,7 @@ async def get_comments(article_id: str):
     按 created_at DESC 排列（最新在前），无分页（每篇评论量不大）。
     """
     try:
+        db = get_db()
         # 查出所有已审核根评论
         rows = db.client.table("article_comments") \
             .select("*") \
@@ -201,6 +203,8 @@ async def report_comment(req: ReportCreate):
         raise HTTPException(status_code=400, detail="举报原因过长（最多 500 字）")
 
     token = (req.reporter_token or "").strip() or "anonymous"
+
+    db = get_db()
 
     try:
         # 检查评论是否存在
