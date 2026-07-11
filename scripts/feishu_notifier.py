@@ -6,7 +6,7 @@ Signal - 飞书 Webhook 通知模块
 import os
 import json
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 
 import httpx
 from dotenv import load_dotenv
@@ -51,6 +51,26 @@ class FeishuNotifier:
                     }
                 }
             }
+        }
+        return self._send(msg)
+
+    def send_metrics_card(self, title: str, lines: List[str]) -> bool:
+        """发送指标卡片（如留存周报）：每行一条文本，简洁不喧宾夺主。"""
+        if not self.is_configured():
+            print("  [FEISHU] 未配置 Webhook，跳过指标卡发送")
+            return False
+
+        content = [[{"tag": "text", "text": ln}] for ln in lines]
+        msg = {
+            "msg_type": "post",
+            "content": {
+                "post": {
+                    "zh_cn": {
+                        "title": title,
+                        "content": content,
+                    }
+                }
+            },
         }
         return self._send(msg)
 

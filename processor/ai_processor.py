@@ -25,6 +25,7 @@ class AIResult:
     tags: List[str]
     importance: str          # high / medium / low
     reason: str
+    so_what: Optional[str] = None   # 观点层：So What / 对你意味着什么（独立步骤产出，可空）
     article_index: int = 0   # 批处理中的文章序号
 
 
@@ -90,13 +91,17 @@ class AIProcessor:
                 failed += len(batch)
                 continue
 
+            # 观点层（So What）独立步骤：与 summary 解耦，避免污染事实字段
+            so_whats = self._generate_so_what(batch)
+
             # 将结果写回 Article 对象
-            for article, result in zip(batch, results):
+            for article, result, so_what in zip(batch, results, so_whats):
                 if result:
                     article.summary = result.summary
                     article.tags = [t for t in result.tags if t in self.TAG_CANDIDATES or t.startswith("其他")]
                     article.importance = result.importance
                     article.importance_reason = result.reason
+                    article.so_what = so_what  # 可空：LLM 失败时为 None，旧文兼容
                     processed += 1
                 else:
                     failed += 1
@@ -201,10 +206,114 @@ class AIProcessor:
             print(f"  [DEBUG] 原始响应: {response.get('choices', [{}])[0].get('message', {}).get('content', '')[:200]}")
             return [None] * expected_count
 
+    # ── 观点层（So What）独立步骤 ────────────────
+    # 与 summary 完全解耦：事实底由 _process_batch 产出，观点层单独调用 LLM，
+    # 即使观点生成失败也绝不回填到 summary，避免污染事实字段。
+
+    # 标题党 / 夸张词汇黑名单（用于 prompt 约束 + 测试可复用的判定）
+    CLICKBAIT_WORDS = [
+        "核弹级", "炸裂", "颠覆", "史诗级", "逆天", "封神", "王炸", "炸场",
+        "惊呆", "震惊", "狂飙", "杀疯了", "绝绝子", "炸天", "逆天改命",
+        "史上最", "吊打", "完爆", "一雪前耻", "原地封神",
+    ]
+
+    def _generate_so_what(self, articles: List[Article]) -> List[Optional[str]]:
+        """为一批文章生成「So What / 对你意味着什么」观点层。
+
+        返回与 articles 等长的列表，逐篇对齐；任意一篇失败则该篇为 None。
+        观点基于已生成的事实底（title/summary/source），不接触原始摘要字段。
+        """
+        if not articles:
+            return []
+
+        prompt = self._build_so_what_prompt(articles)
+        # 观点层用稍高温度更自然，但限制重试与 token 以控成本
+        response = self._call_api(prompt, max_retries=1, temperature=0.5, max_tokens=1024)
+        if response is None:
+            print(f"  [WARN] So What 观点层生成失败（{len(articles)} 篇置空，不影响事实底）")
+            return [None] * len(articles)
+
+        return self._parse_so_what_response(response, len(articles))
+
+    def _build_so_what_prompt(self, articles: List[Article]) -> str:
+        """构建观点层 Prompt（独立于事实层）"""
+        items_text = ""
+        for i, article in enumerate(articles, 1):
+            # 观点必须基于事实底：优先用已生成的 summary，缺失时退回原文片段
+            base = article.summary or article.raw_content[:400]
+            items_text += f"""
+--- 文章 {i} ---
+标题: {article.title}
+来源: {article.source_name}
+事实底（已核实摘要）: {base}
+"""
+
+        banned = "、".join(self.CLICKBAIT_WORDS)
+        prompt = f"""你是一个有经验的 AI 行业编辑，负责写「So What / 对你意味着什么」观点层。
+
+为下面 {len(articles)} 篇文章各写一句「So What」——用大白话告诉关注 AI 的读者：这条新闻**对你（或你所在行业）实际意味着什么**，有什么值得留意、能用上、或要警惕的点。
+
+下面是各篇文章的「事实底」（已核实，请仅据此生发观点，不要编造）：
+{items_text}
+要求：
+1. 像编辑对读者说的"人话"，口语自然，不要新闻稿腔、不要说教。
+2. 严格 1-2 句，中文，不超过 60 字。
+3. 必须基于上面的「事实底」，不编造文章里没有的信息；不输出主观立场或情绪煽动。
+4. **绝对禁止**标题党 / 夸张词汇，例如：{banned}。
+5. 不要简单重复标题本身，要往前走一步点出"所以呢"。
+6. 若内容实在无法判断实际意义，写一句平实的"这条信息的实际影响暂不明确"。
+
+请严格按以下 JSON 数组格式输出（长度必须等于 {len(articles)}，article_index 从 1 开始，不要包含其他文字）：
+[
+  {{"article_index": 1, "so_what": "..."}},
+  ...
+]
+"""
+        return prompt
+
+    def _parse_so_what_response(self, response: dict, expected_count: int) -> List[Optional[str]]:
+        """解析观点层 API 返回的 JSON 结果（容错：解析失败整批置空）"""
+        try:
+            content = response["choices"][0]["message"]["content"]
+            content = content.strip()
+            if content.startswith("```json"):
+                content = content[7:]
+            if content.startswith("```"):
+                content = content[3:]
+            if content.endswith("```"):
+                content = content[:-3]
+            content = content.strip()
+
+            data = json.loads(content)
+            if not isinstance(data, list):
+                print(f"  [WARN] So What 返回非数组，整批置空")
+                return [None] * expected_count
+
+            so_whats = []
+            for item in data:
+                sw = item.get("so_what")
+                so_whats.append(sw if isinstance(sw, str) and sw.strip() else None)
+
+            # 补足缺失的结果
+            while len(so_whats) < expected_count:
+                so_whats.append(None)
+
+            return so_whats[:expected_count]
+
+        except (json.JSONDecodeError, KeyError, TypeError, IndexError) as e:
+            print(f"  [ERROR] 解析 So What 响应失败: {e}")
+            return [None] * expected_count
+
     # ── API 调用 ──────────────────────────────────
 
-    def _call_api(self, prompt: str, max_retries: int = 2) -> Optional[dict]:
-        """调用 DeepSeek API，带重试机制"""
+    def _call_api(self, prompt: str, max_retries: int = 2,
+                  temperature: float = 0.3, max_tokens: int = 2048) -> Optional[dict]:
+        """调用 DeepSeek API，带重试机制
+
+        Args:
+            temperature: 采样温度（事实层用 0.3 保一致；观点层可略高更自然）
+            max_tokens: 输出上限
+        """
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json"
@@ -216,8 +325,8 @@ class AIProcessor:
                 {"role": "system", "content": "你是一个专业的 AI 行业分析师，擅长信息摘要和分析。"},
                 {"role": "user", "content": prompt}
             ],
-            "temperature": 0.3,   # 低温度，保证输出一致性
-            "max_tokens": 2048     # 减少输出限制（从4096减少）
+            "temperature": temperature,   # 低温度，保证输出一致性
+            "max_tokens": max_tokens     # 减少输出限制（从4096减少）
         }
 
         last_error = None

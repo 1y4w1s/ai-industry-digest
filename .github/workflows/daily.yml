@@ -2,7 +2,9 @@ name: AI Industry Digest Daily
 
 on:
   schedule:
-    - cron: '0 22,4,10 * * *'
+    - cron: '0 22,4,10 * * *'   # 06:00 / 12:00 / 18:00 北京时间：常规采集
+    - cron: '0 0 * * *'         # 08:00 北京时间：采集 + 邮件简报推送
+    - cron: '0 1 * * 1'         # 09:00 北京时间（周一）：留存指标周报（§1.5）
   workflow_dispatch:
 
 env:
@@ -33,3 +35,105 @@ jobs:
 
       - name: Data integrity check
         run: python scripts/daily_verify.py
+
+  # ── 邮件简报（产品核心 §1.3）：每日 08:00 北京时间推送，依赖采集完成 ──
+  newsletter:
+    name: 邮件简报
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [daily-digest]
+    # 仅在 08:00(北京时间) 这次调度触发；其余采集运行不发信
+    if: github.event.schedule == '0 0 * * *'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install deps
+        run: pip install -r requirements.txt
+
+      - name: 发送邮件简报
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          NEWSLETTER_ESP: ${{ secrets.NEWSLETTER_ESP || 'console' }}
+          NEWSLETTER_RECIPIENTS: ${{ secrets.NEWSLETTER_RECIPIENTS }}
+          NEWSLETTER_BASE_URL: ${{ secrets.NEWSLETTER_BASE_URL }}
+          NEWSLETTER_FROM: ${{ secrets.NEWSLETTER_FROM }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+        run: python scripts/newsletter.py send --esp "$NEWSLETTER_ESP"
+
+  # ── 播客音频（§2.2）：每日 08:00 北京时间生成当日简报音频，对标 Rundown audio ──
+  #    音频是「加成项」：失败不阻断主流程（continue-on-error），避免坏 enclosure 影响订阅。
+  #    依赖邮件简报 job 完成（needs），且在同一次 08:00 调度触发。
+  podcast:
+    name: 播客音频生成
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [newsletter]
+    if: github.event.schedule == '0 0 * * *'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install deps
+        run: pip install -r requirements.txt
+
+      - name: 生成当日播客音频
+        continue-on-error: true   # 音频是加成项：TTS 失败/无文章均跳过该天，不阻断流水线
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          PUBLIC_BASE_URL: ${{ secrets.PUBLIC_BASE_URL }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}   # 可选：有则启用 OpenAI TTS，否则用 edge-tts
+        run: python scripts/podcast.py generate
+
+  # ── 失败主动告警：流水线任一环节失败 → 飞书群卡片（替代 GitHub 被动通知） ──
+  notify-on-failure:
+    name: 失败告警
+    runs-on: ubuntu-latest
+    if: failure()
+    needs: [daily-digest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: 发送飞书告警
+        env:
+          FEISHU_WEBHOOK: ${{ secrets.FEISHU_WEBHOOK }}
+        run: |
+          pip install -q python-dotenv httpx
+          python -c "
+          import sys; sys.path.insert(0, '.')
+          from scripts.feishu_notifier import FeishuNotifier
+          n = FeishuNotifier()
+          run_url = '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+          n.send_alert('Signal 每日流水线失败', '请查看: ' + run_url)
+          "
+
+  # ── 留存指标周报（§1.5）：每周一 09:00 北京时间跑 metrics.py，推飞书极简卡 ──
+  #    不建 BI 看板；仅三数（订阅/打开/退订）+ 退订率。需配置 FEISHU_WEBHOOK secret。
+  weekly-metrics:
+    name: 留存指标周报
+    runs-on: ubuntu-latest
+    # 仅在周一 09:00(北京时间) 这次调度触发
+    if: github.event.schedule == '0 1 * * 1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install deps
+        run: pip install -r requirements.txt
+
+      - name: 跑留存指标并推飞书卡
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          FEISHU_WEBHOOK: ${{ secrets.FEISHU_WEBHOOK }}
+        run: python scripts/metrics.py --days 7
