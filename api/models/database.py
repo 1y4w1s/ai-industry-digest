@@ -6,7 +6,7 @@ Supabase 写入、查询、分页、搜索
 import os
 import time
 from typing import List, Optional, Dict, Any
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, timezone
 
 from supabase import create_client, Client
 from dotenv import load_dotenv
@@ -86,6 +86,7 @@ class DatabaseManager:
                     "tags": article.tags or [],
                     "importance": article.importance or "low",
                     "importance_reason": article.importance_reason or "",
+                    "so_what": getattr(article, "so_what", None),  # 观点层，可空，旧文兼容
                     "source_refs": article.source_refs or [],
                     "published_at": article.published_at.isoformat() if article.published_at else None,
                 }
@@ -240,7 +241,7 @@ class DatabaseManager:
         if article_ids:
             # 只选列表需要的字段，排除 raw_content（每篇 ~50KB，首页不需要）
             raw = self.client.table("articles") \
-                .select("id, title, url, source_name, summary, tags, importance, importance_reason, published_at, source_refs") \
+                .select("id, title, url, source_name, summary, tags, importance, importance_reason, so_what, published_at, source_refs") \
                 .in_("id", article_ids) \
                 .execute()
             raw_articles = raw.data or []
@@ -641,7 +642,62 @@ class DatabaseManager:
         }
 
 
-# ── 表名常量 ────────────────────────────
+    # ── 留存埋点事件（改造计划 §1.5：订阅/打开/退订 三数） ─────────────
+
+    def record_open_event(self, token: str, article: str) -> bool:
+        """记录一次邮件打开（去重：同 (token, article) 24h 内只记一次）。
+
+        隐私合规：只写 token 维度聚合，绝不写 IP / User-Agent / 设备指纹。
+        返回 True=新记录，False=24h 内已记录或参数无效。
+        """
+        if not token or not article:
+            return False
+        since = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
+        try:
+            existing = (
+                self.client.table("open_events")
+                .select("id")
+                .eq("token", token)
+                .eq("article", article)
+                .gte("opened_at", since)
+                .execute()
+            )
+            if existing.data:
+                return False  # 24h 内已记录，去重
+            self.client.table("open_events").insert(
+                {"token": token, "article": article}
+            ).execute()
+            return True
+        except Exception as e:
+            print(f"  [DB] 记录打开事件失败: {e}")
+            return False
+
+    def record_send_event(self, token: str, issue_date: str) -> bool:
+        """记录一次简报发送（打开率的分母）。同 (token, issue_date) 幂等，不重复计。
+
+        返回 True=新记录，False=已存在或参数无效。
+        """
+        if not token or not issue_date:
+            return False
+        try:
+            existing = (
+                self.client.table("newsletter_sends")
+                .select("id")
+                .eq("token", token)
+                .eq("issue_date", issue_date)
+                .execute()
+            )
+            if existing.data:
+                return False  # 该期已发过，幂等跳过
+            self.client.table("newsletter_sends").insert(
+                {"token": token, "issue_date": issue_date}
+            ).execute()
+            return True
+        except Exception as e:
+            print(f"  [DB] 记录发送事件失败: {e}")
+            return False
+
+    # ── 表名常量 ────────────────────────────
 
 class Tables:
     """数据库表名常量（集中管理，避免硬编码）"""
@@ -652,6 +708,8 @@ class Tables:
     ARTICLE_FEEDBACK = "article_feedback"
     USER_PROFILES = "user_profiles"
     USER_TAGS = "user_tags"
+    ARTICLE_COMMENTS = "article_comments"
+    COMMENT_REPORTS = "comment_reports"
 
 
 # ── 单例导出 ────────────────────────────

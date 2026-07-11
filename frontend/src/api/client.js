@@ -179,12 +179,25 @@ export const api = {
   // 首页聚合
   getHome: () => request('/home'),
 
+  // 今日主线（事件聚类，§2.1）
+  getMainThread: (date) => request(`/main-thread?date=${encodeURIComponent(date)}`),
+
   // 个性化推荐
   getRecommend: (limit = 5) => request(`/recommend?limit=${limit}`),
 
   // 全站搜索（仅文章）
   searchAll: (q, page = 1, page_size = 50) =>
     request(`/search?q=${encodeURIComponent(q)}&page=${page}&page_size=${page_size}`),
+
+  // 评论区（§3.2）
+  getComments: (articleId) =>
+    request(`/comments/${encodeURIComponent(articleId)}`),
+
+  createComment: (body) =>
+    request('/comments', { method: 'POST', body: JSON.stringify(body) }),
+
+  reportComment: (commentId, reason, reporterToken = '') =>
+    request('/comments/report', { method: 'POST', body: JSON.stringify({ comment_id: commentId, reason, reporter_token: reporterToken }) }),
 };
 
 // Dev/test: 暴露到全局方便 DevTools 调试

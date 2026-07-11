@@ -21,6 +21,11 @@ from api.routes.chat import router as chat_router
 from api.routes.recommend import router as recommend_router
 from api.routes.admin import router as admin_router
 from api.routes.websocket import router as websocket_router
+from api.routes.newsletter import router as newsletter_router
+from api.routes.stories import router as stories_router
+from api.routes.public_digest import router as public_digest_router
+from api.routes.podcast import router as podcast_router
+from api.routes.comments import router as comments_router
 
 app = FastAPI(
     title="Signal API",
@@ -148,6 +153,11 @@ app.include_router(chat_router, prefix="/api")
 app.include_router(recommend_router, prefix="/api")
 app.include_router(admin_router, prefix="/api")
 app.include_router(websocket_router)  # WebSocket 不需要前缀
+app.include_router(newsletter_router)  # 退订落地页 /unsubscribe（无前缀）
+app.include_router(stories_router, prefix="/api")  # 今日主线聚类 /api/main-thread（§2.1）
+app.include_router(public_digest_router)  # 公开页 SEO：/digest/{date} + /sitemap.xml + /robots.txt（§2.3，须在 SPA fallback 之前注册）
+app.include_router(podcast_router)  # 播客 RSS：/podcast.xml（§2.2，须在 SPA fallback 之前注册）
+app.include_router(comments_router, prefix="/api")  # 评论区：/api/comments（§3.2）
 
 # ── 优雅关闭 ────────────────────────────
 
@@ -187,6 +197,16 @@ if test_dir.exists():
 frontend_dist = Path(__file__).resolve().parent.parent / "frontend" / "dist"
 if frontend_dist.exists():
     app.mount("/assets", StaticFiles(directory=str(frontend_dist / "assets")), name="frontend_assets")
+
+# 3. 播客音频（§2.2）：静态托管 media/podcast → /podcast
+#    与 frontend/dist 挂载并存（不同前缀，无冲突）。目录不存在时创建空目录以便挂载成功。
+podcast_dir = Path(__file__).resolve().parent.parent / "media" / "podcast"
+try:
+    podcast_dir.mkdir(parents=True, exist_ok=True)
+except Exception:
+    pass
+if podcast_dir.exists():
+    app.mount("/podcast", StaticFiles(directory=str(podcast_dir)), name="podcast")
 
     from fastapi.responses import FileResponse
 

@@ -6,7 +6,7 @@ import { renderMd, renderArticleContent } from '../utils/markdown';
 import DOMPurify from 'dompurify';
 import { Cache, CACHE_TTL } from '../utils/cache';
 import { useToast } from './Toast';
-import ErrorBoundary from './ErrorBoundary';
+import CommentSection from './CommentSection';
 
 /* ── TTS hook (guarded for mobile browsers without SpeechSynthesis) ───── */
 function getSS() {
@@ -330,6 +330,9 @@ export default function ArticleReader({ articleId, onBack }) {
                   导出 PDF
                 </button>
               </div>
+
+              {/* 评论区（§3.2） */}
+              <CommentSection articleId={articleId} />
             </div>
           </div>
 
