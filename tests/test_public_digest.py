@@ -295,3 +295,47 @@ def test_route_digest_html_includes_og_image_meta():
     assert "/og/digest/2026-07-10.svg" in body
     assert 'name="twitter:card"' in body
     assert 'content="summary_large_image"' in body
+
+
+def test_route_digest_github_agents_section_and_filter():
+    """公开页应渲染「本周 AI Agent 新星」区块 + 时间范围/最低 star/排序筛选器。"""
+    client = _make_app_client()
+    today = date.today().isoformat()
+    items = [{
+        "name": "o/p", "url": "https://github.com/o/p", "stars": 1234,
+        "description": "d", "language": "Python",
+        "pushed_at": "2025-01-01T00:00:00Z", "created_at": "2025-01-01T00:00:00Z",
+        "stars_per_day": 5.0, "is_rising_star": False,
+    }]
+    fake_report = _demo_report(8)
+    fake_report["github_agents"] = items
+    fake_report["gh_filter"] = {"range": "week", "min_stars": 100, "sort": "stars"}
+    with patch("api.routes.public_digest.build_report", return_value=fake_report):
+        resp = client.get(f"/digest/{today}")
+    assert resp.status_code == 200
+    body = resp.text
+    assert "本周 AI Agent 新星" in body
+    assert 'name="gh_range"' in body
+    assert 'name="gh_min_stars"' in body
+    assert 'name="gh_sort"' in body
+    assert f'action="/digest/{today}"' in body
+
+
+def test_route_digest_github_filter_changes_query():
+    """公开页筛选器应把 gh_range/gh_min_stars/gh_sort 透传到 build_report(gh_params)。"""
+    client = _make_app_client()
+    today = date.today().isoformat()
+    captured = {}
+
+    def spy(db, report_date, top_n=8, window_days=3, gh_params=None):
+        captured["gh_params"] = gh_params
+        return _demo_report(8)
+
+    with patch("api.routes.public_digest.build_report", side_effect=spy):
+        resp = client.get(
+            f"/digest/{today}?gh_range=month&gh_min_stars=500&gh_sort=trending"
+        )
+    assert resp.status_code == 200
+    assert captured.get("gh_params") == {
+        "range": "month", "min_stars": 500, "sort": "trending", "limit": 30
+    }

@@ -30,13 +30,13 @@ import html
 import json
 from datetime import datetime, timedelta
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 from fastapi.responses import HTMLResponse, PlainTextResponse, Response
 
 from api.models.database import get_db
 
 # 复用邮件简报的取数 + 聚类口径（同一份 cluster_stories 数据，与邮件同源）
-from scripts.newsletter import build_report, NewsletterRenderer
+from scripts.newsletter import build_report, NewsletterRenderer, _fmt_github_card
 
 # 公开页常量
 DEFAULT_PUBLIC_BASE_URL = "https://1y4w1s.icu:8080"   # 线上域名（8080 端口 + HTTPS 待收敛）
@@ -200,6 +200,7 @@ class PublicDigestRenderer:
 
         main_thread_html, main_thread_note = self._render_main_thread(report, escape)
         articles_html = self._render_articles(report, escape)
+        github_html = self._render_github_agents(report, escape, report.get("gh_filter") or {}, report_date)
         head = self._build_head(report, report_date, ranked, escape)
 
         # 降级横幅（DB 不可达等）：合法 meta 之外的友好提示，不泄露错误细节
@@ -238,6 +239,7 @@ class PublicDigestRenderer:
       <div style="font-size:15px;font-weight:700;color:#0f172a;margin:12px 0;">📌 今日精选（Top {len(ranked)}）</div>
       {articles_html}
     </div>
+    {github_html}
     <div style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:18px 28px;font-size:12px;color:#9ca3af;">
       <p style="margin:0 0 6px;">{escape(self.product_name)} 每日 AI 情报简报 · 公开归档页。编辑部每日精选值得关注的 AI 信号，可自由阅读、分享。</p>
       <p style="margin:0;"><a href="{escape(archive_url)}" style="color:#6b7280;">往期归档</a> · <a href="{escape(home_url)}" style="color:#6b7280;">返回首页</a></p>
@@ -245,6 +247,45 @@ class PublicDigestRenderer:
   </div>
 </body>
 </html>"""
+
+    def _render_github_agents(self, report: dict, escape, gh_filter: dict, report_date) -> str:
+        """公开页「本周 AI Agent 新星」区块：含时间范围 / 最低 star / 排序筛选器（整页刷新）。"""
+        items = report.get("github_agents") or []
+        f_range = gh_filter.get("range", "week")
+        f_min = gh_filter.get("min_stars", 100)
+        f_sort = gh_filter.get("sort", "stars")
+        date_str = report_date.isoformat()
+        form = (
+            f'<form method="get" action="/digest/{escape(date_str)}" '
+            f'style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px;">'
+            f'<label style="font-size:12px;color:#6b7280;">时间范围'
+            f'<select name="gh_range" style="margin-left:4px;padding:4px 6px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;">'
+            f'<option value="week"{" selected" if f_range=="week" else ""}>最近一周</option>'
+            f'<option value="month"{" selected" if f_range=="month" else ""}>最近一个月</option>'
+            f'<option value="quarter"{" selected" if f_range=="quarter" else ""}>最近三个月</option>'
+            f'</select></label>'
+            f'<label style="font-size:12px;color:#6b7280;">最低 Star'
+            f'<input name="gh_min_stars" type="number" min="0" step="50" value="{f_min}" '
+            f'style="margin-left:4px;width:80px;padding:4px 6px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;"/></label>'
+            f'<label style="font-size:12px;color:#6b7280;">排序'
+            f'<select name="gh_sort" style="margin-left:4px;padding:4px 6px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;">'
+            f'<option value="stars"{" selected" if f_sort=="stars" else ""}>Star 降序</option>'
+            f'<option value="trending"{" selected" if f_sort=="trending" else ""}>新星飙升</option>'
+            f'</select></label>'
+            f'<button type="submit" style="padding:5px 12px;background:#0f172a;color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer;">应用</button>'
+            f'</form>'
+        )
+        if not items:
+            cards = ('<p style="font-size:13px;color:#9ca3af;margin:0;">'
+                     '暂无匹配项目（GitHub API 限流中，或该范围内暂无高星 Agent 项目；可放宽条件后重试）。</p>')
+        else:
+            cards = "\n".join(_fmt_github_card(it, escape) for it in items)
+        return f"""<div style="padding:8px 28px 24px;">
+      <div style="font-size:15px;font-weight:700;color:#0f172a;margin:12px 0 4px;">🤖 本周 AI Agent 新星（GitHub 高星开源）</div>
+      <div style="font-size:12px;color:#9ca3af;margin-bottom:8px;">按 Star 数降序 · ⚡ 为近期创建且日增迅速的新项目</div>
+      {form}
+      {cards}
+    </div>"""
 
     def render_unavailable(self, raw_date: str) -> str:
         """日期格式非法时返回的友好页（合法 meta，404 语义由路由层设置）。"""
@@ -295,6 +336,8 @@ def _empty_report() -> dict:
         "main_stories": {"stories": [], "total_stories": 0},
         "main_thread": [],
         "articles": {"high": [], "medium": [], "low": []},
+        "github_agents": [],
+        "gh_filter": {},
     }
 
 
@@ -303,7 +346,12 @@ def _parse_date(s: str):
 
 
 @router.get("/digest/{report_date}", response_class=HTMLResponse, tags=["公开页 SEO"])
-async def public_digest(report_date: str):
+async def public_digest(
+    report_date: str,
+    gh_range: str = Query("week"),
+    gh_min_stars: int = Query(100),
+    gh_sort: str = Query("stars"),
+):
     """公开只读简报页（改造计划 §2.3）。
 
     - 复用 newsletter.build_report（同 cluster_stories 数据，与邮件简报同源）。
@@ -321,7 +369,9 @@ async def public_digest(report_date: str):
 
     try:
         db = get_db()
-        report = build_report(db, rd, TOP_N)
+        gh_params = {"range": gh_range, "min_stars": gh_min_stars,
+                     "sort": gh_sort, "limit": 30}
+        report = build_report(db, rd, TOP_N, gh_params=gh_params)
         degraded = False
     except Exception:
         # DB 不可达：优雅降级，返回友好空页（合法 meta），不 500

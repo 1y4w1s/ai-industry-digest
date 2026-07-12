@@ -55,6 +55,7 @@ import httpx
 
 from collector.base import Article
 from processor.reporter import DailyReportGenerator, cluster_stories
+from processor.github_agents import fetch_github_agents
 
 load_dotenv()
 
@@ -95,8 +96,50 @@ def _rows_to_articles(rows: List[dict]) -> List[Article]:
     return articles
 
 
+# ──────────────────────────────────────────────────────────────
+# GitHub AI Agent 高星新星卡片（邮件 + 公开页同源复用）
+# ──────────────────────────────────────────────────────────────
+
+def _fmt_github_card(item: dict, escape) -> str:
+    """单个 GitHub Agent 项目卡片（内联样式，邮件 / 公开页通用）。"""
+    name = escape(item.get("name") or "")
+    url = escape(item.get("url") or "#")
+    desc = escape(item.get("description") or "")
+    stars = item.get("stars", 0)
+    lang = escape(item.get("language") or "")
+    pushed = item.get("pushed_at") or ""
+    rising = item.get("is_rising_star")
+    rising_badge = (
+        '<span style="font-size:11px;padding:1px 7px;border-radius:999px;'
+        'background:#ecfdf5;color:#047857;margin-left:6px;">⚡ 新星</span>'
+    ) if rising else ""
+    lang_badge = (
+        f'<span style="font-size:11px;color:#6b7280;margin-left:6px;">· {lang}</span>'
+    ) if lang else ""
+    pushed_date = pushed[:10] if pushed else ""
+    return f"""<div style="border:1px solid #e5e7eb;border-radius:10px;padding:14px;margin-bottom:10px;">
+      <div style="font-size:15px;font-weight:600;color:#111827;margin-bottom:4px;">
+        <a href="{url}" style="color:#111827;text-decoration:none;">{name}</a>{rising_badge}
+      </div>
+      <p style="font-size:13px;line-height:1.6;color:#374151;margin:0 0 6px;">{desc}</p>
+      <div style="font-size:12px;color:#6b7280;">★ {stars:,}{lang_badge} · 更新于 {pushed_date}</div>
+    </div>"""
+
+
+def _render_github_agents_section(items: list, escape) -> str:
+    """「本周 AI Agent 新星」邮件区块（静态，无交互筛选器）。"""
+    if not items:
+        return ""
+    cards = "\n".join(_fmt_github_card(it, escape) for it in items)
+    return f"""<div style="padding:8px 28px 24px;">
+      <div style="font-size:15px;font-weight:700;color:#0f172a;margin:12px 0;">🤖 本周 AI Agent 新星（GitHub 高星开源）</div>
+      <div style="font-size:12px;color:#9ca3af;margin-bottom:10px;">按 Star 数降序 · ⚡ 为近期创建且日增迅速的新项目</div>
+      {cards}
+    </div>"""
+
+
 def build_report(db: DatabaseManager, report_date: date, top_n: int = 8,
-                 window_days: int = 3) -> dict:
+                 window_days: int = 3, gh_params: Optional[dict] = None) -> dict:
     """取当日文章，复用 reporter.generate 产出报告结构（不修改 reporter）。
 
     返回结构 = reporter 的 report dict，并额外挂：
@@ -138,6 +181,17 @@ def build_report(db: DatabaseManager, report_date: date, top_n: int = 8,
         for item in report["articles"][tier]:
             a = by_url.get(item.get("url"))
             item["so_what"] = a.so_what if a else None
+
+    # 内嵌每日日报 · GitHub AI Agent 高星新星（用户 2026-07-12）
+    # 默认最近一周 + 最低 100 star；公开页可经 gh_params 覆盖时间范围/最低 star/排序。
+    default_gh = {"range": "week", "min_stars": 100, "sort": "stars", "limit": 12}
+    gh = {**default_gh, **(gh_params or {})}
+    try:
+        report["github_agents"] = fetch_github_agents(**gh)
+    except Exception as e:  # noqa: BLE001
+        print(f"  [WARN] github_agents 注入失败（降级为空）: {e}")
+        report["github_agents"] = []
+    report["gh_filter"] = gh
     return report
 
 
@@ -298,6 +352,7 @@ class NewsletterRenderer:
             articles_html = "\n".join(
                 self._render_article(a, escape) for a in ranked
             )
+        github_html = _render_github_agents_section(report.get("github_agents") or [], escape)
 
         subject = f"{self.product_name} 每日 AI 简报 · {report_date.isoformat()}"
         date_str = report_date.isoformat()
@@ -336,6 +391,7 @@ class NewsletterRenderer:
       <div style="font-size:15px;font-weight:700;color:#0f172a;margin:12px 0;">📌 今日精选（Top {len(ranked)}）</div>
       {articles_html}
     </div>
+    {github_html}
     <div style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:18px 28px;font-size:12px;color:#9ca3af;">
       <p style="margin:0 0 6px;">你收到此邮件，是因为订阅了 {escape(self.product_name)} 每日 AI 情报简报。编辑部每天为你挑选值得关注的 AI 信号。</p>
       <p style="margin:0;"><a href="{escape(unsubscribe_url)}" style="color:#6b7280;">退订 Signal 每日情报</a></p>
