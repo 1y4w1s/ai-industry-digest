@@ -105,3 +105,45 @@ sources:
       - type: web
         url: "https://github.com/trending?since=daily"
         timeout: 30
+
+  # ============================================
+  # 社媒一手源（一级热源：快、带话题、带热度信号；tier:1）
+  # 免费、无登录源优先；凭证类源（twitter/youtube/bilibili/xiaohongshu）留作
+  # 凭证就绪后的可插拔桩，无对应 env 时 SocialCollector 安全跳过。
+  # ============================================
+
+  - name: "Hacker News (AI)"
+    id: "hn_ai"
+    priority: 1
+    enabled: true
+    tier: 1
+    collectors:
+      - type: social
+        social_type: hackernews
+        params:
+          query: "AI OR LLM OR machine learning OR deep learning"
+          max_results: 20
+
+  - name: "GitHub (AI repos)"
+    id: "gh_ai_social"
+    priority: 1
+    enabled: true
+    tier: 1
+    collectors:
+      - type: social
+        social_type: github
+        params:
+          topic: "llm"
+          max_results: 15
+
+  - name: "Reddit r/MachineLearning"
+    id: "reddit_ml_social"
+    priority: 2
+    enabled: true
+    tier: 1
+    collectors:
+      - type: social
+        social_type: reddit
+        params:
+          subreddit: "MachineLearning"
+          max_results: 15

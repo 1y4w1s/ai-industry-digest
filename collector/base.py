@@ -24,6 +24,7 @@ class Article:
     so_what: Optional[str] = None           # 观点层：So What / 对你意味着什么（独立 LLM 步骤产出，可空）
     source_refs: List[str] = field(default_factory=list)  # 同事件其他来源
     suspected_duplicate: bool = False      # AI去重失败时标记为"疑似重复"
+    engagement: Optional[dict] = None       # 社媒热度信号（hackernews: score/comments; github: stars; reddit: score）；可空，向后兼容
     created_at: datetime = field(default_factory=datetime.utcnow)
 
 

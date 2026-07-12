@@ -17,6 +17,7 @@ from collector.base import Article
 from collector.rss_collector import RSSCollector
 from collector.arxiv_collector import ArxivCollector
 from collector.hf_collector import HFCollector
+from collector.social_collector import SocialCollector
 from processor.dedup import Deduplicator
 from processor.ai_processor import AIProcessor
 from processor.reporter import DailyReportGenerator
@@ -49,6 +50,8 @@ def create_collector(source_config: dict, collector_type: str = None):
             return ArxivCollector(source_config)
         elif api_type == "huggingface":
             return HFCollector(source_config)
+    elif target_type == "social":
+        return SocialCollector(source_config)
     return None
 
 
