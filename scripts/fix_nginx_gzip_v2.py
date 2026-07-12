@@ -51,6 +51,55 @@ def main():
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
+    # 公开页 SEO（改造计划 §2.3）：/digest/{date}、/sitemap.xml、/robots.txt
+    location /digest/ {
+        proxy_pass http://localhost:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+    location = /sitemap.xml {
+        proxy_pass http://localhost:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+    location = /robots.txt {
+        proxy_pass http://localhost:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+    # 播客 RSS（改造计划 §2.2）：/podcast.xml
+    location = /podcast.xml {
+        proxy_pass http://localhost:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+    # 播客音频文件（静态，由 FastAPI StaticFiles 挂载）
+    location /podcast/ {
+        proxy_pass http://localhost:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+    }
+
+    # 邮件简报（改造计划 §1.3）：退订 /unsubscribe、追踪像素 /track/open
+    location /unsubscribe {
+        proxy_pass http://localhost:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+    }
+    location /track/ {
+        proxy_pass http://localhost:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+    }
+
     # 前端静态文件 — index.html 不可缓存（确保新部署立即生效）
     location / {
         root /opt/ai-industry-digest/frontend/dist;
