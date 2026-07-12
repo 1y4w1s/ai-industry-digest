@@ -66,7 +66,7 @@ export default function SettingsPage() {
   return (
     <div className="flex-1 animate-fade-in" style={{ background: 'var(--color-bg-white)' }}>
       <div className="px-4 lg:px-6" style={{ paddingTop: '24px', paddingBottom: '32px', maxWidth: '560px', margin: '0 auto' }}>
-        <h1 style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '22px', fontWeight: 700, color: 'var(--color-text-title)', marginBottom: '4px' }}>
+        <h1 style={{ fontFamily: "var(--font-display)", fontSize: '22px', fontWeight: 700, color: 'var(--color-text-title)', marginBottom: '4px' }}>
           设置
         </h1>
         <p style={{ fontSize: '13px', color: 'var(--color-text-muted)', marginBottom: '24px' }}>

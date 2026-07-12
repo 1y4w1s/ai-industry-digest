@@ -293,7 +293,7 @@ export default function ProfilePage() {
                 </div>
               ) : (
                 <>
-                  <h1 style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: 'var(--fs-xl)', fontWeight: 700, color: 'var(--color-text-title)' }}>
+                  <h1 style={{ fontFamily: "var(--font-display)", fontSize: 'var(--fs-xl)', fontWeight: 700, color: 'var(--color-text-title)' }}>
                     {nickname}
                   </h1>
                   <button onClick={handleStartEdit} style={{ padding: '4px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-label)', display: 'flex', alignItems: 'center' }}>

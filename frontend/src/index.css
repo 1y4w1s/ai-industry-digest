@@ -1,28 +1,69 @@
 @import "tailwindcss";
 
+/* ============================================================
+   Signal · Modern Editorial Design Tokens (Phase A · 2026-07-12)
+   --------------------------------------------------------------
+   设计语言：编辑设计风（暖白底+墨绿主色+琥珀强调）
+   字体栈：Fraunces 衬线（标题）+ Inter 无衬线（正文）+ JetBrains Mono
+   节奏：  4 / 8 / 12 / 16 / 24 / 32 / 40 / 64 px（7 档）
+   圆角：  6 / 10 / 14 / 20 px（4 档）
+   阴影：  --shadow-1 (浅) / --shadow-2 (中) / --shadow-3 (深)
+   动效：  --ease (标准) / --ease-spring (强调) + 0.15/0.25/0.4s
+
+   向后兼容：所有旧 var(--color-*) 名保留，色值升级到 v2。
+   新增 token 全部走 --color-*-v2 / --shadow-* 命名空间。
+   ============================================================ */
+
 @theme {
-  --color-bg-white: #FBFCFD;
-  --color-bg-off: #F6F7F8;
-  --color-bg-hover: #F0F1F2;
-  --color-bg-toolbar: #EDEEF0;
-  --color-bg-sidebar: #FAFBFC;
-  --color-border-light: #E8EAED;
-  --color-border: #D8DCE0;
-  --color-border-bold: #B0B4B8;
-  --color-text-title: #1A1C1E;
-  --color-text-body: #2C2E32;
-  --color-text-muted: #686C72;
-  --color-text-label: #8C9096;
-  --color-high: #D4322E;
-  --color-medium: #C8960A;
+  /* ── Brand & accent (新增) ── */
+  --color-brand-ink: #0F4C3A;       /* deep green - primary */
+  --color-brand-ink-2: #1A6B52;     /* hover */
+  --color-brand-ink-bg: #E8F0EC;    /* tint */
+  --color-accent-amber: #B8860B;
+  --color-accent-amber-bg: #FBF1D6;
+  --color-accent-coral: #D4654A;
+  --color-accent-coral-bg: #FCEAE3;
+
+  /* ── Legacy tokens (色值升级) ── */
+  --color-bg-white: #F9F7F3;        /* 升级为暖白 canvas */
+  --color-bg-off: #F2EEE6;          /* off-white tint */
+  --color-bg-hover: #ECE5D8;        /* hover tint */
+  --color-bg-toolbar: #ECE5D8;      /* 升级 */
+  --color-bg-sidebar: #FFFFFF;      /* 升级为纯白 */
+  --color-border-light: #E0D9CC;    /* 升级为暖色 line */
+  --color-border: #CDC4B2;
+  --color-border-bold: #A3988E;
+  --color-text-title: #1A1A1A;
+  --color-text-body: #4A4540;
+  --color-text-muted: #7A716A;
+  --color-text-label: #A3988E;
+  --color-high: #B23A2C;            /* 略收 */
+  --color-medium: #B8860B;          /* 改为琥珀 */
   --color-low: #8C9096;
-  --color-blue-link: #2864A8;
-  --color-success: #1E8E4A;
-  --font-display: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+  --color-blue-link: #0F4C3A;       /* 改为墨绿主色 */
+  --color-success: #2D6A4F;         /* 升级为深绿 */
+
+  /* ── Typography (字体升级) ── */
+  --font-display: 'Fraunces', 'Source Serif 4', Georgia, 'Times New Roman', serif;
   --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+
+  /* ── New tokens ── */
+  --shadow-1: 0 1px 2px rgba(60,45,25,0.05), 0 1px 3px rgba(60,45,25,0.04);
+  --shadow-2: 0 4px 8px rgba(60,45,25,0.06), 0 8px 24px rgba(60,45,25,0.06);
+  --shadow-3: 0 12px 32px rgba(60,45,25,0.10), 0 24px 56px rgba(60,45,25,0.08);
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
+/* ============================================================
+   引入 Fraunces 字体
+   ============================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+/* ============================================================
+   Base
+   ============================================================ */
 body {
   margin: 0;
   background: var(--color-bg-white);
@@ -32,10 +73,16 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #D8DCE0; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #B0B4B8; }
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 4px;
+  border: 2px solid var(--color-bg-white);
+}
+::-webkit-scrollbar-thumb:hover { background: var(--color-border-bold); }
+
+::selection { background: var(--color-brand-ink); color: #fff; }
 
 /* Hide scrollbar utility */
 .scrollbar-none::-webkit-scrollbar { display: none; }
@@ -57,14 +104,14 @@ body {
 .animate-slide-right { animation: slideInRight 0.25s ease-out; }
 .animate-slide-up { animation: slideInUp 0.3s ease-out; }
 
-/* ── Font size variants ───────────── */
-/* 默认（无 data-font-size 时）= medium 档 */
+/* ============================================================
+   Font size scale (user 偏好 3 档)
+   ============================================================ */
 :root { --font-size-base: 15px; --fs-xs: 11px; --fs-sm: 12px; --fs-base: 15px; --fs-md: 15px; --fs-lg: 17px; --fs-xl: 22px; --fs-2xl: 26px; }
 [data-font-size="small"] { --font-size-base: 12px; --fs-xs: 9px; --fs-sm: 10px; --fs-base: 12px; --fs-md: 13px; --fs-lg: 15px; --fs-xl: 18px; --fs-2xl: 22px; }
 [data-font-size="medium"] { --font-size-base: 15px; --fs-xs: 11px; --fs-sm: 12px; --fs-base: 15px; --fs-md: 15px; --fs-lg: 17px; --fs-xl: 22px; --fs-2xl: 26px; }
 [data-font-size="large"] { --font-size-base: 18px; --fs-xs: 13px; --fs-sm: 14px; --fs-base: 18px; --fs-md: 17px; --fs-lg: 20px; --fs-xl: 26px; --fs-2xl: 30px; }
 
-/* Override hardcoded inline font-size values to respect CSS variables */
 [data-font-size] [style*="font-size:9"] { font-size: var(--fs-xs) !important; }
 [data-font-size] [style*="font-size:10"] { font-size: var(--fs-sm) !important; }
 [data-font-size] [style*="font-size:11"] { font-size: var(--fs-sm) !important; }
@@ -79,35 +126,50 @@ body {
 [data-font-size] [style*="font-size:24"] { font-size: var(--fs-2xl) !important; }
 [data-font-size] [style*="font-size:26"] { font-size: var(--fs-2xl) !important; }
 
-/* Override Tailwind text-* utility classes */
 [data-font-size] .text-xs { font-size: var(--fs-sm) !important; }
 [data-font-size] .text-sm { font-size: var(--fs-base) !important; }
 
-/* ── Dark theme ───────────── */
+/* ============================================================
+   Dark theme (升级)
+   ============================================================ */
 [data-theme="dark"] {
-  --color-bg-white: #121314;
-  --color-bg-off: #1A1C1E;
-  --color-bg-hover: #2C2E32;
-  --color-bg-toolbar: #1F2124;
-  --color-bg-sidebar: #161719;
-  --color-border-light: #2C2E32;
-  --color-border: #3C3E42;
-  --color-border-bold: #5C5E62;
-  --color-text-title: #E8EAED;
-  --color-text-body: #D0D2D6;
-  --color-text-muted: #9CA0A6;
-  --color-text-label: #6C7076;
-  --color-blue-link: #4A90D9;
-  --color-success: #2ECC71;
+  --color-bg-white: #0F1112;
+  --color-bg-off: #181A1C;
+  --color-bg-hover: #22262A;
+  --color-bg-toolbar: #181A1C;
+  --color-bg-sidebar: #181A1C;
+  --color-border-light: #2C3137;
+  --color-border: #3E444B;
+  --color-border-bold: #5E5A52;
+  --color-text-title: #ECEAE3;
+  --color-text-body: #BFB8AD;
+  --color-text-muted: #8C867C;
+  --color-text-label: #5E5A52;
+  --color-high: #E07A6A;
+  --color-medium: #E0B040;
+  --color-low: #5E5A52;
+  --color-blue-link: #4FB89A;
+  --color-success: #4FB89A;
+
+  --color-brand-ink: #4FB89A;
+  --color-brand-ink-2: #6CCBAF;
+  --color-brand-ink-bg: rgba(79,184,154,0.14);
+  --color-accent-amber: #E0B040;
+  --color-accent-amber-bg: rgba(224,176,64,0.14);
+  --color-accent-coral: #E27A60;
+  --color-accent-coral-bg: rgba(226,122,96,0.14);
+
+  --shadow-1: 0 1px 2px rgba(0,0,0,0.3), 0 1px 3px rgba(0,0,0,0.25);
+  --shadow-2: 0 4px 8px rgba(0,0,0,0.4), 0 8px 24px rgba(0,0,0,0.30);
+  --shadow-3: 0 12px 32px rgba(0,0,0,0.5), 0 24px 56px rgba(0,0,0,0.35);
 }
 [data-theme="dark"] body {
   background: var(--color-bg-white);
   color: var(--color-text-body);
 }
-[data-theme="dark"] ::-webkit-scrollbar-thumb { background: #3C3E42; }
-[data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: #5C5E62; }
+[data-theme="dark"] ::-webkit-scrollbar-thumb { background: var(--color-border); }
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: var(--color-border-bold); }
 
-/* Dark mode: comprehensive overrides for hardcoded colors */
 [data-theme="dark"] .sidebar-link:hover { background: var(--color-bg-hover) !important; }
 [data-theme="dark"] .logo { color: var(--color-text-title) !important; }
 [data-theme="dark"] .logo::after { background: var(--color-text-title) !important; }
@@ -121,12 +183,14 @@ body {
 [data-theme="dark"] [style*="borderRight"] { border-color: var(--color-border-light) !important; }
 [data-theme="dark"] [style*="borderTop"] { border-color: var(--color-border-light) !important; }
 
-/* ── Sidebar ───────────── */
+/* ============================================================
+   Sidebar / Article / Hero (旧组件样式 — 色值随 token 自动升级)
+   ============================================================ */
 .sidebar-link {
   position: relative;
-  transition: all 0.15s ease;
+  transition: all var(--t-fast, 0.15s) var(--ease);
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: 6px;
 }
 .sidebar-link::before {
   content: '';
@@ -136,43 +200,38 @@ body {
   transform: translateY(-50%);
   width: 3px;
   height: 0;
-  background: #1A1C1E;
+  background: var(--color-brand-ink);
   border-radius: 0 2px 2px 0;
-  transition: height 0.2s ease;
+  transition: height 0.2s var(--ease);
 }
 .sidebar-link.active::before { height: 50%; }
 
-/* ── Article cards ───────────── */
 .article-item {
   padding: 8px 0;
   cursor: pointer;
-  transition: all 0.18s ease;
+  transition: all 0.18s var(--ease);
 }
 .article-item:hover {
-  background: #F6F7F8;
+  background: var(--color-bg-off);
   margin: 0 -12px;
   padding: 8px 12px;
-  border-radius: 4px;
+  border-radius: 6px;
 }
 
-/* ── Importance border ───────────── */
-.imp-high { border-left: 3px solid #D4322E; padding-left: 10px; }
-.imp-medium { border-left: 3px solid #C8960A; padding-left: 10px; }
+.imp-high { border-left: 3px solid var(--color-high); padding-left: 10px; }
+.imp-medium { border-left: 3px solid var(--color-medium); padding-left: 10px; }
 .imp-low { padding-left: 13px; }
 
-/* ── Hero card ───────────── */
 .hero-card {
-  background: #F6F7F8;
-  border-radius: 4px;
+  background: var(--color-bg-off);
+  border-radius: 6px;
   padding: 20px 24px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s var(--ease);
+  box-shadow: var(--shadow-1);
 }
-.hero-card:hover {
-  background: #F0F1F2;
-}
+.hero-card:hover { background: var(--color-bg-hover); box-shadow: var(--shadow-2); }
 
-/* ── Mobile overlay ───────────── */
 .sidebar-overlay {
   position: fixed;
   inset: 0;
@@ -180,32 +239,30 @@ body {
   z-index: 40;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.3s var(--ease);
 }
 .sidebar-overlay.open { opacity: 1; pointer-events: auto; }
 
-/* ── Search input ───────────── */
 .search-input:focus {
   box-shadow: 0 0 0 1px rgba(26, 28, 30, 0.2);
 }
 
-/* ── Search keyword highlight ───────────── */
 mark {
-  background: #C8960A;
-  color: #FFFFFF;
+  background: var(--color-accent-amber-bg);
+  color: var(--color-accent-amber);
   padding: 0 2px;
   border-radius: 2px;
+  font-weight: 600;
 }
 [data-theme="dark"] mark {
-  background: #E8A817;
-  color: #1A1C1E;
+  background: rgba(224,176,64,0.18);
+  color: var(--color-accent-amber);
 }
 
-/* ── Logo ───────────── */
 .logo {
-  font-family: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+  font-family: var(--font-display);
   font-weight: 700;
-  color: #1A1C1E;
+  color: var(--color-text-title);
   letter-spacing: -0.3px;
   position: relative;
   display: inline-block;
@@ -217,7 +274,25 @@ mark {
   left: 0;
   width: 140%;
   height: 1px;
-  background: #1A1C1E;
+  background: var(--color-text-title);
 }
 .logo-sm { font-size: 17px; }
 .logo-lg { font-size: 20px; }
+
+/* ============================================================
+   Focus / A11y
+   ============================================================ */
+:focus-visible {
+  outline: 2px solid var(--color-brand-ink);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Reduced motion 守卫 */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

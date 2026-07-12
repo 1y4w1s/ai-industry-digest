@@ -31,7 +31,7 @@ export default function SubscribeBox() {
   return (
     <div className="no-print" style={{ borderTop: '1px solid var(--color-border-light)', marginTop: '32px', paddingTop: '24px' }}>
       <div style={{ maxWidth: '480px', margin: '0 auto', textAlign: 'center' }}>
-        <h3 style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '18px', fontWeight: 700, color: 'var(--color-text-title)', marginBottom: '6px' }}>
+        <h3 style={{ fontFamily: "var(--font-display)", fontSize: '18px', fontWeight: 700, color: 'var(--color-text-title)', marginBottom: '6px' }}>
           订阅 Signal 每日 AI 情报
         </h3>
         <p style={{ fontSize: '13px', color: 'var(--color-text-muted)', marginBottom: '16px', lineHeight: 1.6 }}>
