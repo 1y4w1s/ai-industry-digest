@@ -366,17 +366,17 @@ export default function ProfilePage() {
             <a href="/bookmarks" style={{ display: 'flex', alignItems: 'center', padding: '12px 16px', borderRadius: '4px', textDecoration: 'none', color: 'var(--color-text-title)', fontSize: 'var(--fs-sm)', transition: 'background 0.1s' }} className="hover:bg-[var(--color-bg-hover)]">
               <span style={{ marginRight: '10px', color: 'var(--color-text-muted)', display: 'flex' }}><IconBookmark /></span>
               <span style={{ flex: 1 }}>收藏的文章</span>
-              <span style={{ fontSize: 'var(--fs-sm)', color: 'var(--color-text-label)' }}>→</span>
+              <svg width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M9 5l7 7-7 7' /></svg>
             </a>
             <a href="/history" style={{ display: 'flex', alignItems: 'center', padding: '12px 16px', borderRadius: '4px', textDecoration: 'none', color: 'var(--color-text-title)', fontSize: 'var(--fs-sm)', transition: 'background 0.1s' }} className="hover:bg-[var(--color-bg-hover)]">
               <span style={{ marginRight: '10px', color: 'var(--color-text-muted)', display: 'flex' }}><IconHistory /></span>
               <span style={{ flex: 1 }}>浏览历史</span>
-              <span style={{ fontSize: 'var(--fs-sm)', color: 'var(--color-text-label)' }}>→</span>
+              <svg width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M9 5l7 7-7 7' /></svg>
             </a>
             <a href="/settings" style={{ display: 'flex', alignItems: 'center', padding: '12px 16px', borderRadius: '4px', textDecoration: 'none', color: 'var(--color-text-title)', fontSize: 'var(--fs-sm)', transition: 'background 0.1s' }} className="hover:bg-[var(--color-bg-hover)]">
               <span style={{ marginRight: '10px', color: 'var(--color-text-muted)', display: 'flex' }}><IconSettings /></span>
               <span style={{ flex: 1 }}>设置</span>
-              <span style={{ fontSize: 'var(--fs-sm)', color: 'var(--color-text-label)' }}>→</span>
+              <svg width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M9 5l7 7-7 7' /></svg>
             </a>
           </div>
 
