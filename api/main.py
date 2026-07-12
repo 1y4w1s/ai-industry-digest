@@ -220,8 +220,10 @@ if podcast_dir.exists():
     @app.get("/{full_path:path}")
     async def serve_spa(full_path: str):
         """SPA fallback：非 API 路径返回 index.html"""
-        # 放行 API、WebSocket、文档路径
-        if full_path.startswith(("api/", "ws", "docs", "openapi", "health", "test")):
+        # 放行 API、WebSocket、文档路径 + 公开页 SEO（§2.3）+ 播客 RSS（§2.2）+ 退订（§1.3）+ favicon
+        if full_path.startswith(("api/", "ws", "docs", "openapi", "health", "test",
+                                  "digest/", "sitemap.xml", "robots.txt", "podcast.xml",
+                                  "unsubscribe", "track/", "favicon.ico")):
             return JSONResponse(status_code=404, content={"detail": "Not found"})
 
         html_path = frontend_dist / "index.html"
