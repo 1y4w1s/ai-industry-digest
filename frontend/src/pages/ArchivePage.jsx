@@ -31,7 +31,7 @@ function Calendar({ dates, loading, onSelectDate }) {
       {/* Month navigation */}
       <div className="flex items-center justify-between mb-4">
         <button onClick={prevMonth} style={{ background: 'none', border: '1px solid var(--color-border)', borderRadius: '4px', padding: '6px 12px', cursor: 'pointer', color: 'var(--color-text-body)', fontSize: '12px' }}>← 上月</button>
-        <h2 style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '18px', fontWeight: 700, color: 'var(--color-text-title)' }}>{year} 年 {MONTHS[month]}</h2>
+        <h2 style={{ fontFamily: "var(--font-display)", fontSize: '18px', fontWeight: 700, color: 'var(--color-text-title)' }}>{year} 年 {MONTHS[month]}</h2>
         <button onClick={nextMonth} style={{ background: 'none', border: '1px solid var(--color-border)', borderRadius: '4px', padding: '6px 12px', cursor: 'pointer', color: 'var(--color-text-body)', fontSize: '12px' }}>下月 →</button>
       </div>
 
@@ -65,18 +65,18 @@ function Calendar({ dates, loading, onSelectDate }) {
                         style={{
                           width: '100%', height: '100%', minHeight: '40px',
                           border: 'none', borderRadius: '4px', cursor: cell.hasReport ? 'pointer' : 'default',
-                          background: cell.hasReport ? 'rgba(40,100,168,0.08)' : 'transparent',
-                          color: cell.hasReport ? 'var(--color-blue-link)' : 'var(--color-text-label)',
+                          background: cell.hasReport ? 'rgba(15,76,58,0.08)' : 'transparent',
+                          color: cell.hasReport ? 'var(--color-brand-ink)' : 'var(--color-text-label)',
                           fontWeight: cell.hasReport ? 600 : 400,
                           fontSize: '13px',
                           display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                           transition: 'background 0.15s',
                         }}
-                        onMouseEnter={(e) => { if (cell.hasReport) e.target.style.background = 'rgba(40,100,168,0.15)'; }}
-                        onMouseLeave={(e) => { if (cell.hasReport) e.target.style.background = 'rgba(40,100,168,0.08)'; }}>
+                        onMouseEnter={(e) => { if (cell.hasReport) e.target.style.background = 'rgba(15,76,58,0.18)'; }}
+                        onMouseLeave={(e) => { if (cell.hasReport) e.target.style.background = 'rgba(15,76,58,0.08)'; }}>
                         {cell.day}
                         {cell.hasReport && (
-                          <span style={{ width: '4px', height: '4px', borderRadius: '50%', background: 'var(--color-blue-link)', marginTop: '2px' }} />
+                          <span style={{ width: '4px', height: '4px', borderRadius: '50%', background: 'var(--color-brand-ink)', marginTop: '2px' }} />
                         )}
                       </button>
                     ) : null}
@@ -111,11 +111,11 @@ export default function ArchivePage() {
     <div className="flex-1 flex flex-col min-h-0" style={{ background: 'var(--color-bg-white)' }}>
       <div className="flex-1 overflow-y-auto">
         <div className="px-5 lg:px-8 py-6" style={{ maxWidth: '700px', margin: '0 auto' }}>
-          <button onClick={() => navigate('/')} style={{ fontSize: '12px', color: 'var(--color-blue-link)', background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px', padding: 0, marginBottom: '20px' }}>
+          <button onClick={() => navigate('/')} style={{ fontSize: '12px', color: 'var(--color-brand-ink)', background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px', padding: 0, marginBottom: '20px' }}>
             ← 返回首页
           </button>
 
-          <h1 style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '22px', fontWeight: 700, color: 'var(--color-text-title)', marginBottom: '4px' }}>
+          <h1 style={{ fontFamily: "var(--font-display)", fontSize: '22px', fontWeight: 700, color: 'var(--color-text-title)', marginBottom: '4px' }}>
             日报归档
           </h1>
           <p style={{ fontSize: '13px', color: 'var(--color-text-muted)', marginBottom: '24px' }}>

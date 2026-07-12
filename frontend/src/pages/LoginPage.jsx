@@ -60,14 +60,14 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'var(--color-bg-white)' }}>
-      <div style={{ width: '100%', maxWidth: '400px', background: 'var(--color-bg-white)', borderRadius: '12px', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', padding: '32px' }}>
+      <div style={{ width: '100%', maxWidth: '400px', background: 'var(--color-bg-white)', borderRadius: '12px', boxShadow: 'var(--shadow-2)', padding: '32px' }}>
         <div className="text-center mb-8">
-          <span style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '24px', fontWeight: 700, color: 'var(--color-text-title)' }}>Signal</span>
+          <span style={{ fontFamily: "var(--font-display)", fontSize: '24px', fontWeight: 700, color: 'var(--color-text-title)' }}>Signal</span>
           <p style={{ fontSize: '13px', color: 'var(--color-text-muted)', marginTop: '4px' }}>AI行业资讯聚合平台</p>
         </div>
 
         <div className="text-center mb-6">
-          <h1 style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '24px', fontWeight: 700, color: 'var(--color-text-title)' }}>{t}</h1>
+          <h1 style={{ fontFamily: "var(--font-display)", fontSize: '24px', fontWeight: 700, color: 'var(--color-text-title)' }}>{t}</h1>
           <p style={{ fontSize: '14px', color: 'var(--color-text-muted)', marginTop: '4px' }}>{s}</p>
         </div>
 

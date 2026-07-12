@@ -34,7 +34,7 @@ export default function DateNav({ reports, selectedDate, onSelect, hasMore = fal
 
   return (
     <div className="mb-5">
-      <h1 style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: 'var(--fs-xl)', fontWeight: 700, color: 'var(--color-text-title)', marginBottom: '12px' }}>
+      <h1 style={{ fontFamily: "var(--font-display)", fontSize: 'var(--fs-xl)', fontWeight: 700, color: 'var(--color-text-title)', marginBottom: '12px' }}>
         每日简报
       </h1>
       <div className="flex items-center gap-1 flex-wrap">

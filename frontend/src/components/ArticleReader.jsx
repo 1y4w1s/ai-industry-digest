@@ -315,7 +315,7 @@ export default function ArticleReader({ articleId, onBack }) {
                 </div>
               )}
 
-              <h2 style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '22px', fontWeight: 700, color: 'var(--color-text-title)', lineHeight: 1.35, marginBottom: '12px' }}>{article.title}</h2>
+              <h2 style={{ fontFamily: "var(--font-display)", fontSize: '22px', fontWeight: 700, color: 'var(--color-text-title)', lineHeight: 1.35, marginBottom: '12px' }}>{article.title}</h2>
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-6" style={{ color: 'var(--color-text-muted)', fontSize: '13px' }}>
                 <div className="flex items-center gap-2">
                   <span>{article.source_name}</span><span>·</span><span>{article.published_at?.slice(0, 10)}</span><span>·</span><span>{readingMinutes} 分钟阅读</span>
@@ -482,8 +482,8 @@ export default function ArticleReader({ articleId, onBack }) {
 
       {/* Hidden PDF source */}
       {article && (
-        <div ref={pdfContentRef} style={{ position: 'fixed', top: '-9999px', left: '-9999px', width: '794px', padding: '60px 50px', fontFamily: "'Source Serif 4', 'Noto Serif CJK SC', 'STSong', Georgia, serif", lineHeight: 1.9, color: '#1a1a1a', background: '#ffffff', fontSize: '14px' }}>
-          <h1 style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '24px', fontWeight: 700, marginBottom: '10px', lineHeight: 1.35 }}>{article.title}</h1>
+        <div ref={pdfContentRef} style={{ position: 'fixed', top: '-9999px', left: '-9999px', width: '794px', padding: '60px 50px', fontFamily: "var(--font-display), 'Noto Serif CJK SC', 'STSong', Georgia, serif", lineHeight: 1.9, color: '#1a1a1a', background: '#ffffff', fontSize: '14px' }}>
+          <h1 style={{ fontFamily: "var(--font-display)", fontSize: '24px', fontWeight: 700, marginBottom: '10px', lineHeight: 1.35 }}>{article.title}</h1>
           <p style={{ fontSize: '11px', color: '#666', marginBottom: '24px' }}>{article.source_name}{article.published_at ? ` · ${article.published_at.slice(0, 10)}` : ''}</p>
           <div style={{ fontSize: '12px', lineHeight: 1.9, whiteSpace: 'pre-wrap' }} dangerouslySetInnerHTML={{ __html: renderArticleContent(articleText) }} />
         </div>

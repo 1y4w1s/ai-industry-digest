@@ -5,7 +5,7 @@ export default function HeroArticle({ article, onSelect }) {
         <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-high)' }}>头条</span>
         <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--color-text-label)' }}>{article.source_name} · {article.published_at?.slice(0, 10)}</span>
       </div>
-      <h2 style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: 'var(--fs-lg)', fontWeight: 700, color: 'var(--color-text-title)', lineHeight: 1.35, marginBottom: '8px' }}>
+      <h2 style={{ fontFamily: "var(--font-display)", fontSize: 'var(--fs-lg)', fontWeight: 700, color: 'var(--color-text-title)', lineHeight: 1.35, marginBottom: '8px' }}>
         {article.title}
       </h2>
       {article.summary && (

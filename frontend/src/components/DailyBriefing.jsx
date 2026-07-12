@@ -78,7 +78,7 @@ export default function DailyBriefing({ date }) {
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '12px' }}>
         <h2
           style={{
-            fontFamily: "'Source Serif 4', Georgia, serif",
+            fontFamily: "var(--font-display)",
             fontSize: '16px',
             fontWeight: 700,
             color: 'var(--color-text-title)',
