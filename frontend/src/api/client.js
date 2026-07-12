@@ -182,6 +182,17 @@ export const api = {
   // 今日主线（事件聚类，§2.1）
   getMainThread: (date) => request(`/main-thread?date=${encodeURIComponent(date)}`),
 
+  // 今日 GitHub 推荐（首页卡片，P3-home）
+  getGitHubAgents: (params = {}) => {
+    const q = new URLSearchParams();
+    if (params.range) q.set('range', params.range);
+    if (params.min_stars) q.set('min_stars', params.min_stars);
+    if (params.sort) q.set('sort', params.sort);
+    if (params.limit) q.set('limit', params.limit);
+    const qs = q.toString();
+    return request(`/github-agents${qs ? `?${qs}` : ''}`);
+  },
+
   // 个性化推荐
   getRecommend: (limit = 5) => request(`/recommend?limit=${limit}`),
 

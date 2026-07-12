@@ -14,6 +14,7 @@ import DataStats from '../components/DataStats';
 import RecommendationWidget from '../components/RecommendationWidget';
 import MainThreadPanel from '../components/MainThreadPanel';
 import DailyBriefing from '../components/DailyBriefing';
+import GitHubAgentsCard from '../components/GitHubAgentsCard';
 import SubscribeBox from '../components/SubscribeBox';
 
 export default function Home() {
@@ -129,6 +130,9 @@ export default function Home() {
           <div className="px-5 lg:px-6" style={{ paddingTop: '20px', paddingBottom: '32px' }}>
             {/* 今日速览：首页首屏 hero（每日速览首屏改造 P0），置于文章列表之前 */}
             <DailyBriefing date={selectedDate} />
+
+            {/* 今日 GitHub 推荐（P3-home）：首页编辑部主干的 GitHub 卡片 */}
+            <GitHubAgentsCard range="week" minStars={100} sort="stars" limit={8} />
 
             {reports.length > 0 && (
               <>
