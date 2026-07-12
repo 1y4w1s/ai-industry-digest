@@ -118,23 +118,25 @@ def _fmt_github_card(item: dict, escape) -> str:
     ) if lang else ""
     pushed_date = pushed[:10] if pushed else ""
     return f"""<div style="border:1px solid #e5e7eb;border-radius:10px;padding:14px;margin-bottom:10px;">
-      <div style="font-size:15px;font-weight:600;color:#111827;margin-bottom:4px;">
+      <div style="font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Consolas,monospace;font-size:15px;font-weight:600;color:#111827;margin-bottom:4px;">
         <a href="{url}" style="color:#111827;text-decoration:none;">{name}</a>{rising_badge}
       </div>
       <p style="font-size:13px;line-height:1.6;color:#374151;margin:0 0 6px;">{desc}</p>
-      <div style="font-size:12px;color:#6b7280;">★ {stars:,}{lang_badge} · 更新于 {pushed_date}</div>
+      <div style="font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Consolas,monospace;font-size:12px;color:#6b7280;">★ {stars:,}{lang_badge} · 更新于 {pushed_date}</div>
     </div>"""
 
 
 def _render_github_agents_section(items: list, escape) -> str:
-    """「本周 AI Agent 新星」邮件区块（静态，无交互筛选器）。"""
+    """「今日 GitHub 推荐」邮件区块（静态，无交互筛选器）。"""
     if not items:
         return ""
     cards = "\n".join(_fmt_github_card(it, escape) for it in items)
-    return f"""<div style="padding:8px 28px 24px;">
-      <div style="font-size:15px;font-weight:700;color:#0f172a;margin:12px 0;">🤖 本周 AI Agent 新星（GitHub 高星开源）</div>
-      <div style="font-size:12px;color:#9ca3af;margin-bottom:10px;">按 Star 数降序 · ⚡ 为近期创建且日增迅速的新项目</div>
-      {cards}
+    return f"""<div style="margin:0 0 18px;">
+      <div style="background:#fafaf9;border:1px solid #e7e5e4;border-radius:14px;padding:16px 18px;">
+        <div style="font-family:'Fraunces',Georgia,'Songti SC',serif;font-size:19px;font-weight:700;color:#0F4C3A;margin-bottom:4px;">今日 GitHub 推荐</div>
+        <div style="font-size:12px;color:#9ca3af;margin-bottom:10px;">按 Star 数降序 · ⚡ 为近期创建且日增迅速的新项目</div>
+        {cards}
+      </div>
     </div>"""
 
 

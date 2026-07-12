@@ -1,5 +1,5 @@
 """
-Signal - GitHub AI Agent 高星项目采集（每日日报「本周 AI Agent 新星」小节数据源）
+Signal - GitHub AI Agent 高星项目采集（每日日报「今日 GitHub 推荐」小节数据源）
 
 设计决策（用户 2026-07-12）：
 - 内嵌每日日报：每天生成日报（邮件 / 公开页）时实时 fetch GitHub Search API，

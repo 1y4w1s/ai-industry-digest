@@ -298,7 +298,7 @@ def test_route_digest_html_includes_og_image_meta():
 
 
 def test_route_digest_github_agents_section_and_filter():
-    """公开页应渲染「本周 AI Agent 新星」区块 + 时间范围/最低 star/排序筛选器。"""
+    """公开页应渲染「今日 GitHub 推荐」卡片 + 时间范围/最低 star/排序筛选器。"""
     client = _make_app_client()
     today = date.today().isoformat()
     items = [{
@@ -314,7 +314,7 @@ def test_route_digest_github_agents_section_and_filter():
         resp = client.get(f"/digest/{today}")
     assert resp.status_code == 200
     body = resp.text
-    assert "本周 AI Agent 新星" in body
+    assert "今日 GitHub 推荐" in body
     assert 'name="gh_range"' in body
     assert 'name="gh_min_stars"' in body
     assert 'name="gh_sort"' in body
