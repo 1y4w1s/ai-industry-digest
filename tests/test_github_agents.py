@@ -125,7 +125,7 @@ class TestNewsletterRender(unittest.TestCase):
             "stars_per_day": 5.0, "is_rising_star": True,
         }]
         html = NewsletterRenderer().render(self._report(items), "https://unsub", date(2026, 7, 12))
-        self.assertIn("本周 AI Agent 新星", html)
+        self.assertIn("今日 GitHub 推荐", html)
         self.assertIn("o/p", html)
         self.assertIn("⚡ 新星", html)
         self.assertIn("★ 1,234", html)

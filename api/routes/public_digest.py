@@ -173,7 +173,10 @@ class PublicDigestRenderer:
         # 防止 JSON 中的 < > & 破坏 HTML / 触发 XSS
         ld = ld.replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
 
-        return f"""<title>{escape(title)}</title>
+        return f"""<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<title>{escape(title)}</title>
 <meta name="description" content="{description}">
 <meta property="og:type" content="article">
 <meta property="og:title" content="{escape(title)}">
@@ -249,7 +252,7 @@ class PublicDigestRenderer:
 </html>"""
 
     def _render_github_agents(self, report: dict, escape, gh_filter: dict, report_date) -> str:
-        """公开页「本周 AI Agent 新星」区块：含时间范围 / 最低 star / 排序筛选器（整页刷新）。"""
+        """公开页「今日 GitHub 推荐」卡片：含时间范围 / 最低 star / 排序筛选器（整页刷新）。"""
         items = report.get("github_agents") or []
         f_range = gh_filter.get("range", "week")
         f_min = gh_filter.get("min_stars", 100)
@@ -280,11 +283,13 @@ class PublicDigestRenderer:
                      '暂无匹配项目（GitHub API 限流中，或该范围内暂无高星 Agent 项目；可放宽条件后重试）。</p>')
         else:
             cards = "\n".join(_fmt_github_card(it, escape) for it in items)
-        return f"""<div style="padding:8px 28px 24px;">
-      <div style="font-size:15px;font-weight:700;color:#0f172a;margin:12px 0 4px;">🤖 本周 AI Agent 新星（GitHub 高星开源）</div>
-      <div style="font-size:12px;color:#9ca3af;margin-bottom:8px;">按 Star 数降序 · ⚡ 为近期创建且日增迅速的新项目</div>
-      {form}
-      {cards}
+        return f"""<div style="padding:0 28px 24px;">
+      <div style="background:#fafaf9;border:1px solid #e7e5e4;border-radius:14px;padding:16px 18px;">
+        <div style="font-family:'Fraunces',Georgia,'Songti SC',serif;font-size:19px;font-weight:700;color:#0F4C3A;margin-bottom:4px;">今日 GitHub 推荐</div>
+        <div style="font-size:12px;color:#9ca3af;margin-bottom:10px;">按 Star 数降序 · ⚡ 为近期创建且日增迅速的新项目</div>
+        {form}
+        {cards}
+      </div>
     </div>"""
 
     def render_unavailable(self, raw_date: str) -> str:
