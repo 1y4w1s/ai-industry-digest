@@ -134,7 +134,7 @@ def _render_github_agents_section(items: list, escape) -> str:
     return f"""<div style="margin:0 0 18px;">
       <div style="background:#fafaf9;border:1px solid #e7e5e4;border-radius:14px;padding:16px 18px;">
         <div style="font-family:'Fraunces',Georgia,'Songti SC',serif;font-size:19px;font-weight:700;color:#0F4C3A;margin-bottom:4px;">今日 GitHub 推荐</div>
-        <div style="font-size:12px;color:#9ca3af;margin-bottom:10px;">按 Star 数降序 · ⚡ 为近期创建且日增迅速的新项目</div>
+        <div style="font-size:13px;color:#6b7280;margin-bottom:10px;line-height:1.6;">实时从 GitHub 发掘近期最活跃的 AI Agent 开源项目，按 Star 数排序，帮你快速发现有价值的工具与框架。</div>
         {cards}
       </div>
     </div>"""
