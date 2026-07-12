@@ -1,8 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
-import { Outlet, useNavigate, useSearchParams } from 'react-router-dom';
+import { Outlet, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import AIChatBubble from './AIChatBubble';
 import ErrorBoundary from './ErrorBoundary';
+import Onboarding from './Onboarding';
+import KeyboardShortcuts from './KeyboardShortcuts';
 
 const ADMIN_USER = '1y4w1s';
 
@@ -52,6 +54,7 @@ export default function Layout() {
   const [searchQuery, setSearchQuery] = useState('');
   const searchRef = useRef(null);
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const isReading = !!searchParams.get('article');
   const NAV_ITEMS = useNavItems(user);
@@ -297,6 +300,9 @@ export default function Layout() {
       <div className="no-print">
         <AIChatBubble visible={!isReading} />
       </div>
+
+      <KeyboardShortcuts />
+      {location.pathname === '/' && <Onboarding />}
     </div>
   );
 }

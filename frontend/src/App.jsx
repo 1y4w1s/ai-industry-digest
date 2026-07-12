@@ -1,9 +1,10 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import Layout from './components/Layout';
 import { ToastProvider } from './components/Toast';
+import { UndoToastProvider } from './components/UndoToast';
 import Home from './pages/Home';
 
 // 代码分割：非首屏页面按需加载
@@ -13,6 +14,7 @@ const HistoryPage = lazy(() => import('./pages/HistoryPage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const ArchivePage = lazy(() => import('./pages/ArchivePage'));
+const DigestPage = lazy(() => import('./pages/DigestPage'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 
@@ -47,7 +49,6 @@ function PrivateRoute({ children }) {
 function AppContent() {
   return (
     <Routes>
-      <Route path="/knowledge" element={<Navigate to="/" replace />} />
       <Route path="/login" element={<Suspense fallback={<SuspenseFallback />}><LoginPage /></Suspense>} />
       <Route element={<Layout />}>
         <Route index element={<Home />} />
@@ -57,6 +58,7 @@ function AppContent() {
         <Route path="profile" element={<Suspense fallback={<SuspenseFallback />}><PrivateRoute><ProfilePage /></PrivateRoute></Suspense>} />
         <Route path="settings" element={<Suspense fallback={<SuspenseFallback />}><SettingsPage /></Suspense>} />
          <Route path="archive" element={<Suspense fallback={<SuspenseFallback />}><ArchivePage /></Suspense>} />
+         <Route path="digest/:date" element={<Suspense fallback={<SuspenseFallback />}><DigestPage /></Suspense>} />
          <Route path="admin" element={<Suspense fallback={<SuspenseFallback />}><PrivateRoute><AdminDashboard /></PrivateRoute></Suspense>} />
       </Route>
     </Routes>
@@ -68,7 +70,9 @@ export default function App() {
     <AuthProvider>
       <ThemeProvider>
         <ToastProvider>
-          <AppContent />
+          <UndoToastProvider>
+            <AppContent />
+          </UndoToastProvider>
         </ToastProvider>
       </ThemeProvider>
     </AuthProvider>

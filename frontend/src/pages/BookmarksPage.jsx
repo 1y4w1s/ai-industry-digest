@@ -4,14 +4,18 @@ import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import ArticleCard from '../components/ArticleCard';
 import Pagination from '../components/Pagination';
+import ConfirmDialog from '../components/ConfirmDialog';
+import { useUndoToast } from '../components/UndoToast';
 
 export default function BookmarksPage() {
   const { isLoggedIn, login } = useAuth();
   const [bookmarks, setBookmarks] = useState(null);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
+  const [pendingRemove, setPendingRemove] = useState(null); // { id, snapshot }
   const navigate = useNavigate();
   const goToArticle = (id) => navigate(`/?article=${encodeURIComponent(id)}`);
+  const showUndoToast = useUndoToast();
 
   const fetchBookmarks = (pg) => {
     setLoading(true);
@@ -30,12 +34,38 @@ export default function BookmarksPage() {
 
   useEffect(() => { fetchBookmarks(page); }, [page]);
 
-  const handleRemove = async (e, bookmarkId) => {
+  const handleRemove = (e, bookmarkId) => {
     e.stopPropagation();
+    setPendingRemove({ id: bookmarkId });
+  };
+
+  const confirmRemove = async () => {
+    if (!pendingRemove) return;
+    const id = pendingRemove.id;
+    setPendingRemove(null);
     try {
-      await api.removeBookmark(bookmarkId);
+      // 乐观：先在前端移除这一项
+      const snapshot = bookmarks;
+      const next = snapshot ? {
+        ...snapshot,
+        items: (snapshot.items || []).filter((b) => (b.id || b.article_id) !== id),
+        total: Math.max(0, (snapshot.total || 0) - 1),
+      } : snapshot;
+      if (next) setBookmarks(next);
+
+      await api.removeBookmark(id);
+
+      // 5s 内可撤销
+      showUndoToast('已从收藏移除', async () => {
+        try {
+          // 撤销 = 重新加入收藏（id 即 article_id）
+          await api.addBookmark(id);
+          fetchBookmarks(page);
+        } catch {}
+      });
+    } catch {
       fetchBookmarks(page);
-    } catch {}
+    }
   };
 
   return (
@@ -118,6 +148,15 @@ export default function BookmarksPage() {
           )}
         </div>
       </div>
+
+      <ConfirmDialog
+        open={!!pendingRemove}
+        title="从收藏移除？"
+        description="此文章将不再显示在收藏列表中。5 秒内可撤销。"
+        confirmText="移除"
+        onConfirm={confirmRemove}
+        onCancel={() => setPendingRemove(null)}
+      />
     </div>
   );
 }
