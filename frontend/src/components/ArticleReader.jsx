@@ -6,6 +6,7 @@ import { renderMd, renderArticleContent } from '../utils/markdown';
 import DOMPurify from 'dompurify';
 import { Cache, CACHE_TTL } from '../utils/cache';
 import { useToast } from './Toast';
+import ErrorBoundary from './ErrorBoundary';
 import CommentSection from './CommentSection';
 
 /* ── TTS hook (guarded for mobile browsers without SpeechSynthesis) ───── */
