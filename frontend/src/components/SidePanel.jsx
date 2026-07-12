@@ -49,8 +49,11 @@ export default function SidePanel({ keywords = [], insight = '', topArticles = [
 
       {topArticles.length > 0 && (
         <div style={{ borderRadius: '4px', padding: '16px', background: 'var(--color-bg-off)' }}>
-          <h3 className="font-heading font-semibold text-xs uppercase tracking-wider mb-3" style={{ color: 'var(--color-text-muted)' }}>
-            <span style={{ marginRight: '6px' }}>⭐</span> Top {Math.min(5, topArticles.length)}
+          <h3 className="font-heading font-semibold text-xs uppercase tracking-wider mb-3 flex items-center gap-1.5" style={{ color: 'var(--color-text-muted)' }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true">
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+            </svg>
+            Top {Math.min(5, topArticles.length)}
           </h3>
           <div className="space-y-2.5">
             {topArticles.slice(0, 5).map((a, i) => (
