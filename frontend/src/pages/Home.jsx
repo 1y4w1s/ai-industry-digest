@@ -159,6 +159,17 @@ export default function Home() {
               <div className="text-center py-16 text-sm" style={{ color: 'var(--color-text-label)' }}>加载中...</div>
             ) : displayReporting ? (
               <>
+                {/* P1b 首页架构反转：原始文章流降级为「全部 AI 信号」归档区，
+                    顶部「今日速览」+ 侧栏主线固化为首页编辑部主干。 */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '4px', marginBottom: '16px' }}>
+                  <span style={{ fontFamily: 'var(--font-display)', fontSize: '13px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--color-text-title)' }}>
+                    全部 AI 信号
+                  </span>
+                  <span style={{ flex: 1, height: '1px', background: 'var(--color-border-light)' }} />
+                  <span style={{ fontSize: '11px', color: 'var(--color-text-label)', whiteSpace: 'nowrap' }}>
+                    共 {articles.length} 篇
+                  </span>
+                </div>
                 {heroArticle && <HeroArticle article={heroArticle} onSelect={goToArticle} />}
                 {Object.entries(filteredGroups)
                   .sort(([, a], [, b]) => b.filter((x) => x._imp === 'high').length - a.filter((x) => x._imp === 'high').length)
