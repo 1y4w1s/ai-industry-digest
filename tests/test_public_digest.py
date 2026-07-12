@@ -226,3 +226,72 @@ def test_route_robots_points_to_sitemap():
     assert "User-agent: *" in body
     assert "Allow: /" in body
     assert "Sitemap: https://1y4w1s.icu:8080/sitemap.xml" in body
+
+
+# ── P1a-2 · OG SVG 分享卡片 ──────────────────────────────
+
+def test_route_og_svg_returns_valid_svg():
+    client = _make_app_client()
+    resp = client.get("/og/digest/2026-07-10.svg")
+    assert resp.status_code == 200
+    assert resp.headers["content-type"].startswith("image/svg+xml")
+    body = resp.text
+    assert body.startswith("<?xml")
+    assert '<svg' in body
+    assert 'viewBox="0 0 1200 630"' in body
+    # 品牌元素
+    assert "Signal" in body
+    assert "EDITORIAL" in body
+    # 日期注入
+    assert "2026" in body
+
+
+def test_route_og_svg_invalid_date_returns_placeholder():
+    client = _make_app_client()
+    resp = client.get("/og/digest/not-a-date.svg")
+    assert resp.status_code == 200  # 优雅降级，不是 500
+    assert resp.headers["content-type"].startswith("image/svg+xml")
+    assert "暂无主线数据" in resp.text
+
+
+def test_route_og_svg_db_down_degrades():
+    client = _make_app_client()
+    with patch("api.routes.public_digest.get_db", side_effect=RuntimeError("db down")):
+        resp = client.get("/og/digest/2026-07-10.svg")
+    assert resp.status_code == 200
+    body = resp.text
+    # 降级但仍是合法 SVG
+    assert "<svg" in body
+    # 不泄露堆栈
+    assert "Traceback" not in body
+
+
+def test_route_og_svg_escapes_user_content():
+    """XSS 防护：标题含 HTML 时必须 escape"""
+    client = _make_app_client()
+    # 注入恶意 main_thread 标题
+    fake_report = {
+        "date": date(2026, 7, 10),
+        "main_thread": [
+            {"title": "<script>alert(1)</script>", "entity": "BAD"},
+        ],
+    }
+    with patch("api.routes.public_digest.build_report", return_value=fake_report):
+        resp = client.get("/og/digest/2026-07-10.svg")
+    assert resp.status_code == 200
+    body = resp.text
+    # script 标签必须被 escape
+    assert "<script>" not in body
+    assert "&lt;script&gt;" in body
+
+
+def test_route_digest_html_includes_og_image_meta():
+    """digest HTML 必须注入 og:image / twitter:card meta，引用 /og/digest/{date}.svg"""
+    client = _make_app_client()
+    resp = client.get("/digest/2026-07-10")
+    assert resp.status_code == 200
+    body = resp.text
+    assert 'property="og:image"' in body
+    assert "/og/digest/2026-07-10.svg" in body
+    assert 'name="twitter:card"' in body
+    assert 'content="summary_large_image"' in body

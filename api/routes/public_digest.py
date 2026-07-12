@@ -180,6 +180,12 @@ class PublicDigestRenderer:
 <meta property="og:description" content="{description}">
 <meta property="og:url" content="{canonical}">
 <meta property="og:site_name" content="{escape(self.product_name)}">
+<meta property="og:image" content="{self.base_url}/og/digest/{date_str}.svg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="{escape(title)}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="{self.base_url}/og/digest/{date_str}.svg">
 <meta property="article:published_time" content="{date_str}T00:00:00+08:00">
 <link rel="canonical" href="{canonical}">
 <script type="application/ld+json">{ld}</script>"""
@@ -364,4 +370,92 @@ async def robots():
         "User-agent: *\n"
         "Allow: /\n\n"
         f"Sitemap: {base}/sitemap.xml\n"
+    )
+
+
+# OG 图片（社交分享卡片，1200×630）— 用于 /digest/{date} 的 og:image
+# 设计：暖白底 + 墨绿主色 + Fraunces 标题大字号 + 编辑部 eyebrow + 主线标题
+# 零外部依赖，纯 SVG 文本生成
+@router.get("/og/digest/{report_date}.svg", response_class=Response, tags=["公开页 SEO"])
+async def og_digest_svg(report_date: str):
+    """生成 /digest/{date} 分享卡片 SVG。
+
+    - 拉取 build_report 取主线条目标题（最多 3 条）
+    - 失败/无数据 → 仍返回合法 SVG（带日期 + "今日速览"）
+    - 1200×630 (Twitter Card / Facebook OG 标准)
+    """
+    try:
+        rd = _parse_date(report_date)
+        db = get_db()
+        report = build_report(db, rd, 3)
+        main_thread = (report.get("main_thread") or [])[:3]
+    except Exception:
+        main_thread = []
+        rd = None
+
+    # SVG 内容（escape 防 XSS，因为标题是用户内容）
+    def esc(s):
+        return html.escape(str(s)) if s else ""
+
+    date_str = rd.strftime("%Y年%m月%d日") if rd else esc(report_date)
+    headlines_html = ""
+    if main_thread:
+        items = []
+        for idx, s in enumerate(main_thread[:3]):
+            # main_thread 可能是 List[str]（占位）或 List[dict]（结构化）
+            if isinstance(s, str):
+                title = esc(s[:60])
+                entity = ""
+            else:
+                title = esc((s.get("title") or s.get("entity") or "主线")[:60])
+                entity = esc(s.get("entity") or "")
+            if entity:
+                items.append(
+                    f'<g transform="translate(80, {260 + 70 * idx})">'
+                    f'<rect width="56" height="22" rx="11" fill="#E0B040" opacity="0.18"/>'
+                    f'<text x="28" y="16" text-anchor="middle" font-family="ui-monospace, monospace" '
+                    f'font-size="11" font-weight="700" fill="#0F4C3A" letter-spacing="0.5">{entity}</text>'
+                    f'<text x="76" y="17" font-family="Georgia, serif" '
+                    f'font-size="24" font-weight="600" fill="#0F4C3A">{title}</text>'
+                    f'</g>'
+                )
+            else:
+                items.append(
+                    f'<text x="80" y="{275 + 70 * idx}" '
+                    f'font-family="Georgia, serif" font-size="26" font-weight="600" fill="#0F4C3A">{title}</text>'
+                )
+        headlines_html = "\n".join(items)
+    else:
+        headlines_html = (
+            '<text x="80" y="290" font-family="var(--font-display, Georgia, serif)" '
+            'font-size="32" font-weight="500" fill="#9CA3AF" font-style="italic">暂无主线数据</text>'
+        )
+
+    svg = f'''<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <!-- 暖白底 -->
+  <rect width="1200" height="630" fill="#F9F7F3"/>
+  <!-- 顶部品牌条 -->
+  <rect width="1200" height="6" fill="#0F4C3A"/>
+  <!-- 品牌 K 标志 -->
+  <g transform="translate(80, 80)">
+    <rect width="48" height="48" rx="10" fill="#0F4C3A"/>
+    <text x="24" y="34" text-anchor="middle" font-family="Georgia, serif" font-size="28" font-weight="700" fill="#FFFFFF">K</text>
+  </g>
+  <text x="148" y="115" font-family="Georgia, serif" font-size="32" font-weight="700" fill="#0F4C3A" letter-spacing="-0.5">Signal</text>
+  <text x="270" y="115" font-family="var(--font-mono, monospace)" font-size="14" font-weight="500" fill="#5E5A52" letter-spacing="2">SIGNAL · 每日速览</text>
+  <!-- eyebrow 日期 -->
+  <text x="80" y="195" font-family="var(--font-mono, monospace)" font-size="14" font-weight="600" fill="#B8860B" letter-spacing="3">{esc(date_str)}</text>
+  <!-- 主标题（固定） -->
+  <text x="80" y="240" font-family="Georgia, serif" font-size="42" font-weight="700" fill="#0F4C3A" letter-spacing="-0.5">今天的 AI 行业脉搏</text>
+  <!-- 主线条目（动态） -->
+  {headlines_html}
+  <!-- 底部品牌 -->
+  <text x="80" y="580" font-family="var(--font-mono, monospace)" font-size="13" font-weight="500" fill="#5E5A52" letter-spacing="2">{esc(_public_base_url())} · 由编辑部精选</text>
+  <text x="1120" y="580" text-anchor="end" font-family="var(--font-mono, monospace)" font-size="13" font-weight="600" fill="#0F4C3A" letter-spacing="1">EDITORIAL</text>
+</svg>'''
+    return Response(
+        content=svg,
+        media_type="image/svg+xml",
+        headers={"Cache-Control": "public, max-age=300"},
     )
