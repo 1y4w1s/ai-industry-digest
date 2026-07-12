@@ -54,13 +54,26 @@ export default function SidePanel({ keywords = [], insight = '', topArticles = [
           </h3>
           <div className="space-y-2.5">
             {topArticles.slice(0, 5).map((a, i) => (
-              <div key={a.id || a.url} onClick={() => onArticleClick(a.id)} className="flex items-start gap-2.5 cursor-pointer group transition-all">
+              <button
+                key={a.id || a.url}
+                type="button"
+                onClick={() => onArticleClick(a.id)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onArticleClick(a.id);
+                  }
+                }}
+                className="flex items-start gap-2.5 cursor-pointer group transition-all w-full"
+                style={{ background: 'transparent', border: 'none', padding: 0, textAlign: 'left', color: 'inherit' }}
+                aria-label={a.title}
+              >
                 <span className="flex-shrink-0 w-5 h-5 flex items-center justify-center text-[10px] font-bold rounded" style={{ background: i < 3 ? 'var(--color-border-light)' : 'var(--color-bg-hover)', color: 'var(--color-text-muted)' }}>{i + 1}</span>
                 <div className="min-w-0 flex-1">
                   <p className="text-xs leading-relaxed group-hover:text-blue-link transition-colors" style={{ color: 'var(--color-text-title)' }}>{a.title}</p>
                   <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--color-text-label)' }}>{a.source_name}</span>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         </div>

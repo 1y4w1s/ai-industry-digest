@@ -32,19 +32,49 @@ export default function DateNav({ reports, selectedDate, onSelect, hasMore = fal
     setShowDropdown(false);
   };
 
+  // 回到今天（仅在非今日时显示）
+  const today = new Date().toISOString().slice(0, 10);
+  const isNotToday = selectedDate !== today;
+  const goToday = () => {
+    const t = visibleReports.find((r) => r.report_date === today);
+    if (t) handleSelect(today);
+  };
+
+  // 键盘导航：← → Home End 切日期
+  const handleKeyDown = (e, idx) => {
+    let next = null;
+    if (e.key === 'ArrowRight') next = visibleReports[idx + 1];
+    else if (e.key === 'ArrowLeft') next = visibleReports[idx - 1];
+    else if (e.key === 'Home') next = visibleReports[0];
+    else if (e.key === 'End') next = visibleReports[visibleReports.length - 1];
+    if (next) {
+      e.preventDefault();
+      onSelect(next.report_date);
+    }
+  };
+
   return (
     <div className="mb-5">
       <h1 style={{ fontFamily: "var(--font-display)", fontSize: 'var(--fs-xl)', fontWeight: 700, color: 'var(--color-text-title)', marginBottom: '12px' }}>
         每日简报
       </h1>
-      <div className="flex items-center gap-1 flex-wrap">
-        {visibleReports.map((r) => {
+      <div
+        className="flex items-center gap-1 flex-wrap"
+        role="radiogroup"
+        aria-label="选择历史日期"
+      >
+        {visibleReports.map((r, idx) => {
           const label = getDateLabel(r.report_date);
           const isSelected = selectedDate === r.report_date;
           return (
             <button
               key={r.report_date}
+              type="button"
+              role="radio"
+              aria-checked={isSelected}
+              tabIndex={isSelected ? 0 : -1}
               onClick={() => handleSelect(r.report_date)}
+              onKeyDown={(e) => handleKeyDown(e, idx)}
               style={{
                 padding: '6px 14px',
                 background: isSelected ? 'var(--color-border-light)' : 'transparent',
@@ -211,6 +241,36 @@ export default function DateNav({ reports, selectedDate, onSelect, hasMore = fal
             <svg width="10" height="6" viewBox="0 0 10 6" style={{ marginTop: '1px', transform: 'rotate(180deg)' }}>
               <path d="M1 1l4 4 4-4" stroke="var(--color-text-muted)" strokeWidth="1.5" fill="none" strokeLinecap="round" />
             </svg>
+          </button>
+        )}
+
+        {isNotToday && (
+          <button
+            type="button"
+            onClick={goToday}
+            aria-label="回到今天"
+            style={{
+              marginLeft: 'auto',
+              padding: '6px 12px',
+              fontSize: 'var(--fs-sm)',
+              color: 'var(--color-blue-link)',
+              cursor: 'pointer',
+              background: 'transparent',
+              border: '1px solid var(--color-border-light)',
+              borderRadius: '4px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+              transition: 'all 0.15s',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-border-light)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+          >
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 12a9 9 0 1 0 9-9" />
+              <path d="M3 4v5h5" />
+            </svg>
+            回到今天
           </button>
         )}
       </div>

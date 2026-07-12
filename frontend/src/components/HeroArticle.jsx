@@ -1,6 +1,18 @@
 export default function HeroArticle({ article, onSelect }) {
   return (
-    <div className="hero-card mb-5" onClick={() => onSelect(article.id)}>
+    <button
+      type="button"
+      className="hero-card mb-5 w-full text-left"
+      onClick={() => onSelect(article.id)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onSelect(article.id);
+        }
+      }}
+      style={{ background: 'transparent', border: 'none', padding: 0, cursor: 'pointer', color: 'inherit', font: 'inherit' }}
+      aria-label={article.title}
+    >
       <div className="flex items-center gap-2 mb-2">
         <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-high)' }}>头条</span>
         <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--color-text-label)' }}>{article.source_name} · {article.published_at?.slice(0, 10)}</span>
@@ -18,6 +30,6 @@ export default function HeroArticle({ article, onSelect }) {
           ))}
         </div>
       )}
-    </div>
+    </button>
   );
 }
