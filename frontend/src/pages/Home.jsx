@@ -24,7 +24,19 @@ export default function Home() {
   // 提前读取 URL 中的日期参数，传给 useReport 作为初始值
   const dateParam = searchParams.get('date');
 
-  const goToArticle = (id) => navigate(`/?article=${encodeURIComponent(id)}`);
+  const goToArticle = (idOrArticle) => {
+    // 兼容两种入参：string id 或 article 对象
+    const id = typeof idOrArticle === 'string' ? idOrArticle : idOrArticle.id;
+    const title = typeof idOrArticle === 'string' ? null : idOrArticle.title;
+    // 写入最近浏览（4 条，去重，去旧）
+    try {
+      const list = JSON.parse(localStorage.getItem('signal.recent.v1') || '[]');
+      const entry = title ? { id, title, ts: Date.now() } : { id, ts: Date.now() };
+      const dedup = [entry, ...list.filter((x) => x.id !== id)].slice(0, 4);
+      localStorage.setItem('signal.recent.v1', JSON.stringify(dedup));
+    } catch {}
+    navigate(`/?article=${encodeURIComponent(id)}`);
+  };
 
   const {
     reports, selectedDate, setSelectedDate,

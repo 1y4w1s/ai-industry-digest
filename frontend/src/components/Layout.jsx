@@ -3,6 +3,7 @@ import { Outlet, useNavigate, useSearchParams, useLocation } from 'react-router-
 import { useAuth } from '../context/AuthContext';
 import AIChatBubble from './AIChatBubble';
 import ErrorBoundary from './ErrorBoundary';
+import RecentItems from './RecentItems';
 import Onboarding from './Onboarding';
 import KeyboardShortcuts from './KeyboardShortcuts';
 
@@ -176,7 +177,13 @@ export default function Layout() {
           </div>
 
           {isLoggedIn ? (
-            <div onClick={() => navigate('/profile')} className="flex items-center gap-2 px-2 py-1.5 rounded transition-all" style={{ cursor: 'pointer', background: 'transparent' }}>
+            <button
+              type="button"
+              onClick={() => navigate('/profile')}
+              className="flex items-center gap-2 px-2 py-1.5 rounded transition-all w-full"
+              style={{ cursor: 'pointer', background: 'transparent', border: 'none', textAlign: 'left', color: 'inherit' }}
+              aria-label="个人主页"
+            >
               <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-semibold flex-shrink-0" style={{ background: 'var(--color-brand-ink-bg)', color: 'var(--color-brand-ink)' }}>
                 {(user?.nickname || 'U')[0].toUpperCase()}
               </div>
@@ -184,7 +191,7 @@ export default function Layout() {
               <button onClick={(e) => { e.stopPropagation(); logout(); }} className="hover:text-current" style={{ fontSize: 10, color: 'var(--color-text-label)', background: 'none', border: 'none', cursor: 'pointer', padding: 4 }} aria-label="退出登录">
                 <NavIcon name="logout" />
               </button>
-            </div>
+            </button>
           ) : (
             <button onClick={handleLogin} className="flex items-center gap-2 w-full px-2 py-1.5 rounded transition-all" style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
               <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-semibold flex-shrink-0" style={{ background: 'var(--color-bg-off)', color: 'var(--color-text-muted)' }}>
@@ -193,6 +200,8 @@ export default function Layout() {
               <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>登录</span>
             </button>
           )}
+
+          <RecentItems onItemClick={closeSidebar} />
         </div>
       </aside>
 

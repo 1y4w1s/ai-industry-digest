@@ -41,10 +41,27 @@ function ArticleCard({ article, onSelect, variant = 'compact', keyword }) {
   const textHtml = useMemo(() => highlightText(text, keyword), [text, keyword]);
 
   return (
-    <div
+    <button
+      type="button"
       className="article-item"
       onClick={() => onSelect(article.id)}
-      style={{ padding: variant === 'detailed' ? '8px 0' : '6px 0' }}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onSelect(article.id);
+        }
+      }}
+      style={{
+        width: '100%',
+        textAlign: 'left',
+        background: 'transparent',
+        border: 'none',
+        cursor: 'pointer',
+        padding: variant === 'detailed' ? '8px 0' : '6px 0',
+        font: 'inherit',
+        color: 'inherit',
+      }}
+      aria-label={article.title}
     >
       <div className={impClass}>
         <span className="text-sm leading-relaxed" style={{
@@ -65,7 +82,7 @@ function ArticleCard({ article, onSelect, variant = 'compact', keyword }) {
           />
         )}
       </div>
-    </div>
+    </button>
   );
 }
 

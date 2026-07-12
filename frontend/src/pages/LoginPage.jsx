@@ -84,20 +84,20 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label style={{ display: 'block', fontSize: '12px', color: 'var(--color-text-muted)', marginBottom: '6px' }}>邮箱</label>
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="your@email.com" required style={inputStyle} disabled={loading} />
+            <label htmlFor="login-email" style={{ display: 'block', fontSize: '12px', color: 'var(--color-text-muted)', marginBottom: '6px' }}>邮箱</label>
+            <input id="login-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="your@email.com" required style={inputStyle} disabled={loading} />
           </div>
 
           {mode !== 'reset' && (
             <>
               <div className="mb-4">
-                <label style={{ display: 'block', fontSize: '12px', color: 'var(--color-text-muted)', marginBottom: '6px' }}>密码</label>
-                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="至少8个字符" required style={inputStyle} disabled={loading} />
+                <label htmlFor="login-password" style={{ display: 'block', fontSize: '12px', color: 'var(--color-text-muted)', marginBottom: '6px' }}>密码</label>
+                <input id="login-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="至少8个字符" required style={inputStyle} disabled={loading} />
               </div>
               {mode === 'signup' && (
                 <div className="mb-6">
-                  <label style={{ display: 'block', fontSize: '12px', color: 'var(--color-text-muted)', marginBottom: '6px' }}>确认密码</label>
-                  <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="再次输入密码" required style={inputStyle} disabled={loading} />
+                  <label htmlFor="login-confirm" style={{ display: 'block', fontSize: '12px', color: 'var(--color-text-muted)', marginBottom: '6px' }}>确认密码</label>
+                  <input id="login-confirm" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="再次输入密码" required style={inputStyle} disabled={loading} />
                 </div>
               )}
             </>
