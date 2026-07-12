@@ -78,19 +78,44 @@ export default function DailyBriefing({ date }) {
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '12px' }}>
         <h2
           style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
             fontFamily: "var(--font-display)",
-            fontSize: '16px',
-            fontWeight: 700,
-            color: 'var(--color-text-title)',
+            fontSize: '11px',
+            fontWeight: 600,
+            letterSpacing: '0.14em',
+            textTransform: 'uppercase',
+            color: 'var(--color-brand-ink)',
             margin: 0,
           }}
         >
-          🧭 今日速览
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M3 12h18M3 6h18M3 18h18M9 3v18M15 3v18" />
+          </svg>
+          编辑部 · 每日速览
         </h2>
         <span style={{ fontSize: '11px', color: 'var(--color-text-label)' }}>
           事件聚类自动生成 · {date}
         </span>
       </div>
+
+      {top.length > 0 && top[0]?.title && (
+        <h1
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: '38px',
+            fontWeight: 600,
+            lineHeight: 1.1,
+            letterSpacing: '-0.025em',
+            color: 'var(--color-text-title)',
+            margin: '0 0 12px',
+            fontFeatureSettings: '"kern" 1',
+          }}
+        >
+          {top[0].title}
+        </h1>
+      )}
 
       <div className="space-y-4">
         {top.map((s, i) => {
