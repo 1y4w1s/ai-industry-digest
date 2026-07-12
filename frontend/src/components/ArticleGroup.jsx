@@ -1,11 +1,24 @@
 import ArticleCard from './ArticleCard';
 
-export default function ArticleGroup({ sourceName, articles, onSelectArticle }) {
+export default function ArticleGroup({ sourceName, articles, onSelectArticle, customOrder = null }) {
   if (!articles || articles.length === 0) return null;
 
-  const sorted = [...articles].sort(
-    (a, b) => ({high:0,medium:1,low:2}[a._imp]||2) - ({high:0,medium:1,low:2}[b._imp]||2)
-  );
+  // customOrder: Array<article.id> — 按该顺序排（命中排前，不命中保持相对原序）
+  const orderIndex = customOrder
+    ? new Map(customOrder.map((id, idx) => [id, idx]))
+    : null;
+
+  const sorted = [...articles].sort((a, b) => {
+    // 1. customOrder 优先（推荐排序）
+    if (orderIndex) {
+      const ai = orderIndex.has(a.id) ? orderIndex.get(a.id) : Infinity;
+      const bi = orderIndex.has(b.id) ? orderIndex.get(b.id) : Infinity;
+      if (ai !== bi) return ai - bi;
+    }
+    // 2. fallback: importance
+    const imp = { high: 0, medium: 1, low: 2 };
+    return (imp[a._imp] ?? 2) - (imp[b._imp] ?? 2);
+  });
 
   return (
     <div style={{ marginTop: '24px' }}>

@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useReport } from '../hooks/useReport';
 import { useFilter } from '../hooks/useFilter';
+import { api } from '../api/client';
+import { rankArticles } from '../lib/ranking';
 import ArticleReader from '../components/ArticleReader';
 import SidePanel from '../components/SidePanel';
 import DateNav from '../components/DateNav';
@@ -61,6 +63,20 @@ export default function Home() {
     filteredArticles, filteredGroups,
     activeFilterCount, clearFilters, toggleTag,
   } = useFilter(articles);
+
+  // P1a-1 · 零登录推荐排序：拉取 main-thread，配合 ranking.js 排 filteredArticles
+  const [mainThread, setMainThread] = useState(null);
+  useEffect(() => {
+    if (!selectedDate) return;
+    let cancelled = false;
+    api.getMainThread(selectedDate)
+      .then((data) => { if (!cancelled) setMainThread(data); })
+      .catch(() => { if (!cancelled) setMainThread({ stories: [] }); });
+    return () => { cancelled = true; };
+  }, [selectedDate]);
+
+  // 排名后的文章 id 序列（不命中顺序保留）—— ArticleGroup 用它做组内排序
+  const rankedArticleIds = rankArticles(filteredArticles, mainThread).map((a) => a.id);
 
   const handleAskAI = (question) => {
     window.dispatchEvent(new CustomEvent('ai-ask', { detail: { question } }));
@@ -148,7 +164,7 @@ export default function Home() {
                   .sort(([, a], [, b]) => b.filter((x) => x._imp === 'high').length - a.filter((x) => x._imp === 'high').length)
                   .slice(0, visibleCount)
                   .map(([src, arts]) => (
-                    <ArticleGroup key={src} sourceName={src} articles={arts} onSelectArticle={goToArticle} />
+                    <ArticleGroup key={src} sourceName={src} articles={arts} onSelectArticle={goToArticle} customOrder={rankedArticleIds} />
                   ))}
                 {/* 加载更多 */}
                 {Object.entries(filteredGroups).length > visibleCount && (
