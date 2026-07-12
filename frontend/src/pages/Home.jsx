@@ -11,6 +11,7 @@ import HeroArticle from '../components/HeroArticle';
 import DataStats from '../components/DataStats';
 import RecommendationWidget from '../components/RecommendationWidget';
 import MainThreadPanel from '../components/MainThreadPanel';
+import DailyBriefing from '../components/DailyBriefing';
 import SubscribeBox from '../components/SubscribeBox';
 
 export default function Home() {
@@ -98,6 +99,9 @@ export default function Home() {
       <div className="flex-1 flex overflow-hidden">
         <div className="flex-1 min-w-0 overflow-y-auto">
           <div className="px-5 lg:px-6" style={{ paddingTop: '20px', paddingBottom: '32px' }}>
+            {/* 今日速览：首页首屏 hero（每日速览首屏改造 P0），置于文章列表之前 */}
+            <DailyBriefing date={selectedDate} />
+
             {reports.length > 0 && (
               <>
                 {fromCache && (
