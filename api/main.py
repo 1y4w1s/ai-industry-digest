@@ -26,6 +26,7 @@ from api.routes.stories import router as stories_router
 from api.routes.public_digest import router as public_digest_router
 from api.routes.podcast import router as podcast_router
 from api.routes.comments import router as comments_router
+from api.routes.github_agents import router as github_agents_router
 
 app = FastAPI(
     title="Signal API",
@@ -158,6 +159,7 @@ app.include_router(stories_router, prefix="/api")  # 今日主线聚类 /api/mai
 app.include_router(public_digest_router)  # 公开页 SEO：/digest/{date} + /sitemap.xml + /robots.txt（§2.3，须在 SPA fallback 之前注册）
 app.include_router(podcast_router)  # 播客 RSS：/podcast.xml（§2.2，须在 SPA fallback 之前注册）
 app.include_router(comments_router, prefix="/api")  # 评论区：/api/comments（§3.2）
+app.include_router(github_agents_router, prefix="/api")  # 首页「今日 GitHub 推荐」：/api/github-agents（P3-home）
 
 # ── 优雅关闭 ────────────────────────────
 
