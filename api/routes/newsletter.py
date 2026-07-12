@@ -4,14 +4,24 @@ Signal - 邮件简报退订落地页（改造计划 §1.3）
 退订状态写入 newsletter_subscribers 表（见 scripts/migrations/003_newsletter_subscribers.sql）。
 """
 
+import re
+import secrets
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, HTTPException
 from fastapi.responses import HTMLResponse, Response
+from pydantic import BaseModel
 
 from api.models.database import get_db
 
 router = APIRouter()
+
+# 邮箱格式校验（轻量正则，避开 pydantic.email 的 DNS 校验开销）
+_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+
+class SubscribeRequest(BaseModel):
+    email: str
 
 
 def _page(title: str, message: str, ok: bool) -> str:
@@ -86,3 +96,46 @@ async def track_open(token: str = Query(..., description="订阅者退订令牌"
     except Exception:
         pass  # 追踪失败不应影响用户体验
     return Response(content=_TRANSPARENT_GIF, media_type="image/gif")
+
+
+@router.post("/subscribe", tags=["邮件简报"])
+async def subscribe(req: SubscribeRequest):
+    """网页自助订阅（改造计划 §网站优化）：校验邮箱 → 落库 newsletter_subscribers(source='web')。
+
+    - 已订阅(active)：返回 already，不重复插入。
+    - 曾退订(unsubscribed)：重新激活，复用原记录。
+    - 全新邮箱：生成 token（用于退订链接）后插入。
+    """
+    email = (req.email or "").strip().lower()
+    if not _EMAIL_RE.match(email):
+        raise HTTPException(status_code=400, detail="邮箱格式不正确")
+    if len(email) > 254:
+        raise HTTPException(status_code=400, detail="邮箱过长")
+
+    db = get_db()
+    try:
+        existing = (
+            db.client.table("newsletter_subscribers")
+            .select("id, status, token")
+            .eq("email", email)
+            .execute()
+        )
+        if existing.data:
+            row = existing.data[0]
+            if row["status"] == "active":
+                return {"ok": True, "status": "already", "message": "你已订阅 Signal 每日简报"}
+            # 曾退订 → 重新激活
+            db.client.table("newsletter_subscribers").update(
+                {"status": "active", "unsubscribed_at": None}
+            ).eq("email", email).execute()
+            return {"ok": True, "status": "reactivated", "message": "已恢复订阅 Signal 每日简报"}
+
+        db.client.table("newsletter_subscribers").insert({
+            "email": email,
+            "token": secrets.token_urlsafe(16),
+            "source": "web",
+            "status": "active",
+        }).execute()
+        return {"ok": True, "status": "subscribed", "message": "订阅成功，每天将收到 Signal 每日简报"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"订阅失败：{e}")

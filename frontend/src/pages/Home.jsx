@@ -10,6 +10,8 @@ import ArticleGroup from '../components/ArticleGroup';
 import HeroArticle from '../components/HeroArticle';
 import DataStats from '../components/DataStats';
 import RecommendationWidget from '../components/RecommendationWidget';
+import MainThreadPanel from '../components/MainThreadPanel';
+import SubscribeBox from '../components/SubscribeBox';
 
 export default function Home() {
   const [sidePanelOpen, setSidePanelOpen] = useState(true);
@@ -159,11 +161,15 @@ export default function Home() {
             ) : (
               <div className="text-center py-16 text-sm" style={{ color: 'var(--color-text-label)' }}>暂无数据</div>
             )}
+
+            {/* 自助订阅（网站优化）：零成本增长入口 */}
+            <SubscribeBox />
           </div>
         </div>
 
         <div className={`hidden lg:block flex-shrink-0 overflow-y-auto transition-all duration-300 ${sidePanelOpen ? 'w-[280px] opacity-100' : 'w-0 opacity-0 overflow-hidden'}`}
           style={{ borderLeft: '1px solid var(--color-border-light)', padding: '20px 16px', background: 'var(--color-bg-sidebar)' }}>
+          <MainThreadPanel date={selectedDate} />
           <SidePanel
             keywords={report?.trending_keywords || []}
             insight={report?.summary_insight || ''}

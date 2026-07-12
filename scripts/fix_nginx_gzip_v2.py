@@ -88,8 +88,13 @@ def main():
         proxy_set_header Host $host;
     }
 
-    # 邮件简报（改造计划 §1.3）：退订 /unsubscribe、追踪像素 /track/open
+    # 邮件简报（改造计划 §1.3）：退订 /unsubscribe、追踪像素 /track/open、自助订阅 /subscribe
     location /unsubscribe {
+        proxy_pass http://localhost:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+    }
+    location = /subscribe {
         proxy_pass http://localhost:8000;
         proxy_http_version 1.1;
         proxy_set_header Host $host;

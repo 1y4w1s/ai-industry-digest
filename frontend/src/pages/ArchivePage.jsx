@@ -45,7 +45,8 @@ function Calendar({ dates, loading, onSelectDate }) {
           <span style={{ fontSize: '13px', color: 'var(--color-text-muted)' }}>加载中...</span>
         </div>
       ) : (
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', margin: '0 -4px' }}>
+        <table style={{ width: '100%', minWidth: '560px', borderCollapse: 'collapse' }}>
           <thead>
             <tr>
               {DAY_HEADERS.map((h) => (
@@ -85,6 +86,7 @@ function Calendar({ dates, loading, onSelectDate }) {
             ))}
           </tbody>
         </table>
+        </div>
       )}
     </div>
   );

@@ -36,10 +36,11 @@ export default function SearchPage() {
   const handlePageChange = (pg) => {
     setPage(pg);
     setLoading(true);
-    api.getArticles({ page: pg, page_size: 50, keyword: query })
+    // 与首页搜索保持一致：统一走 /search 接口，避免 /articles 与 /search 结果不一致
+    api.searchAll(query, pg, 50)
       .then((data) => {
-        const items = (data.items || []).map((a) => ({ ...a, _imp: a.importance }));
-        setResults({ ...data, items });
+        const items = (data.articles?.items || []).map((a) => ({ ...a, _imp: a.importance }));
+        setResults({ ...data.articles, items });
       })
       .catch(() => setResults({ items: [], total: 0, pages: 0 }))
       .finally(() => setLoading(false));

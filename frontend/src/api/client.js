@@ -189,6 +189,22 @@ export const api = {
   searchAll: (q, page = 1, page_size = 50) =>
     request(`/search?q=${encodeURIComponent(q)}&page=${page}&page_size=${page_size}`),
 
+  // 邮件简报自助订阅（网站优化）
+  // 注意：newsletter 路由注册在根路径（无 /api 前缀，与 /unsubscribe、/track/ 一致），
+  // 因此直接 fetch 根路径 /subscribe，不走 /api request 封装。
+  subscribe: (email) =>
+    fetch('/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    }).then(async (res) => {
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: res.statusText }));
+        throw new Error(err.detail || `订阅失败 (${res.status})`);
+      }
+      return res.json();
+    }),
+
   // 评论区（§3.2）
   getComments: (articleId) =>
     request(`/comments/${encodeURIComponent(articleId)}`),
