@@ -174,6 +174,26 @@ def check_source(source_config: dict) -> bool:
                 if resp.status_code == 200:
                     return True
 
+            elif coll_type == "social":
+                social_type = coll.get("social_type", "")
+                # 免费源做轻量探活；凭证类无凭证时安全跳过（视为健康，不误报）
+                probe = {
+                    "hackernews": "https://hn.algolia.com/api/v1/search?tags=story&query=ai&hitsPerPage=1",
+                    "github": "https://api.github.com/rate_limit",
+                    "reddit": "https://www.reddit.com/r/MachineLearning/hot.json?limit=1",
+                }.get(social_type)
+                if not probe:
+                    return True
+                try:
+                    resp = requests.get(
+                        probe, timeout=10,
+                        headers={"User-Agent": "AI-Industry-Digest/1.0"},
+                    )
+                    if resp.status_code == 200:
+                        return True
+                except requests.RequestException:
+                    return False
+
         except requests.RequestException:
             continue
 
