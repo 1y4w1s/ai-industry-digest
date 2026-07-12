@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import AIChatBubble from './AIChatBubble';
 import ErrorBoundary from './ErrorBoundary';
 import RecentItems from './RecentItems';
+import ScrollProgress from './ScrollProgress';
 import Onboarding from './Onboarding';
 import KeyboardShortcuts from './KeyboardShortcuts';
 
@@ -206,7 +207,8 @@ export default function Layout() {
       </aside>
 
       <div className="flex flex-col flex-1 min-w-0">
-        <header className="h-14 flex items-center gap-3 px-4 lg:px-6 border-b flex-shrink-0 no-print" style={{ background: 'var(--color-bg-white)', borderColor: 'var(--color-border-light)' }}>
+        <header className="h-14 flex items-center gap-3 px-4 lg:px-6 border-b flex-shrink-0 no-print relative" style={{ background: 'var(--color-bg-white)', borderColor: 'var(--color-border-light)' }}>
+          <ScrollProgress />
           <button onClick={() => setMobileSidebarOpen(true)} className="lg:hidden p-2 -ml-1 rounded" style={{ color: 'var(--color-text-muted)' }} aria-label="打开菜单">
             <NavIcon name="menu" />
           </button>
