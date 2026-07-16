@@ -54,7 +54,7 @@ export default function FilterBar({
               onClick={onClear}
               style={{
                 fontSize: 'var(--fs-sm)',
-                color: 'var(--color-blue-link)',
+                color: 'var(--color-brass)',
                 background: 'none',
                 border: 'none',
                 cursor: 'pointer',

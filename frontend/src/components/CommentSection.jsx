@@ -139,7 +139,7 @@ export default function CommentSection({ articleId }) {
           <span>{timeStr}</span>
           {!isReply && (
             <button onClick={() => setReplyTo(replyTo?.id === c.id ? null : { id: c.id, author_name: c.author_name || '匿名读者' })}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-blue-link)', padding: 0, fontSize: '11px' }}>
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-brass)', padding: 0, fontSize: '11px' }}>
               <IconReply /> 回复
             </button>
           )}

@@ -32,7 +32,7 @@ export default function SubscribeBox() {
     <div className="no-print" style={{ borderTop: '1px solid var(--color-border-light)', marginTop: '32px', paddingTop: '24px' }}>
       <div style={{ maxWidth: '480px', margin: '0 auto', textAlign: 'center' }}>
         <h3 style={{ fontFamily: "var(--font-display)", fontSize: '18px', fontWeight: 700, color: 'var(--color-text-title)', marginBottom: '6px' }}>
-          订阅 Signal 每日 AI 情报
+          订阅 æä¹¾ 每日 AI 情报
         </h3>
         <p style={{ fontSize: '13px', color: 'var(--color-text-muted)', marginBottom: '16px', lineHeight: 1.6 }}>
           编辑部每天为你挑选值得关注的 AI 信号。留下邮箱，简报自动送达，随时可退订。
@@ -53,7 +53,7 @@ export default function SubscribeBox() {
               style={{ flex: 1, padding: '10px 12px', fontSize: '13px', border: '1px solid var(--color-border-bold)', borderRadius: '6px', background: 'var(--color-bg-white)', color: 'var(--color-text-body)', outline: 'none' }}
             />
             <button type="submit" disabled={status === 'loading'}
-              style={{ padding: '10px 18px', fontSize: '13px', fontWeight: 600, color: 'var(--color-bg-white)', background: 'var(--color-blue-link)', border: 'none', borderRadius: '6px', cursor: 'pointer', opacity: status === 'loading' ? 0.6 : 1, whiteSpace: 'nowrap' }}>
+              style={{ padding: '10px 18px', fontSize: '13px', fontWeight: 600, color: 'var(--color-bg-white)', background: 'var(--color-brass)', border: 'none', borderRadius: '6px', cursor: 'pointer', opacity: status === 'loading' ? 0.6 : 1, whiteSpace: 'nowrap' }}>
               {status === 'loading' ? '提交中' : '订阅'}
             </button>
           </form>

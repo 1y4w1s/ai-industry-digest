@@ -96,7 +96,7 @@ export default function RecentItems({ onItemClick }) {
           marginTop: 8,
           padding: '6px 8px',
           fontSize: 11,
-          color: 'var(--color-blue-link)',
+          color: 'var(--color-brass)',
           background: 'transparent',
           border: 'none',
           borderRadius: 4,

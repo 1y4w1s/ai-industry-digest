@@ -66,7 +66,7 @@ function Calendar({ dates, loading, onSelectDate }) {
                           width: '100%', height: '100%', minHeight: '40px',
                           border: 'none', borderRadius: '4px', cursor: cell.hasReport ? 'pointer' : 'default',
                           background: cell.hasReport ? 'rgba(15,76,58,0.08)' : 'transparent',
-                          color: cell.hasReport ? 'var(--color-brand-ink)' : 'var(--color-text-label)',
+                          color: cell.hasReport ? 'var(--color-brass)' : 'var(--color-text-label)',
                           fontWeight: cell.hasReport ? 600 : 400,
                           fontSize: '13px',
                           display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
@@ -76,7 +76,7 @@ function Calendar({ dates, loading, onSelectDate }) {
                         onMouseLeave={(e) => { if (cell.hasReport) e.target.style.background = 'rgba(15,76,58,0.08)'; }}>
                         {cell.day}
                         {cell.hasReport && (
-                          <span style={{ width: '4px', height: '4px', borderRadius: '50%', background: 'var(--color-brand-ink)', marginTop: '2px' }} />
+                          <span style={{ width: '4px', height: '4px', borderRadius: '50%', background: 'var(--color-brass)', marginTop: '2px' }} />
                         )}
                       </button>
                     ) : null}

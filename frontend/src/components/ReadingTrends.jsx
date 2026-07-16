@@ -31,12 +31,12 @@ export default function ReadingTrends({ trends }) {
           ))}
           {/* Line */}
           <polyline
-            fill="none" stroke="var(--color-brand-ink)" strokeWidth="2" strokeLinejoin="round"
+            fill="none" stroke="var(--color-brass)" strokeWidth="2" strokeLinejoin="round"
             points={points.map((p) => `${p.x},${p.y}`).join(' ')}
           />
           {/* Dots */}
           {points.map((p, i) => (
-            <circle key={i} cx={p.x} cy={p.y} r="3" fill="var(--color-brand-ink)" stroke="var(--color-bg-white)" strokeWidth="1.5" />
+            <circle key={i} cx={p.x} cy={p.y} r="3" fill="var(--color-brass)" stroke="var(--color-bg-white)" strokeWidth="1.5" />
           ))}
           {/* Labels */}
           {points.map((p, i) => (

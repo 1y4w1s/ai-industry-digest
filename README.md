@@ -48,7 +48,7 @@ python run.py
 
 ```bash
 python -m pytest tests/ -v
-# 当前：61 项日报相关测试
+# 当前：61+ 项测试（含 newsletter / metrics 留存埋点）
 ```
 
 ---
@@ -110,8 +110,39 @@ frontend/ (5173)  →  api/ (8000)  ──────────┘
 
 ---
 
-## 文档
+## 邮件简报（产品核心）与 dogfood
 
-- 产品边界：[`docs/PRODUCT_CORE.md`](docs/PRODUCT_CORE.md)
-- 协作规则：[`AGENTS.md`](AGENTS.md)
-- 历史拆分记录（已归档）：[`docs/archive/SPLIT_PLAN.md`](docs/archive/SPLIT_PLAN.md)
+产品=「推到邮箱的每日 AI 简报」，网站只是归档。简报由 GitHub Actions 每日 08:00（北京时间）自动推送。
+
+**作者自己先订阅（dogfood，§1.5 验收关键）**：
+
+```bash
+# 把作者邮箱写进 newsletter_subscribers(active)，确保每日简报发到自己
+python scripts/newsletter.py seed --email you@example.com
+```
+
+**过关标准**：作者本人**连续 2 周是日活**——每周一看飞书指标卡，且自己确实每天打开简报。
+
+**留存三数（订阅 / 打开 / 退订）**：
+
+```bash
+# 跑出近 7 天三数并推飞书卡（CI 每周一自动跑）；离线/本地用 --no-push
+python scripts/metrics.py --days 7 --no-push --json
+```
+
+- 订阅：`newsletter_subscribers` 表直接算在订/总计/已退订。
+- 打开：邮件 HTML 含 1px 透明追踪像素（`/track/open`），落 `open_events`（只记 token 维度，**不写 IP/UA**）；同 (token,article) 24h 内算 1 次。
+- 退订：`/unsubscribe` 落地页已落库 `status=unsubscribed`，直接统计；退订率 = 本期新增退订 / (期末在订 + 本期新增退订)。
+- 上线前需在 Supabase 执行 `scripts/migrations/003_newsletter_subscribers.sql` 与 `scripts/migrations/004_open_and_send_events.sql`；CI 需配置 `FEISHU_WEBHOOK` secret。
+
+---
+
+| 文档 | 用途 |
+|------|------|
+| [`docs/PRODUCT_CORE.md`](docs/PRODUCT_CORE.md) | 产品边界与 P0 能力 |
+| [`docs/TECH_STACK.md`](docs/TECH_STACK.md) | 技术栈与目录结构 |
+| [`docs/ops/DEPLOY_GUIDE.md`](docs/ops/DEPLOY_GUIDE.md) | 部署与定时任务 |
+| [`docs/ops/部署与排障记录.md`](docs/ops/部署与排障记录.md) | 线上排障笔记 |
+| [`docs/INTERVIEW_PREP.md`](docs/INTERVIEW_PREP.md) | 面试准备（日报项目） |
+| [`docs/技术面试/`](docs/技术面试/) | 分模块技术讲解 |
+| [`docs/design/DESIGN_SPEC.md`](docs/design/DESIGN_SPEC.md) | UI 设计规范 |

@@ -38,7 +38,7 @@ export default function ArticleMetaActions({
           {tts.supported && (<>
           <button onClick={() => tts.toggle(articleText)}
             title={tts.state === 'idle' ? '朗读' : tts.state === 'playing' ? '暂停' : '继续'}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px', color: tts.state !== 'idle' ? 'var(--color-blue-link)' : 'var(--color-text-muted)', transition: 'color 0.15s' }}>
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px', color: tts.state !== 'idle' ? 'var(--color-brass)' : 'var(--color-text-muted)', transition: 'color 0.15s' }}>
             {tts.state === 'playing' ? <IconPause /> : <IconPlay />}
             <span>{tts.state === 'idle' ? '朗读' : tts.state === 'playing' ? '暂停' : '继续'}</span>
           </button>
@@ -56,7 +56,7 @@ export default function ArticleMetaActions({
             {isBookmarked ? <IconBookmarkFilled /> : <IconBookmark />}
             <span>{isBookmarked ? '已收藏' : '收藏'}</span>
           </button>
-          {article.url && (<a href={article.url} target="_blank" rel="noreferrer" style={{ color: 'var(--color-blue-link)' }}>在新窗口阅读 ↗</a>)}
+          {article.url && (<a href={article.url} target="_blank" rel="noreferrer" style={{ color: 'var(--color-brass)' }}>在新窗口阅读 ↗</a>)}
         </div>
       </div>
 

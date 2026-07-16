@@ -20,7 +20,7 @@ export default class ErrorBoundary extends Component {
             <p style={{ fontSize: '12px', color: 'var(--color-text-label)', marginBottom: '6px' }}>该区域加载失败</p>
             <button
               onClick={() => this.setState({ hasError: false, error: null })}
-              style={{ fontSize: '11px', color: 'var(--color-blue-link)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+              style={{ fontSize: '11px', color: 'var(--color-brass)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
             >
               重试
             </button>

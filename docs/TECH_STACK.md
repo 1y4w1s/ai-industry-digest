@@ -1,7 +1,7 @@
 # Signal — 技术栈
 
 > 单一真相源。所有技术选型、版本、用途在此集中记录。
-> 最后更新: 2026-06-06
+> 最后更新: 2026-07-03
 
 ---
 
@@ -28,8 +28,6 @@
 | **httpx** | - | 异步 HTTP | 信息源采集 + API 代理请求 |
 | **feedparser** | - | RSS 解析 | 多源标准化采集 |
 | **BeautifulSoup** | - | HTML 清洗 | 提取正文内容 |
-| **PyMuPDF (fitz)** | 1.24.0 | PDF 解析 | 预览前 10 页文本 |
-| **python-docx** | 1.1.2 | DOCX 解析 | 提取前 50 段文本 |
 | **PyJWT + cryptography** | - | JWT 验证 | JWKS 公钥 RS256 签名验证 |
 
 ## AI
@@ -39,7 +37,6 @@
 | **DeepSeek API** | 摘要生成 | 每篇文章自动生成摘要 |
 | **DeepSeek API** | 标签分类 | 从预定义 11 个标签中匹配 |
 | **DeepSeek API** | 重要性评分 | high / medium / low 三级 |
-| **DeepSeek API** | 实体识别 + 关系抽取 | 知识库知识图谱构建 |
 | **TagExtractor** | 本地标签匹配 | 字符串匹配，零 API 成本 |
 
 ## DevOps
@@ -50,7 +47,7 @@
 | **Nginx** | 反向代理 | 监听 8080 端口，转发 `/api/` 到 uvicorn:8000 |
 | **Uvicorn** | ASGI 服务器 | 单进程部署，后台持久运行 |
 | **Linux (Ubuntu)** | 生产环境 | 轻量云服务器 |
-| **cron** | 定时任务 | 每天 3:00 全流程采集 + KB 导入 |
+| **cron** | 定时任务 | GitHub Actions `daily.yml` 每日 3 次采集（6:00/12:00/18:00 CST） |
 | **Supabase SQL Editor** | 数据库迁移 | 手动执行 `scripts/migration_*.sql` |
 | **scripts/migrate.py** | 自动 migration | 自动发现并执行未运行的 SQL migration |
 
@@ -82,7 +79,6 @@ AI 个性化推荐:   chat.py → TagExtractor → user_tags → recommend.py �
 | CORS | 白名单域名（非通配符 `*`） | ✅ |
 | 限流 | 双层内存限流：`/api/` 120 req/min，`/api/auth/` 30 req/min | ✅ 增强 |
 | XSS | DOMPurify 清洗 AI 回复 HTML | ✅ |
-| 路径穿越 | 服务端确定扩展名（`EXTENSION_MAP`） | ✅ |
 | 认证一致性 | 统一 `verify_token()` 支持 Header + Query token | ✅ |
 | 数据库连接 | 单例 `get_db()` 防连接池耗尽 | ✅ |
 
@@ -114,9 +110,11 @@ ai-industry-digest/
 ├── processor/              # AI 处理 + 日报生成
 ├── scripts/                # 部署/迁移/备份
 ├── docs/                   # 文档
+│   ├── PRODUCT_CORE.md    # 产品边界
 │   ├── TECH_STACK.md      # ← 你现在在这
+│   ├── INTERVIEW_PREP.md  # 面试准备
+│   ├── 技术面试/           # 分模块讲解
 │   ├── ops/               # 部署与运维
 │   └── design/            # 设计文档
 ├── tests/                  # 61 项 pytest
-└── 任务书.md              # 整改任务跟踪
 ```

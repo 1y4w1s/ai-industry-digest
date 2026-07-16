@@ -14,9 +14,9 @@ export function renderMd(text) {
     .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, text, url) => {
       // 内部链接使用 SPA 导航，外部链接新标签打开
       if (url.startsWith('/')) {
-        return `<a href="${url}" style="color:var(--color-blue-link);text-decoration:underline">${text}</a>`;
+        return `<a href="${url}" style="color:var(--color-brass);text-decoration:underline">${text}</a>`;
       }
-      return `<a href="${url}" target="_blank" rel="noopener noreferrer" style="color:var(--color-blue-link);text-decoration:underline">${text}</a>`;
+      return `<a href="${url}" target="_blank" rel="noopener noreferrer" style="color:var(--color-brass);text-decoration:underline">${text}</a>`;
     })
     .replace(/\n/g, '<br/>');
 }

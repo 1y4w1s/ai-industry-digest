@@ -279,10 +279,10 @@ export default function ArticleReader({ articleId, onBack }) {
             <p style={{ fontSize: '15px', fontWeight: 500, color: 'var(--color-text-title)', marginBottom: '4px' }}>文章加载失败</p>
             <p style={{ fontSize: '13px', color: 'var(--color-text-muted)', marginBottom: '16px' }}>请检查网络连接后重试</p>
             <div className="flex gap-3 justify-center">
-              <button onClick={() => window.location.reload()} style={{ fontSize: '13px', padding: '8px 20px', color: 'white', background: 'var(--color-blue-link)', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>
+              <button onClick={() => window.location.reload()} style={{ fontSize: '13px', padding: '8px 20px', color: 'white', background: 'var(--color-brass)', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>
                 重试
               </button>
-              <button onClick={onBack} style={{ fontSize: '13px', padding: '8px 20px', color: 'var(--color-blue-link)', background: 'none', border: '1px solid var(--color-blue-link)', borderRadius: '6px', cursor: 'pointer' }}>
+              <button onClick={onBack} style={{ fontSize: '13px', padding: '8px 20px', color: 'var(--color-brass)', background: 'none', border: '1px solid var(--color-brass)', borderRadius: '6px', cursor: 'pointer' }}>
                 返回
               </button>
             </div>

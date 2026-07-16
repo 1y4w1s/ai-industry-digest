@@ -52,7 +52,7 @@ export default function Onboarding() {
         {/* 🧠 图标 */}
         <div style={{
           width: 40, height: 40, borderRadius: 10,
-          background: 'var(--color-brand-ink)',
+          background: 'var(--color-brass)',
           color: '#fff',
           display: 'grid', placeItems: 'center',
           fontSize: 20,
@@ -69,7 +69,7 @@ export default function Onboarding() {
           color: 'var(--color-text-title)',
           margin: '0 0 8px',
         }}>
-          Signal
+          æä¹¾
         </h2>
 
         {/* 一句话介绍 */}
@@ -86,7 +86,7 @@ export default function Onboarding() {
           onClick={dismiss}
           style={{
             height: 38, padding: '0 24px',
-            background: 'var(--color-brand-ink)',
+            background: 'var(--color-brass)',
             color: '#fff',
             border: 'none', borderRadius: 10,
             fontSize: 14, fontWeight: 600,
@@ -95,7 +95,7 @@ export default function Onboarding() {
             boxShadow: '0 1px 2px rgba(15,76,58,0.3), 0 2px 8px rgba(15,76,58,0.15)',
           }}
           onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-brand-ink-2)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--color-brand-ink)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--color-brass)'; }}
         >
           知道了
         </button>

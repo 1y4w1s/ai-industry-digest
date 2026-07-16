@@ -70,7 +70,7 @@ export default function ConfirmDialog({
                 <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6M10 11v6M14 11v6" />
               </svg>
             ) : (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-amber)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-brass)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="10" />
                 <line x1="12" y1="8" x2="12" y2="12" />
                 <circle cx="12" cy="16" r="0.5" fill="currentColor" />
@@ -115,7 +115,7 @@ export default function ConfirmDialog({
             onClick={onConfirm}
             style={{
               height: 34, padding: '0 14px',
-              background: danger ? 'var(--status-err)' : 'var(--color-brand-ink)',
+              background: danger ? 'var(--status-err)' : 'var(--color-brass)',
               color: '#fff',
               border: 'none', borderRadius: 7,
               fontSize: 13, fontWeight: 600,

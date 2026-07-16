@@ -71,7 +71,7 @@ export function UndoToastProvider({ children }) {
             onClick={handleUndo}
             style={{
               background: 'none', border: 'none',
-              color: 'var(--color-accent-amber)',
+              color: 'var(--color-brass)',
               fontSize: 13, fontWeight: 700,
               cursor: 'pointer', padding: '4px 8px',
               borderRadius: 4,
@@ -100,7 +100,7 @@ export function UndoToastProvider({ children }) {
             style={{
               position: 'absolute', left: 0, bottom: 0,
               height: 2, borderRadius: '0 0 10px 10px',
-              background: 'var(--color-accent-amber)',
+              background: 'var(--color-brass)',
               width: '100%',
               transformOrigin: 'left',
               animation: `undo-progress ${toast.durationMs}ms linear forwards`,

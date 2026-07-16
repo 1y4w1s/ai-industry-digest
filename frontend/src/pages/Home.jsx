@@ -220,7 +220,7 @@ export default function Home() {
                   </div>
                   {activeFilterCount > 0 && (
                     <button onClick={clearFilters}
-                      style={{ fontSize: '12px', color: 'var(--color-blue-link)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                      style={{ fontSize: '12px', color: 'var(--color-brass)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
                       清除筛选条件
                     </button>
                   )}

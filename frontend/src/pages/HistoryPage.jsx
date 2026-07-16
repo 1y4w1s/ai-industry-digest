@@ -59,7 +59,7 @@ export default function HistoryPage() {
       <div className="flex-1 overflow-y-auto">
         <div className="px-5 lg:px-6" style={{ paddingTop: '20px', paddingBottom: '32px', maxWidth: '800px' }}>
           <div className="mb-5">
-            <button onClick={() => navigate('/')} style={{ fontSize: 'var(--fs-sm)', color: 'var(--color-blue-link)', background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px', padding: 0 }}>
+            <button onClick={() => navigate('/')} style={{ fontSize: 'var(--fs-sm)', color: 'var(--color-brass)', background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px', padding: 0 }}>
               ← 返回首页
             </button>
           </div>
@@ -73,7 +73,7 @@ export default function HistoryPage() {
               </div>
               <p style={{ fontSize: '14px', color: 'var(--color-text-title)', marginBottom: '8px' }}>当前页面需要登录才能浏览</p>
               <button onClick={() => { login(); }}
-                style={{ fontSize: 'var(--fs-sm)', color: 'var(--color-blue-link)', background: 'none', border: 'none', cursor: 'pointer' }}>
+                style={{ fontSize: 'var(--fs-sm)', color: 'var(--color-brass)', background: 'none', border: 'none', cursor: 'pointer' }}>
                 登录 / 注册
               </button>
             </div>
@@ -133,7 +133,7 @@ export default function HistoryPage() {
               </div>
               <p style={{ fontSize: '14px', color: 'var(--color-text-title)', marginBottom: '4px' }}>还没有浏览记录</p>
               <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--color-text-muted)', marginBottom: '12px' }}>阅读文章后会自动记录在这里</p>
-              <a href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: 'var(--color-blue-link)', textDecoration: 'none' }}>
+              <a href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: 'var(--color-brass)', textDecoration: 'none' }}>
                 去看看今日日报 →
               </a>
             </div>

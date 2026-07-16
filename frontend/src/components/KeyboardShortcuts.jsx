@@ -148,7 +148,7 @@ export default function KeyboardShortcuts() {
           >Esc 关闭</button>
         </div>
         <p style={{ fontSize: 12, color: 'var(--color-text-muted)', margin: '4px 0 20px' }}>
-          在 Signal 里用键盘就能完成大部分操作。试试看？
+          在 æä¹¾ 里用键盘就能完成大部分操作。试试看？
         </p>
 
         {sections.map((sec) => bySection[sec].length > 0 && (

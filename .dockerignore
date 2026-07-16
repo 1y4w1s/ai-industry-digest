@@ -1,0 +1,34 @@
+# 密钥：绝不打进镜像（运行时经 compose env_file 注入）
+.env
+.env.*
+!.env.example
+
+# 版本控制 / 缓存 / 构建产物
+.git
+.gitignore
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+
+# 前端：源码与依赖不进运行时镜像；dist 由 CI 构建后挂载
+frontend/node_modules/
+frontend/src/
+frontend/dist/
+frontend/*.json
+frontend/*.config.js
+frontend/.vite/
+
+# 不需要的运行时代码
+tests/
+.github/
+docs/
+*.md
+scripts/migration_*.sql
+
+# 本地 venv / 临时文件
+venv/
+.envs/
+tmp/
+*.log
+.DS_Store
