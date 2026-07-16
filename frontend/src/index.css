@@ -76,6 +76,45 @@
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
+/* ── 暗色模式 ────────────────────────────── */
+[data-theme="dark"] {
+  --color-brand-ink: #E8E0D8;
+  --color-brand-ink-2: #D0C8BC;
+  --color-brand-ink-bg: #2D2824;
+  --color-brass: #D4A843;
+  --color-brass-hover: #E0B84F;
+  --color-brass-bg: #2D2414;
+  --color-accent-amber: #E8A040;
+  --color-accent-amber-bg: #2D1C0C;
+  --color-accent-coral: #D4654A;
+  --color-accent-coral-bg: #2D1410;
+  --color-bg-white: #16120F;
+  --color-bg-off: #1F1A16;
+  --color-bg-hover: #2D2824;
+  --color-bg-toolbar: #2D2824;
+  --color-bg-sidebar: #1A1612;
+  --color-bg-glass: rgba(22,18,15,0.80);
+  --color-border-light: #2D2824;
+  --color-border: #3D3834;
+  --color-border-bold: #5D5854;
+  --color-text-title: #E8E0D8;
+  --color-text-body: #B8B0A8;
+  --color-text-muted: #888078;
+  --color-text-label: #6D6862;
+  --color-high: #D4654A;
+  --color-medium: #D4A843;
+  --color-low: #5D5854;
+  --color-blue-link: #D4A843;
+  --color-success: #5B8C6E;
+  --shadow-1: 0 1px 2px rgba(0,0,0,0.2), 0 1px 3px rgba(0,0,0,0.15);
+  --shadow-2: 0 4px 8px rgba(0,0,0,0.25), 0 8px 24px rgba(0,0,0,0.20);
+  --shadow-3: 0 12px 32px rgba(0,0,0,0.30), 0 24px 56px rgba(0,0,0,0.25);
+  --shadow-glow: 0 4px 24px rgba(212,168,67,0.08);
+  --glass-bg: rgba(22,18,15,0.80);
+  --glass-border: rgba(212,168,67,0.08);
+  --glass-shadow: 0 8px 32px rgba(0,0,0,0.3);
+}
+
 /* ============================================================
    引入 Fraunces 字体
    ============================================================ */
@@ -91,6 +130,30 @@ body {
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── 暗色模式（自动跟随系统） ──────────── */
+@media (prefers-color-scheme: dark) {
+  [data-theme="system"] {
+    --color-brand-ink: #E8E0D8;
+    --color-brand-ink-2: #D0C8BC;
+    --color-brand-ink-bg: #2D2824;
+    --color-brass: #D4A843;
+    --color-brass-bg: #2D2414;
+    --color-bg-white: #16120F;
+    --color-bg-off: #1F1A16;
+    --color-bg-hover: #2D2824;
+    --color-bg-sidebar: #1A1612;
+    --color-border-light: #2D2824;
+    --color-border: #3D3834;
+    --color-text-title: #E8E0D8;
+    --color-text-body: #B8B0A8;
+    --color-text-muted: #888078;
+    --color-text-label: #6D6862;
+    --color-high: #D4654A;
+    --color-medium: #D4A843;
+    --shadow-2: 0 4px 8px rgba(0,0,0,0.25), 0 8px 24px rgba(0,0,0,0.20);
+  }
 }
 
 ::-webkit-scrollbar { width: 8px; height: 8px; }
