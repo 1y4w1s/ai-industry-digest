@@ -56,6 +56,7 @@ import httpx
 from collector.base import Article
 from processor.reporter import DailyReportGenerator, cluster_stories
 from processor.github_agents import fetch_github_agents
+from api.services.html_renderers import render_main_thread, fmt_github_card
 
 load_dotenv()
 
@@ -100,37 +101,11 @@ def _rows_to_articles(rows: List[dict]) -> List[Article]:
 # GitHub AI Agent 高星新星卡片（邮件 + 公开页同源复用）
 # ──────────────────────────────────────────────────────────────
 
-def _fmt_github_card(item: dict, escape) -> str:
-    """单个 GitHub Agent 项目卡片（内联样式，邮件 / 公开页通用）。"""
-    name = escape(item.get("name") or "")
-    url = escape(item.get("url") or "#")
-    desc = escape(item.get("description") or "")
-    stars = item.get("stars", 0)
-    lang = escape(item.get("language") or "")
-    pushed = item.get("pushed_at") or ""
-    rising = item.get("is_rising_star")
-    rising_badge = (
-        '<span style="font-size:11px;padding:1px 7px;border-radius:999px;'
-        'background:#ecfdf5;color:#047857;margin-left:6px;">⚡ 新星</span>'
-    ) if rising else ""
-    lang_badge = (
-        f'<span style="font-size:11px;color:#6b7280;margin-left:6px;">· {lang}</span>'
-    ) if lang else ""
-    pushed_date = pushed[:10] if pushed else ""
-    return f"""<div style="border:1px solid #e5e7eb;border-radius:10px;padding:14px;margin-bottom:10px;">
-      <div style="font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Consolas,monospace;font-size:15px;font-weight:600;color:#111827;margin-bottom:4px;">
-        <a href="{url}" style="color:#111827;text-decoration:none;">{name}</a>{rising_badge}
-      </div>
-      <p style="font-size:13px;line-height:1.6;color:#374151;margin:0 0 6px;">{desc}</p>
-      <div style="font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Consolas,monospace;font-size:12px;color:#6b7280;">★ {stars:,}{lang_badge} · 更新于 {pushed_date}</div>
-    </div>"""
-
-
 def _render_github_agents_section(items: list, escape) -> str:
     """「今日 GitHub 推荐」邮件区块（静态，无交互筛选器）。"""
     if not items:
         return ""
-    cards = "\n".join(_fmt_github_card(it, escape) for it in items)
+    cards = "\n".join(fmt_github_card(it, escape) for it in items)
     return f"""<div style="margin:0 0 18px;">
       <div style="background:#fafaf9;border:1px solid #e7e5e4;border-radius:14px;padding:16px 18px;">
         <div style="font-family:'Fraunces',Georgia,'Songti SC',serif;font-size:19px;font-weight:700;color:#0F4C3A;margin-bottom:4px;">今日 GitHub 推荐</div>
@@ -307,41 +282,8 @@ class NewsletterRenderer:
 
         insight = report.get("summary_insight") or "今日暂无概览。"
 
-        # 今日主线：优先渲染 §2.1 事件聚类结果（主线标题 + 挂的文章标题列表）
-        main_stories = report.get("main_stories") or {}
-        stories = main_stories.get("stories") if isinstance(main_stories, dict) else []
-        if stories:
-            blocks = []
-            for s in stories:
-                entity = s.get("entity")
-                badge = (
-                    f'<span style="font-size:11px;padding:1px 8px;border-radius:999px;'
-                    f'background:#eef2ff;color:#4338ca;margin-right:6px;">{escape(entity)}</span>'
-                ) if entity else ""
-                hung = s.get("articles") or []
-                li_html = "\n".join(
-                    f'<li style="font-size:13px;line-height:1.6;color:#374151;margin-bottom:3px;">'
-                    f'<a href="{escape(a.get("url") or "#")}" style="color:#2563eb;text-decoration:none;">'
-                    f'{escape(a.get("title") or "（无标题）")}</a>'
-                    f'<span style="color:#9ca3af;"> · {escape(a.get("source_name") or "")}</span></li>'
-                    for a in hung[:6]
-                )
-                blocks.append(
-                    '<div style="margin-bottom:14px;">'
-                    f'<div style="font-size:14px;font-weight:600;color:#0f172a;margin-bottom:2px;">{badge}{escape(s.get("title") or "")}</div>'
-                    f'<ul style="margin:2px 0 0;padding-left:18px;">{li_html}</ul>'
-                    '</div>'
-                )
-            main_thread_html = "\n".join(blocks)
-            main_thread_note = "事件聚类自动生成 · 同一事件的多篇报道已合并"
-        else:
-            # 聚类无结果：回退展示 main_thread 占位字符串列表
-            fallback = report.get("main_thread") or []
-            main_thread_html = "\n".join(
-                f'<li style="font-size:13px;line-height:1.6;color:#374151;margin-bottom:4px;">'
-                f'{escape(b)}</li>' for b in fallback
-            )
-            main_thread_note = "（暂无可聚类信号，显示热度 Top 候选）"
+        # 今日主线（使用共享渲染函数）
+        main_thread_html, main_thread_note = render_main_thread(report, escape)
 
         # Top N：跨重要性层级（高→中→低）取前 N
         ranked = (report["articles"]["high"]

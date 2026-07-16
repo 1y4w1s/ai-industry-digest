@@ -36,7 +36,8 @@ from fastapi.responses import HTMLResponse, PlainTextResponse, Response
 from api.models.database import get_db
 
 # 复用邮件简报的取数 + 聚类口径（同一份 cluster_stories 数据，与邮件同源）
-from scripts.newsletter import build_report, NewsletterRenderer, _fmt_github_card
+from scripts.newsletter import build_report, NewsletterRenderer
+from api.services.html_renderers import render_main_thread, fmt_github_card
 
 # 公开页常量
 DEFAULT_PUBLIC_BASE_URL = "https://1y4w1s.icu:8080"   # 线上域名（8080 端口 + HTTPS 待收敛）
@@ -76,42 +77,6 @@ class PublicDigestRenderer:
         return NewsletterRenderer._fmt_time(iso)
 
     # ── 今日主线区块（与邮件同结构）────────────────────────
-    def _render_main_thread(self, report: dict, escape) -> tuple:
-        """返回 (main_thread_html, main_thread_note)。结构同 NewsletterRenderer.render()。"""
-        main_stories = report.get("main_stories") or {}
-        stories = main_stories.get("stories") if isinstance(main_stories, dict) else []
-        if stories:
-            blocks = []
-            for s in stories:
-                entity = s.get("entity")
-                badge = (
-                    f'<span style="font-size:11px;padding:1px 8px;border-radius:999px;'
-                    f'background:#eef2ff;color:#4338ca;margin-right:6px;">{escape(entity)}</span>'
-                ) if entity else ""
-                hung = s.get("articles") or []
-                li_html = "\n".join(
-                    f'<li style="font-size:13px;line-height:1.6;color:#374151;margin-bottom:3px;">'
-                    f'<a href="{escape(a.get("url") or "#")}" style="color:#2563eb;text-decoration:none;">'
-                    f'{escape(a.get("title") or "（无标题）")}</a>'
-                    f'<span style="color:#9ca3af;"> · {escape(a.get("source_name") or "")}</span></li>'
-                    for a in hung[:6]
-                )
-                blocks.append(
-                    '<div style="margin-bottom:14px;">'
-                    f'<div style="font-size:14px;font-weight:600;color:#0f172a;margin-bottom:2px;">{badge}{escape(s.get("title") or "")}</div>'
-                    f'<ul style="margin:2px 0 0;padding-left:18px;">{li_html}</ul>'
-                    '</div>'
-                )
-            return "\n".join(blocks), "事件聚类自动生成 · 同一事件的多篇报道已合并"
-        # 聚类无结果：回退展示 main_thread 占位字符串列表
-        fallback = report.get("main_thread") or []
-        main_thread_html = "\n".join(
-            f'<li style="font-size:13px;line-height:1.6;color:#374151;margin-bottom:4px;">'
-            f'{escape(b)}</li>' for b in fallback
-        )
-        return main_thread_html, "（暂无可聚类信号，显示热度 Top 候选）"
-
-    # ── Top N 文章区块（复用邮件卡片）──────────────────────
     def _ranked_articles(self, report: dict) -> list:
         arts = (report.get("articles") or {})
         return (arts.get("high", []) + arts.get("medium", []) + arts.get("low", []))[:self.top_n]
@@ -201,7 +166,7 @@ class PublicDigestRenderer:
         ranked = self._ranked_articles(report)
         insight = (report.get("summary_insight") or "今日暂无概览。").strip()
 
-        main_thread_html, main_thread_note = self._render_main_thread(report, escape)
+        main_thread_html, main_thread_note = render_main_thread(report, escape)
         articles_html = self._render_articles(report, escape)
         github_html = self._render_github_agents(report, escape, report.get("gh_filter") or {}, report_date)
         head = self._build_head(report, report_date, ranked, escape)
@@ -282,7 +247,7 @@ class PublicDigestRenderer:
             cards = ('<p style="font-size:13px;color:#9ca3af;margin:0;">'
                      '暂无匹配项目（GitHub API 限流中，或该范围内暂无高星 Agent 项目；可放宽条件后重试）。</p>')
         else:
-            cards = "\n".join(_fmt_github_card(it, escape) for it in items)
+            cards = "\n".join(fmt_github_card(it, escape) for it in items)
         return f"""<div style="padding:0 28px 24px;">
       <div style="background:#fafaf9;border:1px solid #e7e5e4;border-radius:14px;padding:16px 18px;">
         <div style="font-family:'Fraunces',Georgia,'Songti SC',serif;font-size:19px;font-weight:700;color:#0F4C3A;margin-bottom:4px;">今日 GitHub 推荐</div>
