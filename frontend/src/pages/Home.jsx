@@ -129,7 +129,7 @@ export default function Home() {
 
       <div className="flex-1 flex overflow-hidden">
         <div className="flex-1 min-w-0 overflow-y-auto">
-          <div className="px-5 lg:px-6" style={{ paddingTop: '20px', paddingBottom: '32px' }}>
+          <div className="px-5 lg:px-6" style={{ paddingTop: '20px', paddingBottom: '32px', maxWidth: '800px', margin: '0 auto' }}>
             {/* 品牌 Hero 行 */}
             <div className="reveal-up" style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 20 }}>
               <span style={{ fontFamily: 'var(--font-display)', fontSize: '15px', fontWeight: 700, color: 'var(--color-text-title)', letterSpacing: '0.04em' }}>
@@ -180,7 +180,7 @@ export default function Home() {
                     顶部「今日速览」+ 侧栏主线固化为首页编辑部主干。 */}
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginTop: 4, marginBottom: 16 }}>
                   <span style={{ fontFamily: 'var(--font-display)', fontSize: '14px', fontWeight: 700, color: 'var(--color-text-title)', letterSpacing: '0.04em' }}>
-                    全部 AI 信号
+                    全部信号
                   </span>
                   <span style={{ flex: 1, height: '1px', background: 'linear-gradient(90deg, var(--color-brass) 0%, var(--color-border-light) 100%)' }} />
                   <span style={{ fontSize: '11px', color: 'var(--color-text-label)', whiteSpace: 'nowrap' }}>

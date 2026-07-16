@@ -1,21 +1,10 @@
 import { useState, useEffect } from 'react';
 import { api } from '../api/client';
 
-/**
- * 今日速览（每日速览首屏改造 · P0）
- * 在首页主内容列最顶部渲染「今日速览」hero，复用 /api/main-thread 的同一份
- * cluster_stories + so_what 数据（与侧栏 MainThreadPanel、公开页 DigestPage 同源）。
- * 纯前端组装，零新采集、零新接口、零新表。
- *
- * 降级策略（与 MainThreadPanel 一致）：
- *  - 加载中：返回 null，不占版面、不闪烁。
- *  - 空数据（stories.length === 0）：返回 null，首页照常显示文章列表。
- *  - 接口异常：catch 后视作空数据，静默隐藏。
- */
 export default function DailyBriefing({ date }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(Array(3).fill(false));
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -30,18 +19,22 @@ export default function DailyBriefing({ date }) {
   }, [date]);
 
   const stories = (data && data.stories) || [];
-  // 加载中或无聚类结果时不占版面
   if (!loading && stories.length === 0) return null;
 
   const top = stories.slice(0, 3);
   const total = data?.total_stories || stories.length;
 
+  const toggleExpand = (i) => {
+    setExpanded((prev) => {
+      const next = [...prev];
+      next[i] = !next[i];
+      return next;
+    });
+  };
+
   const share = () => {
     const link = `${window.location.origin}/digest/${date}`;
-    const ok = () => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    };
+    const ok = () => { setCopied(true); setTimeout(() => setCopied(false), 2000); };
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(link).then(ok).catch(() => fallbackCopy(link, ok));
     } else {
@@ -52,147 +45,82 @@ export default function DailyBriefing({ date }) {
   const fallbackCopy = (text, ok) => {
     try {
       const ta = document.createElement('textarea');
-      ta.value = text;
-      ta.style.position = 'fixed';
-      ta.style.opacity = '0';
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand('copy');
-      document.body.removeChild(ta);
-      ok();
-    } catch {
-      /* 复制失败静默忽略，不影响其他功能 */
-    }
+      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+      document.body.removeChild(ta); ok();
+    } catch { /* silent */ }
   };
 
   return (
-    <section
-      style={{
-        borderRadius: '8px',
-        padding: '16px 20px',
-        background: 'var(--color-bg-off)',
-        border: '1px solid var(--color-border-light)',
-        marginBottom: '20px',
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '12px' }}>
-        <h2
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-            fontFamily: "var(--font-display)",
-            fontSize: '11px',
-            fontWeight: 600,
-            letterSpacing: '0.14em',
-            textTransform: 'uppercase',
-            color: 'var(--color-brand-ink)',
-            margin: 0,
-          }}
-        >
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M3 12h18M3 6h18M3 18h18M9 3v18M15 3v18" />
-          </svg>
-          编辑部 · 每日速览
-        </h2>
-        <span style={{ fontSize: '11px', color: 'var(--color-text-label)' }}>
-          事件聚类自动生成 · {date}
-        </span>
-      </div>
-
+    <section style={{
+      marginBottom: 16,
+    }}>
       {top.length > 0 && top[0]?.title && (
-        <h1
-          style={{
-            fontFamily: 'var(--font-display)',
-            fontSize: '38px',
-            fontWeight: 600,
-            lineHeight: 1.1,
-            letterSpacing: '-0.025em',
-            color: 'var(--color-text-title)',
-            margin: '0 0 12px',
-            fontFeatureSettings: '"kern" 1',
-          }}
-        >
+        <div style={{
+          fontFamily: 'var(--font-display)',
+          fontSize: '18px', fontWeight: 600,
+          lineHeight: 1.3, letterSpacing: '-0.01em',
+          color: 'var(--color-text-title)',
+          margin: '0 0 4px',
+        }}>
           {top[0].title}
-        </h1>
+        </div>
       )}
 
-      <div className="space-y-4">
+      <div className="space-y-2">
         {top.map((s, i) => {
           const lead = s.articles?.[0];
           const soWhat = lead?.so_what || null;
-          const shown = expanded ? s.articles : (s.articles || []).slice(0, 3);
+          const isExpanded = expanded[i];
+          const shown = isExpanded ? s.articles : (s.articles || []).slice(0, 2);
           return (
             <div key={s.title || i}>
-              <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--color-text-title)', lineHeight: 1.4 }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
                 {s.entity && (
-                  <span
-                    style={{
-                      fontSize: '11px',
-                      padding: '1px 8px',
-                      borderRadius: '999px',
-                      background: '#eef2ff',
-                      color: '#4338ca',
-                      marginRight: '6px',
-                    }}
-                  >
-                    {s.entity}
-                  </span>
+                  <span style={{
+                    fontSize: '10px', fontWeight: 600, padding: '1px 7px',
+                    borderRadius: 999, background: 'var(--color-brass-bg)',
+                    color: 'var(--color-brass)', flexShrink: 0,
+                  }}>{s.entity}</span>
                 )}
-                {s.title}
+                <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--color-text-title)', lineHeight: 1.4 }}>
+                  {s.title}
+                </span>
               </div>
               {s.summary && (
-                <p style={{ fontSize: '12px', color: 'var(--color-text-muted)', margin: '2px 0 0', lineHeight: 1.5 }}>
+                <p style={{ fontSize: '12px', color: 'var(--color-text-muted)', margin: '2px 0 0 0', lineHeight: 1.5 }}>
                   {s.summary}
                 </p>
               )}
               {soWhat && (
-                <div
-                  style={{
-                    fontSize: '12px',
-                    lineHeight: 1.6,
-                    color: '#92400e',
-                    marginTop: '6px',
-                    padding: '6px 10px',
-                    background: 'rgba(146,64,14,0.06)',
-                    borderRadius: '4px',
-                  }}
-                >
-                  💡 编辑部观点：{soWhat}
+                <div style={{
+                  fontSize: '11px', lineHeight: 1.6, color: 'var(--color-text-muted)',
+                  marginTop: 4, padding: '4px 8px',
+                  background: 'var(--color-bg-off)', borderRadius: 4,
+                }}>
+                  编辑部观点：{soWhat}
                 </div>
               )}
-              <ul style={{ listStyle: 'none', margin: '6px 0 0', paddingLeft: 0 }} className="space-y-1">
-                {shown.map((a, j) => (
-                  <li key={a.url || j}>
-                    <a
-                      href={a.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      style={{ fontSize: '12px', color: 'var(--color-blue-link)', textDecoration: 'none' }}
-                    >
-                      {a.title}
-                    </a>
-                    {a.source_name && (
-                      <span style={{ fontSize: '10px', color: 'var(--color-text-label)', marginLeft: '4px' }}>
-                        · {a.source_name}
-                      </span>
-                    )}
-                  </li>
-                ))}
-              </ul>
-              {(s.articles?.length || 0) > 3 && (
-                <button
-                  onClick={() => setExpanded((v) => !v)}
-                  style={{
-                    fontSize: '11px',
-                    color: 'var(--color-text-muted)',
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    padding: '4px 0',
-                  }}
-                >
-                  {expanded ? '收起' : `展开全部 ${(s.articles || []).length} 篇`}
+              {shown.length > 0 && (
+                <ul style={{ listStyle: 'none', margin: '4px 0 0', paddingLeft: '14px' }}>
+                  {shown.map((a, j) => (
+                    <li key={a.url || j} style={{ fontSize: '12px', lineHeight: 1.6 }}>
+                      <a href={a.url} target="_blank" rel="noreferrer"
+                        style={{ color: 'var(--color-text-body)', textDecoration: 'none' }}
+                        onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-brass)'}
+                        onMouseLeave={(e) => e.currentTarget.style.color = 'var(--color-text-body)'}
+                      >{a.title}</a>
+                      {a.source_name && (
+                        <span style={{ fontSize: '10px', color: 'var(--color-text-label)', marginLeft: 4 }}> · {a.source_name}</span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {(s.articles?.length || 0) > 2 && (
+                <button onClick={() => toggleExpand(i)}
+                  style={{ fontSize: '11px', color: 'var(--color-brass)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 0', marginLeft: 14 }}>
+                  {isExpanded ? '收起' : `展开全部 ${(s.articles || []).length} 篇`}
                 </button>
               )}
             </div>
@@ -200,27 +128,15 @@ export default function DailyBriefing({ date }) {
         })}
       </div>
 
-      <div style={{ display: 'flex', gap: '12px', marginTop: '14px', fontSize: '12px' }}>
-        <button
-          onClick={share}
-          style={{
-            color: 'var(--color-text-muted)',
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            padding: 0,
-          }}
-        >
-          {copied ? '已复制链接 ✓' : '分享今日速览'}
+      <div style={{ display: 'flex', gap: 12, marginTop: 8, fontSize: '12px' }}>
+        <button onClick={share}
+          style={{ color: 'var(--color-text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+          {copied ? '已复制链接' : '分享今日速览'}
         </button>
         {total > 3 && (
-          <a
-            href={`/digest/${date}`}
-            target="_blank"
-            rel="noreferrer"
-            style={{ color: 'var(--color-blue-link)', textDecoration: 'none' }}
-          >
-            查看完整简报 ↗
+          <a href={`/digest/${date}`} target="_blank" rel="noreferrer"
+            style={{ color: 'var(--color-brass)', textDecoration: 'none' }}>
+            查看完整简报
           </a>
         )}
       </div>
