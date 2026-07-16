@@ -194,6 +194,45 @@ class DatabaseManager:
             if cached is not None:
                 return cached
 
+        # 有关键词时走 RPC 搜索（ts_rank 排序 + pg_trgm 索引）
+        if keyword:
+            try:
+                offset = (page - 1) * page_size
+                # 获取按相关性排序的结果
+                rpc_result = self.client.rpc(
+                    "search_articles_ranked",
+                    {
+                        "search_query": keyword,
+                        "result_limit": page_size,
+                        "result_offset": offset,
+                    }
+                ).execute()
+                # 获取总数
+                count_result = self.client.rpc(
+                    "search_articles_count",
+                    {"search_query": keyword}
+                ).execute()
+
+                items = rpc_result.data or []
+                total = count_result.data[0]["search_articles_count"] if count_result.data else 0
+
+                data = {
+                    "items": items,
+                    "total": total,
+                    "page": page,
+                    "page_size": page_size,
+                    "pages": (total + page_size - 1) // page_size if page_size > 0 else 0,
+                }
+
+                # 缓存搜索结果（5分钟）
+                cache_key_str = cache_key("search", keyword, page, page_size)
+                cache.set(cache_key_str, data, ttl=300)
+
+                return data
+            except Exception as e:
+                print(f"    [DB] RPC 搜索失败，降级到普通搜索: {e}")
+                # 降级到普通搜索
+
         query = self.client.table("articles").select("*", count="exact")
 
         # 过滤条件
