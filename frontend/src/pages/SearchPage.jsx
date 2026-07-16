@@ -57,20 +57,23 @@ export default function SearchPage() {
   return (
     <div className="flex-1 flex flex-col min-h-0" style={{ background: 'var(--color-bg-white)' }}>
       <div className="flex-1 overflow-y-auto">
-        <div className="px-5 lg:px-6 py-5" style={{ maxWidth: '1200px', margin: '0 auto' }}>
+        <div className="px-5 lg:px-6 py-5" style={{ maxWidth: '800px', margin: '0 auto' }}>
           <div className="mb-5">
-            <button onClick={() => navigate('/')} style={{ fontSize: 'var(--fs-sm)', color: 'var(--color-blue-link)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+            <button onClick={() => navigate('/')} style={{ fontSize: '12px', color: 'var(--color-text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
               ← 返回首页
             </button>
           </div>
 
-          <div className="mb-6" style={{ borderBottom: '1px solid var(--color-border-light)', paddingBottom: '16px' }}>
-            <h1 style={{ fontFamily: "var(--font-display)", fontSize: 'var(--fs-xl)', fontWeight: 700, color: 'var(--color-text-title)', marginBottom: '4px' }}>
-              搜索结果
-            </h1>
+          <div className="mb-6" style={{ paddingBottom: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
+              <h1 style={{ fontFamily: "var(--font-display)", fontSize: '20px', fontWeight: 700, color: 'var(--color-text-title)' }}>
+                搜索结果
+              </h1>
+              <span style={{ flex: 1, height: '1px', background: 'linear-gradient(90deg, var(--color-brass) 0%, var(--color-border-light) 100%)', minWidth: 40 }} />
+            </div>
             {query && !loading && results && (
-              <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--color-text-muted)' }}>
-                关键词 "<span style={{ color: 'var(--color-text-title)', fontWeight: 500 }}>{query}</span>" · 共 {results.total} 条结果
+              <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
+                关键词 "<span style={{ color: 'var(--color-text-title)', fontWeight: 500 }}>{query}</span>" · {results.total}
               </div>
             )}
           </div>
