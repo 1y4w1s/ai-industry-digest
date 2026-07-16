@@ -183,7 +183,7 @@ jobs:
               pm2 start /home/ubuntu/.local/bin/uvicorn \
                 --name signal-backend \
                 --interpreter python3 \
-                -- api.main:app --host 0.0.0.0 --port 8000
+                -- api.main:app --host 0.0.0.0 --port 8000 --workers 4
             echo "   ✅ 后端服务已重启"
 
             echo ""
