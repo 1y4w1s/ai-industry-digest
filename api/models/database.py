@@ -15,6 +15,11 @@ from collector.base import Article
 from api.services.cache import cache, cache_key, invalidate_cache
 from api.services.logger import logger
 
+from .article_repo import ArticleRepository
+from .user_repo import UserRepository
+from .bookmark_repo import BookmarkRepository
+from .chat_repo import ChatRepository
+
 load_dotenv()
 
 
@@ -37,6 +42,16 @@ class DatabaseManager:
         self._url = url
         self._key = key
         self.client: Client = self._create_client()
+
+        # 仓储层
+        from .article_repo import ArticleRepository
+        from .user_repo import UserRepository
+        from .bookmark_repo import BookmarkRepository
+        from .chat_repo import ChatRepository
+        self.articles = ArticleRepository(self.client)
+        self.users = UserRepository(self.client)
+        self.bookmarks_obj = BookmarkRepository(self.client)
+        self.chat_repo = ChatRepository(self.client)
 
     def _create_client(self) -> Client:
         """创建 Supabase 客户端"""
