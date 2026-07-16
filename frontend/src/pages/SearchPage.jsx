@@ -4,21 +4,8 @@ import { api } from '../api/client';
 import ArticleCard from '../components/ArticleCard';
 import Pagination from '../components/Pagination';
 import AIRecommendPanel from '../components/AIRecommendPanel';
+import SkeletonCard from '../components/SkeletonCard';
 
-function SkeletonCard() {
-  return (
-    <div style={{
-      padding: '16px 0',
-      borderBottom: '1px solid var(--color-border-light)',
-      animation: 'pulse 1.5s ease-in-out infinite',
-    }}>
-      <div style={{ height: 14, width: '35%', background: 'var(--color-border-light)', borderRadius: 4, marginBottom: 10 }} />
-      <div style={{ height: 18, width: '75%', background: 'var(--color-border-light)', borderRadius: 4, marginBottom: 8 }} />
-      <div style={{ height: 13, width: '60%', background: 'var(--color-border-light)', borderRadius: 4, marginBottom: 6 }} />
-      <div style={{ height: 13, width: '45%', background: 'var(--color-border-light)', borderRadius: 4 }} />
-    </div>
-  );
-}
 
 const SUGGESTIONS = [
   'OpenAI', '大模型', '融资', 'AI 医疗', '自动驾驶', '量子计算',

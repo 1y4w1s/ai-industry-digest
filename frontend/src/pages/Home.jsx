@@ -4,6 +4,7 @@ import { useReport } from '../hooks/useReport';
 import { useFilter } from '../hooks/useFilter';
 import { api } from '../api/client';
 import { rankArticles } from '../lib/ranking';
+import SkeletonCard from '../components/SkeletonCard';
 import ArticleReader from '../components/ArticleReader';
 import SidePanel from '../components/SidePanel';
 import DateNav from '../components/DateNav';
@@ -176,7 +177,9 @@ export default function Home() {
             )}
 
             {detailLoading ? (
-              <div className="text-center py-16 text-sm" style={{ color: 'var(--color-text-label)' }}>加载中...</div>
+              <div className="space-y-0">
+                <SkeletonCard /><SkeletonCard /><SkeletonCard />
+              </div>
             ) : displayReporting ? (
               <>
                 {/* P1b 首页架构反转：原始文章流降级为「全部 AI 信号」归档区，

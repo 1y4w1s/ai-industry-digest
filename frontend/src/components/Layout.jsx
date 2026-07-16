@@ -190,11 +190,11 @@ export default function Layout() {
             <button
               type="button"
               onClick={() => navigate('/profile')}
-              className="flex items-center gap-2 px-2 py-1.5 rounded transition-all w-full"
+              className="flex items-center gap-2 px-2 py-2.5 rounded transition-all w-full"
               style={{ cursor: 'pointer', background: 'transparent', border: 'none', textAlign: 'left', color: 'inherit' }}
               aria-label="个人主页"
             >
-              <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-semibold flex-shrink-0" style={{ background: 'var(--color-brass-bg)', color: 'var(--color-brass)' }}>
+              <div className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-semibold flex-shrink-0" style={{ background: 'var(--color-brass-bg)', color: 'var(--color-brass)' }}>
                 {(user?.nickname || 'U')[0].toUpperCase()}
               </div>
               <span style={{ fontSize: 12, color: 'var(--color-text-title)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.nickname}</span>
@@ -203,8 +203,8 @@ export default function Layout() {
               </button>
             </button>
           ) : (
-            <button onClick={handleLogin} className="flex items-center gap-2 w-full px-2 py-1.5 rounded transition-all" style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
-              <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-semibold flex-shrink-0" style={{ background: 'var(--color-bg-off)', color: 'var(--color-text-muted)' }}>
+            <button onClick={handleLogin} className="flex items-center gap-2 w-full px-2 py-2.5 rounded transition-all" style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+              <div className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-semibold flex-shrink-0" style={{ background: 'var(--color-bg-off)', color: 'var(--color-text-muted)' }}>
                 ?
               </div>
               <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>登录</span>

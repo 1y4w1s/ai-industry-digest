@@ -55,7 +55,7 @@ function ArticleCard({ article, onSelect, variant = 'compact', keyword }) {
         border: 'none',
         borderBottom: '1px solid var(--color-border-light)',
         cursor: 'pointer',
-        padding: '10px 0',
+        padding: '12px 0',
         font: 'inherit',
         color: 'inherit',
         transition: 'opacity 0.15s',
