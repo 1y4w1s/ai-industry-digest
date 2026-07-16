@@ -61,7 +61,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4" style={{
-      background: 'linear-gradient(135deg, #1C1814 0%, #2D2824 30%, #3A3228 60%, #2D2824 100%)',
+      background: 'linear-gradient(135deg, var(--color-bg-sidebar) 0%, var(--color-bg-off) 30%, var(--color-bg-hover) 60%, var(--color-bg-off) 100%)',
       position: 'relative',
       overflow: 'hidden',
     }}>
