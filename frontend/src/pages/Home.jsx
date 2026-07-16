@@ -189,8 +189,8 @@ export default function Home() {
                     全部信号
                   </span>
                   <span style={{ flex: 1, height: '1px', background: 'linear-gradient(90deg, var(--color-brass) 0%, var(--color-border-light) 100%)' }} />
-                  <span style={{ fontSize: '11px', color: 'var(--color-text-label)', whiteSpace: 'nowrap' }}>
-                    共 {articles.length} 篇
+                  <span style={{ fontSize: '10px', color: 'var(--color-text-label)', whiteSpace: 'nowrap', opacity: 0.7 }}>
+                    共 {articles.length}
                   </span>
                 </div>
                 {heroArticle && <HeroArticle article={heroArticle} onSelect={goToArticle} />}

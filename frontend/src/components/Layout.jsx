@@ -122,7 +122,7 @@ export default function Layout() {
       <div className={`sidebar-overlay no-print ${mobileSidebarOpen ? 'open' : ''}`} onClick={closeSidebar} />
 
       <aside
-        className={`fixed lg:static z-50 inset-y-0 left-0 flex flex-col flex-shrink-0 transition-all duration-300 no-print ${mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}
+        className={`fixed lg:static z-[60] inset-y-0 left-0 flex flex-col flex-shrink-0 transition-all duration-300 no-print ${mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}
         style={{
           width: '240px',
           background: 'var(--color-bg-sidebar)',
@@ -178,7 +178,7 @@ export default function Layout() {
           })}
         </nav>
 
-        <div className="flex-shrink-0 px-3 pb-3 space-y-1 border-t" style={{ borderColor: 'var(--color-border-light)' }}>
+        <div className="flex-shrink-0 px-3 pb-3 pt-3 space-y-1 border-t" style={{ borderColor: 'var(--color-border-light)' }}>
 
           <RecentItems onItemClick={closeSidebar} />
 
@@ -194,7 +194,7 @@ export default function Layout() {
                 {(user?.nickname || 'U')[0].toUpperCase()}
               </div>
               <span style={{ fontSize: 12, color: 'var(--color-text-title)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.nickname}</span>
-              <button onClick={(e) => { e.stopPropagation(); logout(); }} className="hover:text-current" style={{ fontSize: 10, color: 'var(--color-text-label)', background: 'none', border: 'none', cursor: 'pointer', padding: 4 }} aria-label="退出登录">
+              <button onClick={(e) => { e.stopPropagation(); logout(); }} className="hover:text-current" style={{ fontSize: 10, color: 'var(--color-text-label)', background: 'none', border: 'none', cursor: 'pointer', padding: 8 }} aria-label="退出登录">
                 <NavIcon name="logout" />
               </button>
             </button>
@@ -310,7 +310,7 @@ export default function Layout() {
       </div>
 
       <KeyboardShortcuts />
-      <MobileNav />
+      <MobileNav hidden={mobileSidebarOpen} />
       {location.pathname === '/' && <Onboarding />}
     </div>
   );

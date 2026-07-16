@@ -53,23 +53,24 @@ function ArticleCard({ article, onSelect, variant = 'compact', keyword }) {
         textAlign: 'left',
         background: 'transparent',
         border: 'none',
-        borderBottom: '1px solid var(--color-border-light)',
+        borderBottom: '1px solid var(--color-border)',
         cursor: 'pointer',
         padding: '12px 0',
         font: 'inherit',
         color: 'inherit',
-        transition: 'opacity 0.15s',
+        transition: 'background 0.15s',
+        borderRadius: 4,
       }}
       aria-label={article.title}
-      onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.75'; }}
-      onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; }}
+      onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-bg-hover)'; }}
+      onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
     >
       {/* 重要性指示点 */}
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
         <span style={{
           width: 5, height: 5, borderRadius: '50%',
           background: impColor,
-          flexShrink: 0, marginTop: 8,
+          flexShrink: 0, alignSelf: 'flex-start', marginTop: 6,
         }} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <span style={{

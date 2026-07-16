@@ -7,9 +7,11 @@ const TABS = [
   { path: '/profile', label: '我的', icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z' },
 ];
 
-export default function MobileNav() {
+export default function MobileNav({ hidden }) {
   const location = useLocation();
   const navigate = useNavigate();
+
+  if (hidden) return null;
 
   return (
     <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50"

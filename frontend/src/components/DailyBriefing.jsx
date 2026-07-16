@@ -128,14 +128,14 @@ export default function DailyBriefing({ date }) {
         })}
       </div>
 
-      <div style={{ display: 'flex', gap: 12, marginTop: 8, fontSize: '12px' }}>
+      <div style={{ display: 'flex', gap: 16, marginTop: 8, fontSize: '13px' }}>
         <button onClick={share}
-          style={{ color: 'var(--color-text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+          style={{ color: 'var(--color-text-body)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0', fontWeight: 500 }}>
           {copied ? '已复制链接' : '分享今日速览'}
         </button>
         {total > 3 && (
           <a href={`/digest/${date}`} target="_blank" rel="noreferrer"
-            style={{ color: 'var(--color-brass)', textDecoration: 'none' }}>
+            style={{ color: 'var(--color-brass)', textDecoration: 'none', fontWeight: 500 }}>
             查看完整简报
           </a>
         )}
