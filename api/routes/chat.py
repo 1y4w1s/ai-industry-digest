@@ -17,6 +17,7 @@ from api.models.database import get_db
 from api.services.tag_extractor import TagExtractor
 from api.services.cache import cache, cache_key
 from api.services.intent_classifier import classify_intent, get_classifier
+from api.services.logger import logger
 
 router = APIRouter()
 db = get_db()
@@ -469,6 +470,6 @@ def _extract_tags(user_id: str, message: str, db_instance):
         for tag in matched_tags:
             db_instance.upsert_user_tag(user_id, tag, source='chat')
         if matched_tags:
-            print(f"  [TAG] 用户 {user_id[:8]}... 匹配到标签: {matched_tags}")
+            logger.info("标签匹配", extra={"user_id": user_id[:8], "tags": matched_tags})
     except Exception as e:
-        print(f"  [TAG] 提取失败（不阻塞）: {e}")
+        logger.warning("标签提取失败", extra={"error": str(e)[:100]})

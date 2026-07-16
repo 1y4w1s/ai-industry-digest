@@ -15,9 +15,10 @@ try:
     REDIS_AVAILABLE = True
 except ImportError:
     REDIS_AVAILABLE = False
-    print("[Cache] redis 库未安装，缓存功能将降级")
+    logger.warning("redis 库未安装，缓存功能将降级")
 
 from dotenv import load_dotenv
+from api.services.logger import logger
 
 load_dotenv()
 
@@ -142,7 +143,7 @@ class CacheService:
             return 0
         except Exception as e:
             self._stats["errors"] += 1
-            print(f"[Cache] 批量删除缓存失败: {e}")
+            logger.error("批量删除缓存失败", extra={"error": str(e)})
             return 0
 
     def get_stats(self) -> Dict[str, Any]:

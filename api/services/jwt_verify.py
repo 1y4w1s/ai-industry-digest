@@ -13,6 +13,7 @@ import jwt
 from typing import Optional
 
 from supabase import create_client, Client
+from api.services.logger import logger
 
 # Demo 用户配置
 DEMO_USER_ID = "demo-user"
@@ -63,6 +64,6 @@ def verify_token(token: str) -> Optional[str]:
         if response.user and response.user.id:
             return response.user.id
     except Exception as e:
-        print(f"[JWT] Supabase 验证失败: {type(e).__name__}: {str(e)[:100]}")
+        logger.warning("Supabase JWT 验证失败", extra={"error": str(e)[:100]})
     
     return None  # 验证失败

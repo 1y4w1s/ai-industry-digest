@@ -181,12 +181,13 @@ async def shutdown():
     await asyncio.sleep(3)
     # 3. 释放 Redis 连接
     try:
+        from api.services.logger import logger
         from api.services.cache import cache
         if cache._redis:
             cache._redis.close()
     except Exception:
         pass  # 关闭阶段，Redis 释放失败不阻塞
-    print("[Shutdown] 优雅关闭完成")
+    logger.info("优雅关闭完成")
 
 # ── 静态文件托管 ────────────────────────────
 

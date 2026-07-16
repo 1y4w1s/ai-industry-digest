@@ -10,7 +10,7 @@ import KeyboardShortcuts from './KeyboardShortcuts';
 import MobileNav from './MobileNav';
 import LaoQianLogo from './LaoQianLogo';
 
-const ADMIN_USER = '1y4w1s';
+const ADMIN_USER = import.meta.env.VITE_ADMIN_USER || '1y4w1s';
 
 function useNavItems(user) {
   const base = [

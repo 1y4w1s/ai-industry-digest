@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 
 from collector.base import Article
 from api.services.cache import cache, cache_key, invalidate_cache
+from api.services.logger import logger
 
 load_dotenv()
 
@@ -84,7 +85,7 @@ class DatabaseManager:
                 if resp.data:
                     existing_urls.update(item["url"] for item in resp.data)
             except Exception as e:
-                print(f"    [DB ERROR] 批量查重失败: {e}")
+                logger.error("批量查重失败", extra={"error": str(e)})
                 result["errors"] += 1
                 # 降级：逐条处理
                 return self._save_articles_fallback(articles)
@@ -120,7 +121,7 @@ class DatabaseManager:
                     .execute()
                 result["inserted"] += len(data_list)
             except Exception as e:
-                print(f"    [DB ERROR] 批量写入失败: {e}")
+                logger.error("批量写入失败", extra={"error": str(e)})
                 result["errors"] += len(data_list)
 
         # 清除文章列表缓存
@@ -157,7 +158,7 @@ class DatabaseManager:
                 self.client.table("articles").insert(data).execute()
                 result["inserted"] += 1
             except Exception as e:
-                print(f"    [DB ERROR] 写入失败 [{article.url[:50]}...]: {e}")
+                logger.error("写入失败", extra={"url": article.url[:50], "error": str(e)})
                 result["errors"] += 1
         if result["inserted"] > 0:
             invalidate_cache("articles:*")
@@ -230,7 +231,7 @@ class DatabaseManager:
 
                 return data
             except Exception as e:
-                print(f"    [DB] RPC 搜索失败，降级到普通搜索: {e}")
+                logger.warning("RPC 搜索降级", extra={"error": str(e)[:100]})
                 # 降级到普通搜索
 
         query = self.client.table("articles").select("*", count="exact")

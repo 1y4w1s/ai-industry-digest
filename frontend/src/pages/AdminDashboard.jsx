@@ -91,7 +91,7 @@ function SourceDistribution({ sources }) {
   );
 }
 
-const ADMIN_USER = '1y4w1s';
+const ADMIN_USER = import.meta.env.VITE_ADMIN_USER || '1y4w1s';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();

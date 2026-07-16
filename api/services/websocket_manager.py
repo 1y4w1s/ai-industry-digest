@@ -9,6 +9,7 @@ import time
 from typing import Dict, Set, Optional, Any
 from datetime import datetime
 from fastapi import WebSocket
+from api.services.logger import logger
 
 
 class ConnectionManager:
