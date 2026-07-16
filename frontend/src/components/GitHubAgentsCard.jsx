@@ -68,8 +68,8 @@ export default function GitHubAgentsCard({ range = 'week', minStars = 100, sort 
       >
         今日 GitHub 推荐
       </h2>
-      <p style={{ fontSize: '12px', color: 'var(--color-text-label)', margin: '0 0 14px' }}>
-        按 Star 数降序 · ⚡ 为近期创建且日增迅速的新项目
+      <p style={{ fontSize: '13px', color: 'var(--color-text-muted)', margin: '0 0 14px', lineHeight: 1.6 }}>
+        实时从 GitHub 发掘近期最活跃的 AI Agent 开源项目，按 Star 数排序，帮你快速发现有价值的工具与框架。
       </p>
 
       {loading && (

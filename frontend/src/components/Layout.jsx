@@ -154,9 +154,20 @@ export default function Layout() {
                   paddingRight: '12px',
                   color: isActive ? 'var(--color-brand-ink)' : 'var(--color-text-muted)',
                   fontWeight: isActive ? 600 : 500,
+                  background: isActive ? 'var(--color-bg-hover)' : 'transparent',
+                  borderRadius: 8,
+                  position: 'relative',
+                  transition: 'all 0.15s var(--ease)',
                 }}
                 aria-current={isActive ? 'page' : undefined}
               >
+                {isActive && (
+                  <span style={{
+                    position: 'absolute', left: 0, top: '50%', translate: '0 -50%',
+                    width: 3, height: 18, borderRadius: 2,
+                    background: 'var(--color-brand-ink)',
+                  }} />
+                )}
                 <NavIcon name={item.icon} />
                 <span style={{ flex: 1, textAlign: 'left' }}>{item.label}</span>
                 {item.path === '/' && (

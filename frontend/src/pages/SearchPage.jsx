@@ -5,6 +5,26 @@ import ArticleCard from '../components/ArticleCard';
 import Pagination from '../components/Pagination';
 import AIRecommendPanel from '../components/AIRecommendPanel';
 
+function SkeletonCard() {
+  return (
+    <div style={{
+      padding: '16px 0',
+      borderBottom: '1px solid var(--color-border-light)',
+      animation: 'pulse 1.5s ease-in-out infinite',
+    }}>
+      <div style={{ height: 14, width: '35%', background: 'var(--color-border-light)', borderRadius: 4, marginBottom: 10 }} />
+      <div style={{ height: 18, width: '75%', background: 'var(--color-border-light)', borderRadius: 4, marginBottom: 8 }} />
+      <div style={{ height: 13, width: '60%', background: 'var(--color-border-light)', borderRadius: 4, marginBottom: 6 }} />
+      <div style={{ height: 13, width: '45%', background: 'var(--color-border-light)', borderRadius: 4 }} />
+    </div>
+  );
+}
+
+const SUGGESTIONS = [
+  'OpenAI', '大模型', '融资', 'AI 医疗', '自动驾驶', '量子计算',
+  'GPT', 'Claude', 'Google', 'Meta', '腾讯', '百度',
+];
+
 export default function SearchPage() {
   const [searchParams] = useSearchParams();
   const query = searchParams.get('q') || '';
@@ -71,13 +91,12 @@ export default function SearchPage() {
           <div className="flex gap-6" style={{ position: 'relative' }}>
             <div className="flex-1 min-w-0">
               {loading && (
-                <div className="text-center py-16">
-                  <div className="flex gap-1.5 justify-center mb-3">
-                    <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: 'var(--color-text-label)', animationDelay: '0ms' }} />
-                    <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: 'var(--color-text-label)', animationDelay: '150ms' }} />
-                    <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: 'var(--color-text-label)', animationDelay: '300ms' }} />
-                  </div>
-                  <span style={{ fontSize: 'var(--fs-sm)', color: 'var(--color-text-muted)' }}>搜索中...</span>
+                <div className="space-y-0">
+                  <SkeletonCard />
+                  <SkeletonCard />
+                  <SkeletonCard />
+                  <SkeletonCard />
+                  <SkeletonCard />
                 </div>
               )}
 
@@ -90,17 +109,39 @@ export default function SearchPage() {
               )}
 
               {!loading && results && results.items.length === 0 && (
-                <div className="text-center py-20">
+                <div className="text-center py-16">
                   <div style={{ width: '48px', height: '48px', margin: '0 auto 16px', borderRadius: '50%', background: 'var(--color-bg-hover)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-label)" strokeWidth={1.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                   </div>
                   <p style={{ fontSize: '14px', color: 'var(--color-text-title)', marginBottom: '4px' }}>未找到相关文章</p>
-                  <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--color-text-muted)', marginBottom: '12px' }}>试试其他关键词，或询问 AI 助手获取推荐</p>
-                  <a href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: 'var(--color-blue-link)', textDecoration: 'none' }}>
-                    去看看今日日报 →
-                  </a>
+                  <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--color-text-muted)', marginBottom: '16px' }}>试试其他关键词，或浏览热门话题</p>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '6px', maxWidth: '400px', margin: '0 auto' }}>
+                    {SUGGESTIONS.map((tag) => (
+                      <button
+                        key={tag}
+                        onClick={() => navigate(`/search?q=${encodeURIComponent(tag)}`)}
+                        style={{
+                          fontSize: 12, padding: '4px 12px',
+                          borderRadius: 999, border: '1px solid var(--color-border-light)',
+                          background: 'var(--color-bg-off)',
+                          color: 'var(--color-text-body)',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s',
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--color-brand-ink)'; e.currentTarget.style.color = 'var(--color-brand-ink)'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--color-border-light)'; e.currentTarget.style.color = 'var(--color-text-body)'; }}
+                      >
+                        {tag}
+                      </button>
+                    ))}
+                  </div>
+                  <div style={{ marginTop: 16 }}>
+                    <a href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: 'var(--color-blue-link)', textDecoration: 'none' }}>
+                      去看看今日日报 →
+                    </a>
+                  </div>
                 </div>
               )}
 
