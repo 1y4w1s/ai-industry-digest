@@ -130,7 +130,7 @@ export default function Home() {
 
       <div className="flex-1 flex overflow-hidden">
         <div className="flex-1 min-w-0 overflow-y-auto">
-          <div className="px-5 lg:px-6" style={{ paddingTop: '20px', paddingBottom: '32px', maxWidth: '800px', margin: '0 auto' }}>
+          <div className="px-5 lg:px-6 content-area" style={{ paddingTop: '20px', paddingBottom: '32px', maxWidth: '800px', margin: '0 auto' }}>
             {/* 品牌 Hero 行 */}
             <div className="reveal-up" style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 20 }}>
               <span style={{ fontFamily: 'var(--font-display)', fontSize: '15px', fontWeight: 700, color: 'var(--color-text-title)', letterSpacing: '0.04em' }}>

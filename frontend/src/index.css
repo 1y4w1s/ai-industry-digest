@@ -134,6 +134,14 @@ body {
   }
 }
 
+/* ── 平板端内容区 padding ───────────────── */
+@media (max-width: 860px) {
+  .content-area {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+}
+
 ::selection { background: var(--color-brand-ink); color: #fff; }
 
 /* Hide scrollbar utility */
