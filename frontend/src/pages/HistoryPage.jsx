@@ -78,13 +78,16 @@ export default function HistoryPage() {
               </button>
             </div>
           ) : (<>
-          <div className="flex items-center justify-between mb-6" style={{ borderBottom: '1px solid var(--color-border-light)', paddingBottom: '16px' }}>
+          <div className="flex items-center justify-between mb-6" style={{ paddingBottom: '16px' }}>
             <div>
-              <h1 style={{ fontFamily: "var(--font-display)", fontSize: 'var(--fs-xl)', fontWeight: 700, color: 'var(--color-text-title)' }}>
-                浏览历史
-              </h1>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
+                <h1 style={{ fontFamily: "var(--font-display)", fontSize: '20px', fontWeight: 700, color: 'var(--color-text-title)' }}>
+                  浏览历史
+                </h1>
+                <span style={{ flex: 1, height: '1px', background: 'linear-gradient(90deg, var(--color-brass) 0%, var(--color-border-light) 100%)', minWidth: 40 }} />
+              </div>
               {history && (
-                <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--color-text-muted)', marginTop: '4px' }}>
+                <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginTop: 2 }}>
                   共 {history.total} 条记录
                 </div>
               )}

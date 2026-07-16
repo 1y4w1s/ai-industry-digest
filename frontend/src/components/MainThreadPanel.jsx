@@ -3,8 +3,7 @@ import { api } from '../api/client';
 
 /**
  * 今日主线（改造计划 §2.1）
- * 复用 /api/main-thread 的同一份 cluster 数据，在侧边栏展示聚类主线 + 挂文。
- * 与邮件简报同口径；接口不可达时静默隐藏（优雅降级）。
+ * 侧边栏展示聚类主线 + 挂文，金色左边框强调。
  */
 export default function MainThreadPanel({ date }) {
   const [data, setData] = useState(null);
@@ -22,58 +21,54 @@ export default function MainThreadPanel({ date }) {
   }, [date]);
 
   const stories = (data && data.stories) || [];
-  // 加载中或无聚类结果时不占版面
   if (!loading && stories.length === 0) return null;
 
   return (
-    <div style={{ borderRadius: '4px', padding: '16px', background: 'var(--color-bg-off)' }}>
-      <h3 className="font-heading font-semibold text-xs uppercase tracking-wider mb-3" style={{ color: 'var(--color-text-muted)' }}>
-        <span style={{ marginRight: '6px' }}>🧭</span> 今日主线
+    <div style={{
+      borderLeft: '3px solid var(--color-brass)',
+      padding: '0 0 0 14px',
+      marginBottom: 24,
+    }}>
+      <h3 style={{
+        fontFamily: 'var(--font-display)',
+        fontSize: '13px', fontWeight: 600,
+        color: 'var(--color-text-title)',
+        marginBottom: 12,
+      }}>
+        今日主线
       </h3>
-      <div className="space-y-3">
-        {stories.map((s, i) => (
-          <div key={s.title || i}>
-            <div className="flex items-center gap-2 flex-wrap">
-              {s.entity && (
-                <span
-                  style={{
-                    fontSize: '10px',
-                    padding: '1px 7px',
-                    borderRadius: '999px',
-                    background: 'var(--color-border-light)',
-                    color: 'var(--color-text-muted)',
-                  }}
-                >
-                  {s.entity}
+      {loading ? (
+        <div style={{ height: 60, background: 'var(--color-bg-hover)', borderRadius: 6, opacity: 0.5 }} />
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {stories.map((s, i) => (
+            <div key={i}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                {s.entity && (
+                  <span style={{
+                    fontSize: '10px', fontWeight: 600, padding: '1px 7px',
+                    borderRadius: 999, background: 'var(--color-brass-bg)',
+                    color: 'var(--color-brass)',
+                  }}>{s.entity}</span>
+                )}
+                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-text-title)', lineHeight: 1.4 }}>
+                  {s.title}
                 </span>
-              )}
-              <span className="text-xs font-semibold" style={{ color: 'var(--color-text-title)' }}>
-                {s.title}
-              </span>
-            </div>
-            <ul style={{ listStyle: 'none', margin: '4px 0 0', paddingLeft: 0 }} className="space-y-1">
-              {(s.articles || []).slice(0, 5).map((a, j) => (
-                <li key={a.url || j}>
-                  <a
-                    href={a.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-xs leading-relaxed hover:text-blue-link transition-colors"
-                    style={{ color: 'var(--color-text-body)', textDecoration: 'none' }}
-                  >
-                    {a.title}
-                  </a>
-                  {a.source_name && (
-                    <span style={{ fontSize: '10px', color: 'var(--color-text-label)', marginLeft: '4px' }}>
-                      · {a.source_name}
-                    </span>
-                  )}
-                </li>
+              </div>
+              {(s.articles || []).slice(0, 4).map((a, j) => (
+                <div key={j} style={{ fontSize: '12px', color: 'var(--color-text-muted)', lineHeight: 1.5, paddingLeft: 2 }}>
+                  <a href={a.url} target="_blank" rel="noreferrer"
+                    style={{ color: 'var(--color-text-body)', textDecoration: 'none', transition: 'color 0.15s' }}
+                    onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-brass)'}
+                    onMouseLeave={(e) => e.currentTarget.style.color = 'var(--color-text-body)'}
+                  >{a.title}</a>
+                  {a.source_name && <span style={{ color: 'var(--color-text-label)' }}> · {a.source_name}</span>}
+                </div>
               ))}
-            </ul>
-          </div>
-        ))}
-      </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

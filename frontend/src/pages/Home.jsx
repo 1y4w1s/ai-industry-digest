@@ -130,6 +130,17 @@ export default function Home() {
       <div className="flex-1 flex overflow-hidden">
         <div className="flex-1 min-w-0 overflow-y-auto">
           <div className="px-5 lg:px-6" style={{ paddingTop: '20px', paddingBottom: '32px' }}>
+            {/* 品牌 Hero 行 */}
+            <div className="reveal-up" style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 20 }}>
+              <span style={{ fontFamily: 'var(--font-display)', fontSize: '15px', fontWeight: 700, color: 'var(--color-text-title)', letterSpacing: '0.04em' }}>
+                今日速览
+              </span>
+              <span style={{ flex: 1, height: '1px', background: 'linear-gradient(90deg, var(--color-brass) 0%, var(--color-border-light) 100%)' }} />
+              <span style={{ fontSize: '11px', color: 'var(--color-brass)', fontWeight: 500 }}>
+                编辑部精选
+              </span>
+            </div>
+
             {/* 今日速览：首页首屏 hero（每日速览首屏改造 P0），置于文章列表之前 */}
             <DailyBriefing date={selectedDate} />
 
@@ -139,7 +150,7 @@ export default function Home() {
             {reports.length > 0 && (
               <>
                 {fromCache && (
-                  <div style={{ fontSize: '11px', color: '#C8960A', marginBottom: '12px', padding: '6px 12px', background: 'rgba(200,150,10,0.06)', borderRadius: '4px', border: '1px solid rgba(200,150,10,0.15)' }}>
+                  <div style={{ fontSize: '11px', color: 'var(--color-brass)', marginBottom: '12px', padding: '6px 12px', background: 'var(--color-brass-bg)', borderRadius: '6px' }}>
                     ⚠ 数据加载失败 · 显示{cacheAge !== null ? `${cacheAge} 分钟前` : ''}的缓存
                   </div>
                 )}
@@ -167,11 +178,11 @@ export default function Home() {
               <>
                 {/* P1b 首页架构反转：原始文章流降级为「全部 AI 信号」归档区，
                     顶部「今日速览」+ 侧栏主线固化为首页编辑部主干。 */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '4px', marginBottom: '16px' }}>
-                  <span style={{ fontFamily: 'var(--font-display)', fontSize: '13px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--color-text-title)' }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginTop: 4, marginBottom: 16 }}>
+                  <span style={{ fontFamily: 'var(--font-display)', fontSize: '14px', fontWeight: 700, color: 'var(--color-text-title)', letterSpacing: '0.04em' }}>
                     全部 AI 信号
                   </span>
-                  <span style={{ flex: 1, height: '1px', background: 'var(--color-border-light)' }} />
+                  <span style={{ flex: 1, height: '1px', background: 'linear-gradient(90deg, var(--color-brass) 0%, var(--color-border-light) 100%)' }} />
                   <span style={{ fontSize: '11px', color: 'var(--color-text-label)', whiteSpace: 'nowrap' }}>
                     共 {articles.length} 篇
                   </span>
@@ -188,8 +199,10 @@ export default function Home() {
                   <div className="text-center mt-4 no-print">
                     <button
                       onClick={() => setVisibleCount((c) => c + 10)}
-                      className="w-full py-2.5 text-xs rounded transition-colors"
-                      style={{ background: 'var(--color-bg-off)', color: 'var(--color-text-muted)', border: '1px solid var(--color-border-light)', cursor: 'pointer' }}
+                      className="w-full py-2.5 text-xs rounded transition-all"
+                      style={{ background: 'var(--color-bg-off)', color: 'var(--color-text-muted)', border: '1px solid var(--color-border-light)', cursor: 'pointer', boxShadow: 'var(--shadow-1)' }}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--glass-bg)'; e.currentTarget.style.boxShadow = 'var(--glass-shadow)'; e.currentTarget.style.borderColor = 'var(--glass-border)'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--color-bg-off)'; e.currentTarget.style.boxShadow = 'var(--shadow-1)'; e.currentTarget.style.borderColor = 'var(--color-border-light)'; }}
                     >
                       加载更多（{Object.entries(filteredGroups).length - visibleCount} 个来源）
                     </button>
