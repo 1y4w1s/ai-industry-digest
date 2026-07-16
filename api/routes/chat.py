@@ -16,6 +16,7 @@ from api.models.database import get_db
 from api.services.tag_extractor import TagExtractor
 from api.services.cache import cache, cache_key
 from api.services.intent_classifier import classify_intent, get_classifier
+from cachetools import TTLCache
 from api.services.logger import logger
 
 router = APIRouter()
@@ -23,30 +24,7 @@ db = get_db()
 
 # 对话上下文存储（生产环境建议用 Redis，这里用内存简化）
 chat_contexts: dict = {}
-
-# 上下文访问时间记录，用于清理过期上下文
-_context_access: dict = {}
-_CONTEXT_TTL = 1800 # 30 分钟无访问自动清理
-
-def _cleanup_stale_contexts():
-    """清理超过 30 分钟未活跃的对话上下文,防止内存泄漏"""
-    now = time.time()
-    stale_keys = [
-        key for key, last_access in _context_access.items()
-        if now - last_access > _CONTEXT_TTL
-    ]
-    for key in stale_keys:
-        chat_contexts.pop(key, None)
-        _context_access.pop(key, None)
-    if stale_keys:
-        print(f"[Chat] 清理了 {len(stale_keys)} 个过期对话上下文")
-
-def _touch_context(session_id: str):
-    """更新上下文访问时间戳"""
-    _context_access[session_id] = time.time()
-    # 每更新 50 次触发一次全局清理
-    if len(_context_access) % 50 == 0:
-        _cleanup_stale_contexts()
+# TTLCache 自动过期，无需手动清理
 
 # 统计信息（内存存储，生产环境建议用 Redis）
 chat_stats = {
@@ -407,12 +385,7 @@ async def chat(
         ]
         _touch_context(session_id)
 
-        # 限制上下文大小
-        if len(chat_contexts) > 1000:
-            # 简单清理：删除最早的一半
-            keys = list(chat_contexts.keys())[:500]
-            for k in keys:
-                del chat_contexts[k]
+        # 限制上下文大小（TTLCache 自动管理）
 
         # 异步提取标签（不阻塞响应）
         _schedule_tag_extraction(background_tasks, authorization, req.message, db)
