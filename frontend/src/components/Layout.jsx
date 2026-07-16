@@ -179,10 +179,6 @@ export default function Layout() {
         </nav>
 
         <div className="flex-shrink-0 px-3 pb-3 space-y-1 border-t" style={{ borderColor: 'var(--color-border-light)' }}>
-          <div className="flex items-center gap-2 px-2 py-2 mt-2">
-            <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--color-success)' }} />
-            <span style={{ fontSize: 11, color: 'var(--color-text-label)' }}>v2.1 · æä¹¾</span>
-          </div>
 
           <RecentItems onItemClick={closeSidebar} />
 
