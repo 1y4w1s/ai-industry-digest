@@ -446,14 +446,17 @@ def _schedule_tag_extraction(
     if token == "demo-user":
         return
 
-    # 尝试解析 user_id
+    # 尝试解析 user_id（仅用于标签提取，非认证）
     user_id = token
     try:
-        import jwt as pyjwt
-        decoded = pyjwt.decode(token, options={"verify_signature": False})
-        user_id = decoded.get("sub", token)
+        import json, base64
+        parts = token.split(".")
+        if len(parts) == 3:
+            padded = parts[1] + "=" * (4 - len(parts[1]) % 4)
+            payload = json.loads(base64.urlsafe_b64decode(padded))
+            user_id = payload.get("sub", token)
     except Exception:
-        pass
+        pass  # 非关键路径：标签提取失败不阻塞用户请求
 
     background_tasks.add_task(_extract_tags, user_id, message, db_instance)
 

@@ -175,7 +175,7 @@ async def shutdown():
             "message": "服务正在维护，请稍后重新连接"
         })
     except Exception:
-        pass
+        pass  # 关闭阶段，广播失败不阻塞
     # 2. 等待 3 秒让已有请求完成
     import asyncio
     await asyncio.sleep(3)
@@ -185,7 +185,7 @@ async def shutdown():
         if cache._redis:
             cache._redis.close()
     except Exception:
-        pass
+        pass  # 关闭阶段，Redis 释放失败不阻塞
     print("[Shutdown] 优雅关闭完成")
 
 # ── 静态文件托管 ────────────────────────────

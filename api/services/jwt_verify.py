@@ -34,14 +34,6 @@ def _get_supabase_client() -> Client:
     return _supabase_client
 
 
-def _decode_jwt_without_verification(token: str) -> Optional[dict]:
-    """不验证签名直接解码 JWT payload（作为 fallback）"""
-    try:
-        payload = jwt.decode(token, options={"verify_signature": False})
-        return payload
-    except Exception as e:
-        print(f"[JWT] 解码失败: {str(e)[:50]}")
-        return None
 
 
 def verify_token(token: str) -> Optional[str]:

@@ -143,7 +143,7 @@ export default function Layout() {
 
         <nav className="flex-1 py-4 px-3 space-y-0.5 overflow-y-auto" aria-label="主导航">
           {NAV_ITEMS.map((item) => {
-            const isActive = window.location.pathname === item.path;
+            const isActive = location.pathname === item.path;
             return (
               <button
                 key={item.path}
@@ -175,7 +175,7 @@ export default function Layout() {
                     fontSize: 10, fontWeight: 600, padding: '1px 6px',
                     borderRadius: 999, background: 'var(--color-accent-amber-bg)',
                     color: 'var(--color-accent-amber)',
-                  }}>+12</span>
+                  }}>new</span>
                 )}
               </button>
             );
