@@ -7,6 +7,7 @@ import RecentItems from './RecentItems';
 import ScrollProgress from './ScrollProgress';
 import Onboarding from './Onboarding';
 import KeyboardShortcuts from './KeyboardShortcuts';
+import LaoQianLogo from './LaoQianLogo';
 
 const ADMIN_USER = '1y4w1s';
 
@@ -129,15 +130,7 @@ export default function Layout() {
       >
         <div className="h-14 flex items-center px-5 border-b flex-shrink-0" style={{ borderColor: 'var(--color-border-light)' }}>
           <div className="flex items-center gap-2">
-            <div style={{
-              width: 28, height: 28, borderRadius: 6,
-              background: 'var(--color-brand-ink)',
-              color: '#fff',
-              display: 'grid', placeItems: 'center',
-              fontFamily: 'var(--font-display)',
-              fontWeight: 700, fontSize: 15,
-            }}>S</div>
-            <span className="logo logo-lg" style={{ fontSize: 18 }}>Signal</span>
+            <LaoQianLogo size={24} />
           </div>
         </div>
 
@@ -185,7 +178,7 @@ export default function Layout() {
         <div className="flex-shrink-0 px-3 pb-3 space-y-1 border-t" style={{ borderColor: 'var(--color-border-light)' }}>
           <div className="flex items-center gap-2 px-2 py-2 mt-2">
             <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--color-success)' }} />
-            <span style={{ fontSize: 11, color: 'var(--color-text-label)' }}>v2.1 · Signal</span>
+            <span style={{ fontSize: 11, color: 'var(--color-text-label)' }}>v2.1 · æä¹¾</span>
           </div>
 
           <RecentItems onItemClick={closeSidebar} />
@@ -225,13 +218,7 @@ export default function Layout() {
           </button>
 
           <div className="lg:hidden flex items-center gap-2">
-            <div style={{
-              width: 24, height: 24, borderRadius: 5,
-              background: 'var(--color-brand-ink)', color: '#fff',
-              display: 'grid', placeItems: 'center',
-              fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 13,
-            }}>S</div>
-            <span className="font-display" style={{ fontSize: 16, fontWeight: 700, color: 'var(--color-text-title)', letterSpacing: '-0.3px' }}>Signal</span>
+            <LaoQianLogo size={20} />
           </div>
 
           <div className="flex-1" />

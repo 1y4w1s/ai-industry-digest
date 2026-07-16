@@ -1,57 +1,77 @@
 @import "tailwindcss";
 
 /* ============================================================
-   Signal · Modern Editorial Design Tokens (Phase A · 2026-07-12)
+   捞乾 · 墨金设计系统 (Phase B · 2026-07-16)
    --------------------------------------------------------------
-   设计语言：编辑设计风（暖白底+墨绿主色+琥珀强调）
+   设计语言：墨金 · 温润人文 AI 
+   主色：墨 #1C1814（有温度的深色）
+   强调：金 #C8922A（捞乾/捞钱联想）+ 琥珀 #D46520（点缀）
+   底色：仿古纸 #F5F0E8（暖白 canvas）
+   
    字体栈：Fraunces 衬线（标题）+ Inter 无衬线（正文）+ JetBrains Mono
-   节奏：  4 / 8 / 12 / 16 / 24 / 32 / 40 / 64 px（7 档）
    圆角：  6 / 10 / 14 / 20 px（4 档）
-   阴影：  --shadow-1 (浅) / --shadow-2 (中) / --shadow-3 (深)
+   阴影：  --shadow-1 / -2 / -3（柔焦暖阴影）
    动效：  --ease (标准) / --ease-spring (强调) + 0.15/0.25/0.4s
 
-   向后兼容：所有旧 var(--color-*) 名保留，色值升级到 v2。
-   新增 token 全部走 --color-*-v2 / --shadow-* 命名空间。
+   向后兼容：所有旧 var(--color-*) 名保留，无需改动组件代码。
    ============================================================ */
 
 @theme {
-  /* ── Brand & accent (新增) ── */
-  --color-brand-ink: #0F4C3A;       /* deep green - primary */
-  --color-brand-ink-2: #1A6B52;     /* hover */
-  --color-brand-ink-bg: #E8F0EC;    /* tint */
-  --color-accent-amber: #B8860B;
-  --color-accent-amber-bg: #FBF1D6;
-  --color-accent-coral: #D4654A;
+  /* ── 品牌色：墨 + 金 ── */
+  --color-brand-ink: #1C1814;       /* 墨色 — 主色 */
+  --color-brand-ink-2: #2D2824;     /* hover 略浅 */
+  --color-brand-ink-bg: #EBE8E4;    /* tint */
+  --color-brass: #C8922A;           /* 金色 — 品牌强调 */
+  --color-brass-hover: #D9A33B;     /* 金 hover */
+  --color-brass-bg: #F8F0DC;        /* 金 tint */
+  --color-accent-amber: #D46520;    /* 琥珀 — 点缀/CTA */
+  --color-accent-amber-bg: #FBEDE3;
+  --color-accent-coral: #C24A3A;
   --color-accent-coral-bg: #FCEAE3;
 
-  /* ── Legacy tokens (色值升级) ── */
-  --color-bg-white: #F9F7F3;        /* 升级为暖白 canvas */
-  --color-bg-off: #F2EEE6;          /* off-white tint */
-  --color-bg-hover: #ECE5D8;        /* hover tint */
-  --color-bg-toolbar: #ECE5D8;      /* 升级 */
-  --color-bg-sidebar: #FFFFFF;      /* 升级为纯白 */
-  --color-border-light: #E0D9CC;    /* 升级为暖色 line */
-  --color-border: #CDC4B2;
-  --color-border-bold: #A3988E;
-  --color-text-title: #1A1A1A;
+  /* ── 底色（仿古纸暖白系） ── */
+  --color-bg-white: #F5F0E8;        /* 仿古纸 canvas */
+  --color-bg-off: #EDE7DC;          /* off-white tint */
+  --color-bg-hover: #E4DCD0;        /* hover tint */
+  --color-bg-toolbar: #E4DCD0;
+  --color-bg-sidebar: #FFFFFF;       /* 纯白侧栏 */
+  --color-bg-glass: rgba(245,240,232,0.72); /* 毛玻璃 */
+
+  /* ── 边框 ── */
+  --color-border-light: #DDD5C8;
+  --color-border: #CBC1B2;
+  --color-border-bold: #A89B8E;
+
+  /* ── 文字 ── */
+  --color-text-title: #1C1814;
   --color-text-body: #4A4540;
   --color-text-muted: #7A716A;
-  --color-text-label: #A3988E;
-  --color-high: #B23A2C;            /* 略收 */
-  --color-medium: #B8860B;          /* 改为琥珀 */
-  --color-low: #8C9096;
-  --color-blue-link: #0F4C3A;       /* 改为墨绿主色 */
-  --color-success: #2D6A4F;         /* 升级为深绿 */
+  --color-text-label: #A89B8E;
 
-  /* ── Typography (字体升级) ── */
+  /* ── 语义色 ── */
+  --color-high: #C24A3A;
+  --color-medium: #C8922A;
+  --color-low: #8C9096;
+  --color-blue-link: #C8922A;        /* 链接色改为金色 */
+  --color-success: #5B8C6E;
+
+  /* ── 字体 ── */
   --font-display: 'Fraunces', 'Source Serif 4', Georgia, 'Times New Roman', serif;
   --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
 
-  /* ── New tokens ── */
-  --shadow-1: 0 1px 2px rgba(60,45,25,0.05), 0 1px 3px rgba(60,45,25,0.04);
-  --shadow-2: 0 4px 8px rgba(60,45,25,0.06), 0 8px 24px rgba(60,45,25,0.06);
-  --shadow-3: 0 12px 32px rgba(60,45,25,0.10), 0 24px 56px rgba(60,45,25,0.08);
+  /* ── 阴影（暖色柔焦） ── */
+  --shadow-1: 0 1px 2px rgba(28,24,20,0.04), 0 1px 3px rgba(28,24,20,0.03);
+  --shadow-2: 0 4px 8px rgba(28,24,20,0.05), 0 8px 24px rgba(28,24,20,0.05);
+  --shadow-3: 0 12px 32px rgba(28,24,20,0.08), 0 24px 56px rgba(28,24,20,0.06);
+  --shadow-glow: 0 4px 24px rgba(200,146,42,0.15), 0 8px 48px rgba(200,146,42,0.08);
+
+  /* ── 毛玻璃 ── */
+  --glass-bg: rgba(245,240,232,0.72);
+  --glass-border: rgba(200,146,42,0.10);
+  --glass-shadow: 0 8px 32px rgba(28,24,20,0.06);
+
+  /* ── 动效 ── */
   --ease: cubic-bezier(0.2, 0, 0, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
@@ -81,6 +101,31 @@ body {
   border: 2px solid var(--color-bg-white);
 }
 ::-webkit-scrollbar-thumb:hover { background: var(--color-border-bold); }
+
+/* ── 毛玻璃工具类 ──────────────────── */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+/* ── 入场动画 ──────────────────────── */
+.reveal-up {
+  animation: revealUp 0.5s var(--ease-spring) both;
+}
+.reveal-scale {
+  animation: revealScale 0.4s var(--ease-spring) both;
+}
+@keyframes revealUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes revealScale {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
 
 ::selection { background: var(--color-brand-ink); color: #fff; }
 
