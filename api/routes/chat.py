@@ -240,10 +240,13 @@ async def chat(
     if not api_key:
         raise HTTPException(status_code=503, detail="AI 服务未配置（缺少 DEEPSEEK_API_KEY）")
 
-    # 认证
+    # 认证：有 token 但无效时返回 401，无 token 时允许匿名访问
     raw = authorization
-    user_id = verify_token(raw) if raw else DEMO_USER_UUID
-    if not user_id:
+    if raw:
+        user_id = verify_token(raw)
+        if not user_id:
+            raise HTTPException(status_code=401, detail="token 无效或已过期，请重新登录")
+    else:
         user_id = DEMO_USER_UUID
 
     session_id = req.session_id or f"session_{hash(str(req.article_id))}_{os.urandom(4).hex()}"
