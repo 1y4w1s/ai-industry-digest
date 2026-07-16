@@ -697,6 +697,9 @@ class DatabaseManager:
         }
 
     def get_reading_trends(self, user_id: str) -> dict:
+        return self.users.get_reading_trends(user_id)
+
+    def _get_reading_trends_old(self, user_id: str) -> dict:
         """获取阅读趋势统计"""
         history = self.client.table("reading_history") \
             .select("read_at") \
