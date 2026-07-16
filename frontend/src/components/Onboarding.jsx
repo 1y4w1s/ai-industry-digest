@@ -25,101 +25,80 @@ export default function Onboarding() {
 
   return (
     <div
-      role="alert"
+      role="dialog"
+      aria-modal="true"
       aria-label="首次使用引导"
       style={{
-        position: 'relative',
-        zIndex: 100,
-        background: 'var(--color-bg-off)',
-        borderBottom: '1px solid var(--color-border-light)',
-        display: 'flex',
-        justifyContent: 'center',
-        animation: 'slideDown 0.3s var(--ease-spring)',
-        userSelect: 'none',
+        position: 'fixed', inset: 0, zIndex: 200,
+        background: 'rgba(26, 26, 26, 0.55)',
+        backdropFilter: 'blur(6px)',
+        WebkitBackdropFilter: 'blur(6px)',
+        display: 'grid', placeItems: 'center',
+        padding: 16,
+        animation: 'fadeIn 0.25s var(--ease)',
       }}
+      onClick={(e) => { if (e.target === e.currentTarget) dismiss(); }}
+      onKeyDown={(e) => { if (e.key === 'Escape') dismiss(); }}
     >
       <div style={{
-        width: '100%', maxWidth: 1200,
-        height: 40,
-        display: 'flex', alignItems: 'center', gap: 12,
-        padding: '0 20px',
-        fontSize: 13, lineHeight: 1,
+        width: '100%', maxWidth: 400,
+        background: 'var(--color-bg-white)',
+        borderRadius: 16,
+        boxShadow: '0 20px 60px rgba(0,0,0,0.20), 0 4px 16px rgba(0,0,0,0.08)',
+        padding: '28px 28px 24px',
+        animation: 'slideInUp 0.3s var(--ease-spring)',
+        textAlign: 'center',
       }}>
-        {/* 左侧品牌色竖条 */}
+        {/* 🧠 图标 */}
         <div style={{
-          width: 3, height: 24, borderRadius: 2, flexShrink: 0,
+          width: 40, height: 40, borderRadius: 10,
           background: 'var(--color-brand-ink)',
-        }} />
-
-        {/* 🧠 Signal */}
-        <span style={{
-          fontWeight: 600, color: 'var(--color-text-title)',
-          whiteSpace: 'nowrap', flexShrink: 0,
+          color: '#fff',
+          display: 'grid', placeItems: 'center',
+          fontSize: 20,
+          margin: '0 auto 16px',
         }}>
-          🧠 Signal
-        </span>
+          🧠
+        </div>
 
-        {/* 描述文字 */}
-        <span style={{
-          color: 'var(--color-text-muted)',
-          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-          flex: '0 1 auto', minWidth: 0,
+        {/* 标题 */}
+        <h2 style={{
+          fontFamily: 'var(--font-display)',
+          fontSize: 18, fontWeight: 600,
+          lineHeight: 1.3, letterSpacing: '-0.01em',
+          color: 'var(--color-text-title)',
+          margin: '0 0 8px',
+        }}>
+          Signal
+        </h2>
+
+        {/* 一句话介绍 */}
+        <p style={{
+          fontSize: 14, lineHeight: 1.6,
+          color: 'var(--color-text-body)',
+          margin: '0 0 20px',
         }}>
           每天 5 分钟的 AI 行业脉搏 — 编辑部精选 + 一句话观点
-        </span>
+        </p>
 
-        {/* ⌘K 标签 */}
-        <kbd style={{
-          fontFamily: 'var(--font-mono)', fontSize: 10,
-          padding: '2px 6px', borderRadius: 4,
-          background: 'var(--color-bg-white)',
-          border: '1px solid var(--color-border-light)',
-          color: 'var(--color-text-label)',
-          flexShrink: 0,
-        }}>⌘K 搜索</kbd>
-
-        {/* 操作按钮 — 紧跟内容 */}
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 4,
-          flexShrink: 0,
-        }}>
-          <button
-            onClick={dismiss}
-            style={{
-              height: 26, padding: '0 12px',
-              background: 'var(--color-brand-ink)',
-              color: '#fff',
-              border: 'none', borderRadius: 6,
-              fontSize: 12, fontWeight: 600,
-              cursor: 'pointer',
-              transition: 'all 0.15s',
-              lineHeight: 1,
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-brand-ink-2)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--color-brand-ink)'; }}
-          >
-            知道了
-          </button>
-
-          <button
-            onClick={dismiss}
-            aria-label="关闭"
-            style={{
-              width: 26, height: 26,
-              display: 'grid', placeItems: 'center',
-              background: 'none', border: 'none', borderRadius: 6,
-              color: 'var(--color-text-label)',
-              cursor: 'pointer',
-              fontSize: 15,
-              transition: 'all 0.15s',
-              lineHeight: 1,
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-bg-hover)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = 'none'; }}
-          >
-            ✕
-          </button>
-        </div>
+        {/* 知道了按钮 */}
+        <button
+          onClick={dismiss}
+          style={{
+            height: 38, padding: '0 24px',
+            background: 'var(--color-brand-ink)',
+            color: '#fff',
+            border: 'none', borderRadius: 10,
+            fontSize: 14, fontWeight: 600,
+            cursor: 'pointer',
+            transition: 'all 0.15s var(--ease)',
+            boxShadow: '0 1px 2px rgba(15,76,58,0.3), 0 2px 8px rgba(15,76,58,0.15)',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-brand-ink-2)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--color-brand-ink)'; }}
+        >
+          知道了
+        </button>
       </div>
     </div>
   );
