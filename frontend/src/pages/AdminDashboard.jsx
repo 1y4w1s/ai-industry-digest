@@ -1,5 +1,5 @@
 /**
- * Signal - 管理员数据看板（日报业务统计）
+ * æä¹¾ - 管理员数据看板（日报业务统计）
  */
 
 import { useEffect, useState } from 'react';
@@ -24,17 +24,17 @@ async function adminRequest(path) {
   return res.json();
 }
 
-function StatsCard({ title, value, icon: Icon, color, subtitle }) {
+function StatsCard({ title, value, icon: Icon, subtitle }) {
   return (
-    <div className="bg-white rounded-xl p-6 shadow-sm border">
+    <div style={{ background: 'var(--color-bg-off)', padding: '20px', borderRadius: '12px' }}>
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm text-gray-500">{title}</p>
-          <p className={`text-3xl font-bold mt-1 ${color}`}>{value}</p>
-          {subtitle && <p className="text-xs text-gray-400 mt-1">{subtitle}</p>}
+          <p style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>{title}</p>
+          <p style={{ fontSize: '28px', fontWeight: 700, color: 'var(--color-text-title)', marginTop: 4 }}>{value}</p>
+          {subtitle && <p style={{ fontSize: '11px', color: 'var(--color-text-label)', marginTop: 2 }}>{subtitle}</p>}
         </div>
-        <div className={`p-3 rounded-lg ${color.replace('text-', 'bg-').replace('-600', '-100')}`}>
-          <Icon className={`w-6 h-6 ${color}`} />
+        <div style={{ padding: '12px', borderRadius: '10px', background: 'var(--color-brass-bg)', color: 'var(--color-brass)' }}>
+          <Icon size={24} />
         </div>
       </div>
     </div>
@@ -46,7 +46,7 @@ function PopularArticles({ articles }) {
   return (
     <div className="bg-white rounded-xl p-6 shadow-sm border">
       <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-        <TrendingUp className="w-5 h-5 text-blue-500" />
+        <TrendingUp className="w-5 h-5 var(--color-brass)" />
         热门文章
       </h3>
       <div className="space-y-3">
@@ -137,7 +137,7 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div style={{ minHeight: "100vh", padding: "24px", background: "var(--color-bg-white)" }}>
       <div className="max-w-7xl mx-auto">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900">管理员数据看板</h1>
