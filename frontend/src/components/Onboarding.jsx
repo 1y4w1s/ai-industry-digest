@@ -1,10 +1,5 @@
 import { useState, useEffect } from 'react';
 
-/**
- * Onboarding · 首次访问引导（轻量级横幅版）
- * 页面顶部 banner，不遮挡主内容，一句话讲清 Signal 是什么。
- * 通过 localStorage 'signal.onboarded.v1' 标记。
- */
 const STORAGE_KEY = 'signal.onboarded.v1';
 
 function getOnboarded() {
@@ -35,66 +30,93 @@ export default function Onboarding() {
       style={{
         position: 'relative',
         zIndex: 100,
-        background: 'linear-gradient(135deg, var(--color-brand-ink) 0%, #1a5a48 100%)',
-        color: '#fff',
-        padding: '12px 20px',
+        background: 'var(--color-bg-off)',
+        borderBottom: '1px solid var(--color-border-light)',
+        padding: '0 20px 0 0',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center',
-        gap: 16,
-        flexWrap: 'wrap',
+        gap: 12,
         animation: 'slideDown 0.3s var(--ease-spring)',
-        fontSize: 14,
-        lineHeight: 1.5,
+        fontSize: 13,
+        lineHeight: 1,
+        height: 40,
+        userSelect: 'none',
       }}
     >
-      <span style={{ fontWeight: 600, whiteSpace: 'nowrap' }}>
+      {/* 左侧品牌色竖条 */}
+      <div style={{
+        width: 3, height: 24, borderRadius: 2, flexShrink: 0,
+        background: 'var(--color-brand-ink)',
+      }} />
+
+      {/* 🧠 Signal */}
+      <span style={{
+        fontWeight: 600, color: 'var(--color-text-title)',
+        whiteSpace: 'nowrap', flexShrink: 0,
+      }}>
         🧠 Signal
       </span>
-      <span style={{ opacity: 0.9 }}>
+
+      {/* 描述文字 */}
+      <span style={{
+        color: 'var(--color-text-muted)',
+        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+        flex: '0 1 auto', minWidth: 0,
+      }}>
         每天 5 分钟的 AI 行业脉搏 — 编辑部精选 + 一句话观点
       </span>
+
+      {/* ⌘K 标签 */}
       <kbd style={{
-        fontFamily: 'var(--font-mono)', fontSize: 11,
-        padding: '2px 7px', borderRadius: 4,
-        background: 'rgba(255,255,255,0.15)',
-        color: 'rgba(255,255,255,0.8)',
+        fontFamily: 'var(--font-mono)', fontSize: 10,
+        padding: '2px 6px', borderRadius: 4,
+        background: 'var(--color-bg-white)',
+        border: '1px solid var(--color-border-light)',
+        color: 'var(--color-text-label)',
+        flexShrink: 0,
       }}>⌘K 搜索</kbd>
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+
+      {/* 右侧操作区 */}
+      <div style={{
+        marginLeft: 'auto',
+        display: 'flex', alignItems: 'center', gap: 4,
+        flexShrink: 0,
+      }}>
         <button
           onClick={dismiss}
-          aria-label="不再显示引导"
           style={{
-            fontSize: 12, color: 'rgba(255,255,255,0.7)',
-            background: 'rgba(255,255,255,0.1)',
-            border: '1px solid rgba(255,255,255,0.2)',
-            borderRadius: 6,
-            padding: '4px 12px',
+            height: 26, padding: '0 12px',
+            background: 'var(--color-brand-ink)',
+            color: '#fff',
+            border: 'none', borderRadius: 6,
+            fontSize: 12, fontWeight: 600,
             cursor: 'pointer',
             transition: 'all 0.15s',
+            lineHeight: 1,
           }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.2)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
-        >
-          不再显示
-        </button>
-        <button
-          onClick={dismiss}
-          aria-label="关闭引导"
-          style={{
-            fontSize: 12, color: 'var(--color-brand-ink)',
-            background: '#fff',
-            border: 'none',
-            borderRadius: 6,
-            padding: '4px 14px',
-            fontWeight: 600,
-            cursor: 'pointer',
-            transition: 'all 0.15s',
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = '#e8f0ec'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = '#fff'; }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-brand-ink-2)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--color-brand-ink)'; }}
         >
           知道了
+        </button>
+
+        <button
+          onClick={dismiss}
+          aria-label="关闭"
+          style={{
+            width: 26, height: 26,
+            display: 'grid', placeItems: 'center',
+            background: 'none', border: 'none', borderRadius: 6,
+            color: 'var(--color-text-label)',
+            cursor: 'pointer',
+            fontSize: 15,
+            transition: 'all 0.15s',
+            lineHeight: 1,
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-bg-hover)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'none'; }}
+        >
+          ✕
         </button>
       </div>
     </div>
