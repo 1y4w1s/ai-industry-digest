@@ -698,60 +698,6 @@ class DatabaseManager:
 
     def get_reading_trends(self, user_id: str) -> dict:
         return self.users.get_reading_trends(user_id)
-
-    def _get_reading_trends_old(self, user_id: str) -> dict:
-        """获取阅读趋势统计"""
-        history = self.client.table("reading_history") \
-            .select("read_at") \
-            .eq("user_id", user_id) \
-            .order("read_at", desc=True) \
-            .execute()
-
-        records = history.data or []
-
-        # Monthly trend (last 6 months)
-        monthly = {}
-        # Hour distribution
-        hourly = {h: 0 for h in range(24)}
-
-        for row in records:
-            read_at = row.get("read_at", "")
-            if read_at:
-                month_key = read_at[:7]
-                monthly[month_key] = monthly.get(month_key, 0) + 1
-                try:
-                    hour = int(read_at[11:13])
-                    hourly[hour] = hourly.get(hour, 0) + 1
-                except (ValueError, IndexError):
-                    pass
-
-        # Build monthly trend array (last 6 months, sorted)
-        today = date.today()
-        monthly_trend = []
-        for i in range(5, -1, -1):
-            y = today.year
-            m = today.month - i
-            if m <= 0:
-                y -= 1
-                m += 12
-            key = f"{y}-{str(m).zfill(2)}"
-            monthly_trend.append({"month": key, "count": monthly.get(key, 0)})
-
-        # Peak reading hour
-        peak_hour = max(hourly, key=hourly.get) if any(hourly.values()) else None
-
-        # Avg read length
-        avg_read_length = round(total_chars / total_read_with_content) if total_read_with_content > 0 else 0
-
-        return {
-            "monthly_trend": monthly_trend,
-            "hourly_distribution": hourly,
-            "peak_hour": peak_hour,
-        }
-
-
-    # ── 留存埋点事件（改造计划 §1.5：订阅/打开/退订 三数） ─────────────
-
     def record_open_event(self, token: str, article: str) -> bool:
         """记录一次邮件打开（去重：同 (token, article) 24h 内只记一次）。
 

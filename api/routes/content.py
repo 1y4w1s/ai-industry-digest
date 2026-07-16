@@ -6,6 +6,7 @@ Signal - 内容接口路由
 import httpx
 import time
 from typing import Optional
+from urllib.parse import urlparse
 
 from fastapi import APIRouter, Query, HTTPException
 from fastapi.responses import Response, JSONResponse
@@ -109,6 +110,37 @@ async def proxy_article(url: str = Query(..., description="目标 URL")):
     """代理获取文章内容（绕过 CORS/X-Frame 限制）"""
     if not url.startswith("http://") and not url.startswith("https://"):
         raise HTTPException(status_code=400, detail="无效的 URL")
+
+    # SSRF 防护：仅允许代理文章表中的已收录域名
+    try:
+        # 从数据库中提取所有文章域名作为白名单
+        result = db.get_sources()
+        # 对于每个 source_name，可能对应一个或多个域名
+        # 简单方案：只允许 articles 表中已存在的完整 URL
+        articles_result = db.client.table("articles").select("url").limit(1000).execute()
+        valid_urls = set(r["url"] for r in (articles_result.data or []))
+        if url not in valid_urls:
+            # 兼容：检查域名是否在 sources 中（松散匹配）
+            from urllib.parse import urlparse
+            parsed = urlparse(url)
+            domain = parsed.netloc.lower()
+            # 基础域名白名单
+            ALLOWED_DOMAINS = {
+                "www.qbitai.com", "qbitai.com",
+                "36kr.com", "www.36kr.com",
+                "github.com", "www.github.com",
+                "techcrunch.com", "www.techcrunch.com",
+                "theverge.com", "www.theverge.com",
+                "arstechnica.com", "www.arstechnica.com",
+                "theguardian.com", "www.theguardian.com",
+                "nytimes.com", "www.nytimes.com",
+            }
+            if domain not in ALLOWED_DOMAINS:
+                raise HTTPException(status_code=403, detail="域名不在白名单中")
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"白名单检查失败: {e}")
 
     try:
         async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:

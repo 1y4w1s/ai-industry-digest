@@ -247,7 +247,6 @@ async def chat(
     req: ChatRequest,
     background_tasks: BackgroundTasks,
     authorization: Optional[str] = Header(None),
-    token: Optional[str] = Header(None),
 ):
     """AI 对话接口（带文章或日报上下文）
     
@@ -264,7 +263,7 @@ async def chat(
         raise HTTPException(status_code=503, detail="AI 服务未配置（缺少 DEEPSEEK_API_KEY）")
 
     # 认证
-    raw = authorization or token
+    raw = authorization
     user_id = verify_token(raw) if raw else DEMO_USER_UUID
     if not user_id:
         user_id = DEMO_USER_UUID
