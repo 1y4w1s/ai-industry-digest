@@ -9,6 +9,8 @@ import CommentSection from './CommentSection';
 import AiSummaryCard from './AiSummaryCard';
 import { IconPlay, IconPause, IconStop, IconBookmark, IconBookmarkFilled, IconPDF, IconShare } from './icons';
 import useTTS from '../hooks/useTTS';
+import ArticleMetaActions from './ArticleMetaActions';
+import ChatPanel from './ChatPanel';
 import PDFExportButton from './PDFExportButton';
 import ScrollToTopButton from './ScrollToTopButton';
 
@@ -225,130 +227,39 @@ export default function ArticleReader({ articleId, onBack }) {
               {article.summary && <AiSummaryCard summary={article.summary} importanceReason={article.importance_reason} tags={article.tags} />}
 
               <h2 style={{ fontFamily: "var(--font-display)", fontSize: '22px', fontWeight: 700, color: 'var(--color-text-title)', lineHeight: 1.35, marginBottom: '12px' }}>{article.title}</h2>
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-6" style={{ color: 'var(--color-text-muted)', fontSize: '13px' }}>
-                <div className="flex items-center gap-2">
-                  <span>{article.source_name}</span><span>·</span><span>{article.published_at?.slice(0, 10)}</span><span>·</span><span>{readingMinutes} 分钟阅读</span>
-                </div>
-                <div className="flex items-center gap-2 flex-wrap sm:ml-auto no-print">
-                  {/* 分享 / 复制链接 */}
-                  <button onClick={handleShare} title="分享 / 复制链接"
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px', color: 'var(--color-text-muted)', transition: 'color 0.15s' }}>
-                    <IconShare />
-                    <span>分享</span>
-                  </button>
-
-                  {/* TTS button — hidden on devices without SpeechSynthesis */}
-                  {ttsSupported && (<>
-                  <button onClick={() => ttsToggle(articleText)}
-                    title={ttsState === 'idle' ? '朗读' : ttsState === 'playing' ? '暂停' : '继续'}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px', color: ttsState !== 'idle' ? 'var(--color-blue-link)' : 'var(--color-text-muted)', transition: 'color 0.15s' }}>
-                    {ttsState === 'playing' ? <IconPause /> : <IconPlay />}
-                    <span>{ttsState === 'idle' ? '朗读' : ttsState === 'playing' ? '暂停' : '继续'}</span>
-                  </button>
-                  {ttsState !== 'idle' && (
-                    <button onClick={() => ttsStop()}
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px', color: 'var(--color-text-muted)' }}>
-                      <IconStop />
-                    </button>
-                  )}
-                  </>)}
-
-                  {/* Bookmark button */}
-                  <button onClick={toggleBookmark} title={isBookmarked ? '取消收藏' : '收藏'}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px', color: isBookmarked ? '#C8960A' : 'var(--color-text-muted)', transition: 'color 0.15s' }}>
-                    {isBookmarked ? <IconBookmarkFilled /> : <IconBookmark />}
-                    <span>{isBookmarked ? '已收藏' : '收藏'}</span>
-                  </button>
-                  {article.url && (<a href={article.url} target="_blank" rel="noreferrer" style={{ color: 'var(--color-blue-link)' }}>在新窗口阅读 ↗</a>)}
-                </div>
-              </div>
+              <ArticleMetaActions
+                article={article}
+                readingMinutes={readingMinutes}
+                articleText={articleText}
+                tts={{ supported: ttsSupported, state: ttsState, toggle: ttsToggle, stop: ttsStop }}
+                isBookmarked={!!bookmarkId}
+                onShare={handleShare}
+                onBookmark={toggleBookmark}
+                onExportPDF={downloadPDF}
+                exporting={loading}
+              />
               <div className="text-sm leading-relaxed" style={{ color: 'var(--color-text-body)', lineHeight: '1.8', fontSize: '15px' }}>
                 <span dangerouslySetInnerHTML={{ __html: renderArticleContent(articleText) }} />
               </div>
-
-              {/* PDF export */}
-              <PDFExportButton onExport={downloadPDF} disabled={loading} />
 
               {/* 评论区（§3.2） */}
               <CommentSection articleId={articleId} />
             </div>
           </div>
 
-          {/* Right panel: Chat — becomes bottom panel on mobile */}
-          <div className="w-full lg:w-[400px] xl:w-[440px] flex-shrink-0 flex flex-col no-print lg:border-t-0" style={{ background: 'var(--color-bg-off)', borderTop: '1px solid var(--color-border-light)' }}>
-            <ErrorBoundary>
-            <div className="flex flex-col min-h-0 max-h-[40vh] lg:max-h-none h-full" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-              {/* 标题栏 + 移动端折叠按钮 */}
-              <div className="px-5 pt-4 pb-2 flex-shrink-0 flex items-center justify-between">
-                <h3 className="font-semibold text-xs uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>深入对话</h3>
-                <button onClick={() => setChatCollapsed(!chatCollapsed)}
-                  className="lg:hidden flex items-center justify-center"
-                  style={{ background: 'var(--color-bg-hover)', border: 'none', borderRadius: '3px', cursor: 'pointer', padding: '2px 8px', fontSize: '11px', color: 'var(--color-text-label)' }}>
-                  {chatCollapsed ? '展开' : '折叠'}
-                </button>
-              </div>
-
-              {/* 折叠内容 — 移动端折叠时隐藏 */}
-              <div className={`flex-1 flex flex-col min-h-0 ${chatCollapsed ? 'hidden' : ''}`}>
-                {/* 消息区 — 可滚动 */}
-                <div className="flex-1 overflow-y-auto px-4 pb-2 space-y-2.5 min-h-0">
-                  {messages.length === 0 && (
-                    <div className="flex flex-col items-center justify-center h-full" style={{ padding: '24px 12px' }}>
-                      <p className="text-xs mb-4" style={{ color: 'var(--color-text-label)' }}>问关于这篇文章的问题</p>
-                      <div className="flex flex-col gap-2 w-full max-w-[320px]">
-                        {(() => {
-                          const tags = article?.tags || [];
-                          const prompts = ['总结核心观点', '有哪些技术细节？', '有什么争议？', '这篇文章的局限性？'];
-                          if (tags.length > 0) {
-                            prompts.push(`解释本文中的「${tags[0]}」概念`);
-                            if (tags.length > 1) prompts.push(`本文如何体现「${tags[1]}」的发展？`);
-                            if (tags.length > 2) prompts.push(`「${tags[2]}」在其中的作用是什么？`);
-                            prompts.push(`和同类文章相比，本文的独特之处？`);
-                          }
-                          return [...new Set(prompts)].slice(0, 7).map((q) => (
-                            <button key={q} onClick={() => { setChatInput(q); setTimeout(() => chatInputRef.current?.focus(), 100); }}
-                              className="w-full text-left px-3.5 py-2.5 text-xs rounded transition-all hover:brightness-95"
-                              style={{ background: 'var(--color-bg-white)', border: '1px solid var(--color-border-light)', color: 'var(--color-text-body)' }}>{q}</button>
-                          ));
-                        })()}
-                      </div>
-                    </div>
-                  )}
-                  {messages.map((msg, i) => (
-                  <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className="max-w-[90%] px-3 py-2 text-xs leading-relaxed rounded"
-                      style={msg.role === 'user'
-                        ? { background: 'var(--color-text-title)', color: 'var(--color-bg-white)' }
-                        : { background: 'var(--color-bg-white)', color: 'var(--color-text-body)' }}>
-                      <span dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(renderMd(msg.content)) }} />
-                    </div>
-                  </div>
-                ))}
-                {chatLoading && (
-                  <div className="flex justify-start">
-                    <div className="px-3 py-2 rounded flex gap-1" style={{ background: 'var(--color-bg-white)' }}>
-                      <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: 'var(--color-text-label)', animationDelay: '0ms' }} />
-                      <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: 'var(--color-text-label)', animationDelay: '150ms' }} />
-                      <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: 'var(--color-text-label)', animationDelay: '300ms' }} />
-                    </div>
-                  </div>
-                )}
-                <div ref={chatEndRef} />
-              </div>
-              <div className="p-4 pt-3 flex-shrink-0" style={{ borderTop: '1px solid var(--color-border-light)' }}>
-                <form onSubmit={handleChat} className="flex gap-2">
-                  <input ref={chatInputRef} type="text" value={chatInput} onChange={(e) => setChatInput(e.target.value)}
-                    placeholder="输入问题..." className="flex-1 px-3 py-2 text-sm rounded"
-                    style={{ background: 'var(--color-bg-white)', border: '1px solid var(--color-border)', color: 'var(--color-text-body)' }} />
-                  <button type="submit" disabled={chatLoading || !chatInput.trim()}
-                    className="px-4 py-2 text-sm rounded disabled:opacity-40 font-medium"
-                    style={{ background: 'var(--color-text-title)', color: 'var(--color-bg-white)' }}>发送</button>
-                </form>
-              </div>
-            </div>
-            </div>
-            </ErrorBoundary>
-          </div>
+          <ChatPanel
+            messages={messages}
+            chatInput={chatInput}
+            chatLoading={chatLoading}
+            chatCollapsed={chatCollapsed}
+            article={article}
+            chatEndRef={chatEndRef}
+            ref={chatInputRef}
+            onInputChange={(v) => setChatInput(v)}
+            onSubmit={handleChat}
+            onToggleCollapse={() => setChatCollapsed(!chatCollapsed)}
+            onSelectPrompt={(q) => { setChatInput(q); setTimeout(() => chatInputRef.current?.focus(), 100); }}
+          />
         </div>
       ) : (
         <div className="flex-1 flex items-center justify-center p-8" style={{ background: 'var(--color-bg-off)' }}>
