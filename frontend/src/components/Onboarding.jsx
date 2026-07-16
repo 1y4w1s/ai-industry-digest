@@ -32,92 +32,94 @@ export default function Onboarding() {
         zIndex: 100,
         background: 'var(--color-bg-off)',
         borderBottom: '1px solid var(--color-border-light)',
-        padding: '0 20px 0 0',
         display: 'flex',
-        alignItems: 'center',
-        gap: 12,
+        justifyContent: 'center',
         animation: 'slideDown 0.3s var(--ease-spring)',
-        fontSize: 13,
-        lineHeight: 1,
-        height: 40,
         userSelect: 'none',
       }}
     >
-      {/* 左侧品牌色竖条 */}
       <div style={{
-        width: 3, height: 24, borderRadius: 2, flexShrink: 0,
-        background: 'var(--color-brand-ink)',
-      }} />
-
-      {/* 🧠 Signal */}
-      <span style={{
-        fontWeight: 600, color: 'var(--color-text-title)',
-        whiteSpace: 'nowrap', flexShrink: 0,
+        width: '100%', maxWidth: 1200,
+        height: 40,
+        display: 'flex', alignItems: 'center', gap: 12,
+        padding: '0 20px',
+        fontSize: 13, lineHeight: 1,
       }}>
-        🧠 Signal
-      </span>
+        {/* 左侧品牌色竖条 */}
+        <div style={{
+          width: 3, height: 24, borderRadius: 2, flexShrink: 0,
+          background: 'var(--color-brand-ink)',
+        }} />
 
-      {/* 描述文字 */}
-      <span style={{
-        color: 'var(--color-text-muted)',
-        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-        flex: '0 1 auto', minWidth: 0,
-      }}>
-        每天 5 分钟的 AI 行业脉搏 — 编辑部精选 + 一句话观点
-      </span>
+        {/* 🧠 Signal */}
+        <span style={{
+          fontWeight: 600, color: 'var(--color-text-title)',
+          whiteSpace: 'nowrap', flexShrink: 0,
+        }}>
+          🧠 Signal
+        </span>
 
-      {/* ⌘K 标签 */}
-      <kbd style={{
-        fontFamily: 'var(--font-mono)', fontSize: 10,
-        padding: '2px 6px', borderRadius: 4,
-        background: 'var(--color-bg-white)',
-        border: '1px solid var(--color-border-light)',
-        color: 'var(--color-text-label)',
-        flexShrink: 0,
-      }}>⌘K 搜索</kbd>
+        {/* 描述文字 */}
+        <span style={{
+          color: 'var(--color-text-muted)',
+          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+          flex: '0 1 auto', minWidth: 0,
+        }}>
+          每天 5 分钟的 AI 行业脉搏 — 编辑部精选 + 一句话观点
+        </span>
 
-      {/* 右侧操作区 */}
-      <div style={{
-        marginLeft: 'auto',
-        display: 'flex', alignItems: 'center', gap: 4,
-        flexShrink: 0,
-      }}>
-        <button
-          onClick={dismiss}
-          style={{
-            height: 26, padding: '0 12px',
-            background: 'var(--color-brand-ink)',
-            color: '#fff',
-            border: 'none', borderRadius: 6,
-            fontSize: 12, fontWeight: 600,
-            cursor: 'pointer',
-            transition: 'all 0.15s',
-            lineHeight: 1,
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-brand-ink-2)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--color-brand-ink)'; }}
-        >
-          知道了
-        </button>
+        {/* ⌘K 标签 */}
+        <kbd style={{
+          fontFamily: 'var(--font-mono)', fontSize: 10,
+          padding: '2px 6px', borderRadius: 4,
+          background: 'var(--color-bg-white)',
+          border: '1px solid var(--color-border-light)',
+          color: 'var(--color-text-label)',
+          flexShrink: 0,
+        }}>⌘K 搜索</kbd>
 
-        <button
-          onClick={dismiss}
-          aria-label="关闭"
-          style={{
-            width: 26, height: 26,
-            display: 'grid', placeItems: 'center',
-            background: 'none', border: 'none', borderRadius: 6,
-            color: 'var(--color-text-label)',
-            cursor: 'pointer',
-            fontSize: 15,
-            transition: 'all 0.15s',
-            lineHeight: 1,
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-bg-hover)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = 'none'; }}
-        >
-          ✕
-        </button>
+        {/* 操作按钮 — 紧跟内容 */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 4,
+          flexShrink: 0,
+        }}>
+          <button
+            onClick={dismiss}
+            style={{
+              height: 26, padding: '0 12px',
+              background: 'var(--color-brand-ink)',
+              color: '#fff',
+              border: 'none', borderRadius: 6,
+              fontSize: 12, fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'all 0.15s',
+              lineHeight: 1,
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-brand-ink-2)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--color-brand-ink)'; }}
+          >
+            知道了
+          </button>
+
+          <button
+            onClick={dismiss}
+            aria-label="关闭"
+            style={{
+              width: 26, height: 26,
+              display: 'grid', placeItems: 'center',
+              background: 'none', border: 'none', borderRadius: 6,
+              color: 'var(--color-text-label)',
+              cursor: 'pointer',
+              fontSize: 15,
+              transition: 'all 0.15s',
+              lineHeight: 1,
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-bg-hover)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'none'; }}
+          >
+            ✕
+          </button>
+        </div>
       </div>
     </div>
   );
