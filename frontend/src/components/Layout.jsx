@@ -130,7 +130,7 @@ export default function Layout() {
       >
         <div className="h-14 flex items-center px-5 border-b flex-shrink-0" style={{ borderColor: 'var(--color-border-light)' }}>
           <div className="flex items-center gap-2">
-            <LaoQianLogo size={24} />
+            <LaoQianLogo size={24} color="var(--color-brass)" />
           </div>
         </div>
 
@@ -145,20 +145,22 @@ export default function Layout() {
                 style={{
                   paddingLeft: '12px',
                   paddingRight: '12px',
-                  color: isActive ? 'var(--color-brand-ink)' : 'var(--color-text-muted)',
+                  color: isActive ? 'var(--color-brass)' : 'var(--color-text-muted)',
                   fontWeight: isActive ? 600 : 500,
-                  background: isActive ? 'var(--color-bg-hover)' : 'transparent',
+                  background: isActive ? 'var(--color-brass-bg)' : 'transparent',
                   borderRadius: 8,
                   position: 'relative',
                   transition: 'all 0.15s var(--ease)',
                 }}
                 aria-current={isActive ? 'page' : undefined}
+                onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.background = 'var(--color-bg-off)'; }}
+                onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.background = 'transparent'; }}
               >
                 {isActive && (
                   <span style={{
                     position: 'absolute', left: 0, top: '50%', translate: '0 -50%',
                     width: 3, height: 18, borderRadius: 2,
-                    background: 'var(--color-brand-ink)',
+                    background: 'var(--color-brass)',
                   }} />
                 )}
                 <NavIcon name={item.icon} />
@@ -166,8 +168,8 @@ export default function Layout() {
                 {item.path === '/' && (
                   <span style={{
                     fontSize: 10, fontWeight: 600, padding: '1px 6px',
-                    borderRadius: 999, background: 'var(--color-accent-amber-bg)',
-                    color: 'var(--color-accent-amber)',
+                    borderRadius: 999, background: 'var(--color-brass-bg)',
+                    color: 'var(--color-brass)',
                   }}>new</span>
                 )}
               </button>
@@ -191,7 +193,7 @@ export default function Layout() {
               style={{ cursor: 'pointer', background: 'transparent', border: 'none', textAlign: 'left', color: 'inherit' }}
               aria-label="个人主页"
             >
-              <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-semibold flex-shrink-0" style={{ background: 'var(--color-brand-ink-bg)', color: 'var(--color-brand-ink)' }}>
+              <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-semibold flex-shrink-0" style={{ background: 'var(--color-brass-bg)', color: 'var(--color-brass)' }}>
                 {(user?.nickname || 'U')[0].toUpperCase()}
               </div>
               <span style={{ fontSize: 12, color: 'var(--color-text-title)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.nickname}</span>
@@ -249,7 +251,7 @@ export default function Layout() {
                       outline: 'none',
                       transition: 'all 0.15s var(--ease)',
                     }}
-                    onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--color-brand-ink)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(15,76,58,0.12)'; }}
+                    onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--color-brass)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(200,146,42,0.12)'; }}
                     onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.boxShadow = 'none'; }}
                   />
                 </div>
