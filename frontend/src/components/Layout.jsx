@@ -188,6 +188,8 @@ export default function Layout() {
             <span style={{ fontSize: 11, color: 'var(--color-text-label)' }}>v2.1 · Signal</span>
           </div>
 
+          <RecentItems onItemClick={closeSidebar} />
+
           {isLoggedIn ? (
             <button
               type="button"
@@ -212,8 +214,6 @@ export default function Layout() {
               <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>登录</span>
             </button>
           )}
-
-          <RecentItems onItemClick={closeSidebar} />
         </div>
       </aside>
 
