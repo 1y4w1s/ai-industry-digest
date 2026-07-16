@@ -50,7 +50,7 @@ export default function DigestPage() {
       <div className="flex-1 overflow-y-auto">
         <div className="px-5 lg:px-8 py-6" style={{ maxWidth: '720px', margin: '0 auto' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-            <button onClick={() => navigate('/')} style={{ fontSize: '12px', color: 'var(--color-blue-link)', background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px', padding: 0 }}>
+            <button onClick={() => navigate('/')} style={{ fontSize: '12px', color: 'var(--color-brass)', background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px', padding: 0 }}>
               ← 返回首页
             </button>
             <a href={`/digest/${date}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: '12px', color: 'var(--color-text-muted)', textDecoration: 'none' }}>
@@ -59,7 +59,7 @@ export default function DigestPage() {
           </div>
 
           <h1 style={{ fontFamily: "var(--font-display)", fontSize: '22px', fontWeight: 700, color: 'var(--color-text-title)', marginBottom: '4px' }}>
-            Signal · 每日 AI 情报简报
+            æä¹¾ · 每日 AI 情报简报
           </h1>
           <p style={{ fontSize: '13px', color: 'var(--color-text-muted)', marginBottom: '24px' }}>
             {date} · 公开归档页（无需订阅即可阅读）
@@ -106,7 +106,7 @@ export default function DigestPage() {
                         <ul style={{ margin: '2px 0 0', paddingLeft: '18px' }}>
                           {(s.articles || []).slice(0, 6).map((a, j) => (
                             <li key={j} style={{ fontSize: '13px', lineHeight: 1.6, color: 'var(--color-text-body)', marginBottom: '3px' }}>
-                              <a href={a.url || '#'} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-blue-link)', textDecoration: 'none' }}>
+                              <a href={a.url || '#'} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-brass)', textDecoration: 'none' }}>
                                 {a.title || '（无标题）'}
                               </a>
                               <span style={{ color: 'var(--color-text-muted)' }}> · {a.source_name || ''}</span>
@@ -162,7 +162,7 @@ export default function DigestPage() {
 
               <div style={{ borderTop: '1px solid var(--color-border-light)', marginTop: '24px', paddingTop: '16px', fontSize: '12px', color: 'var(--color-text-muted)' }}>
                 本页内容来自已公开的每日简报，可自由阅读、分享。
-                {' '}<Link to="/archive" style={{ color: 'var(--color-blue-link)', textDecoration: 'none' }}>往期归档</Link>
+                {' '}<Link to="/archive" style={{ color: 'var(--color-brass)', textDecoration: 'none' }}>往期归档</Link>
               </div>
             </>
           )}

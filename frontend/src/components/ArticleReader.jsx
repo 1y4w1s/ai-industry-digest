@@ -64,6 +64,13 @@ export default function ArticleReader({ articleId, onBack }) {
     setBookmarkId(null);
     api.getArticle(articleId).then((data) => {
       setArticle(data);
+      // 写入最近浏览
+      try {
+        const list = JSON.parse(localStorage.getItem('signal.recent.v1') || '[]');
+        const entry = { id: articleId, title: data.title || null, ts: Date.now() };
+        const dedup = [entry, ...list.filter((x) => x.id !== articleId)].slice(0, 4);
+        localStorage.setItem('signal.recent.v1', JSON.stringify(dedup));
+      } catch {}
       // 延迟 2 秒写入历史，不阻塞渲染
       setTimeout(() => api.addHistory(articleId).catch(() => {}), 2000);
       // 从缓存获取 bookmarks，避免额外请求
