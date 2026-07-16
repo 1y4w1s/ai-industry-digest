@@ -30,3 +30,13 @@ backup_*.json
 # 前端
 frontend/dist/
 frontend/node_modules/
+# Temp files
+screenshot_*.png
+_fix_*.py
+vision_*.*
+archive_*.txt
+=8.0.0
+# Project artifacts
+.reasonix/
+media/
+output/

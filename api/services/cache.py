@@ -15,10 +15,12 @@ try:
     REDIS_AVAILABLE = True
 except ImportError:
     REDIS_AVAILABLE = False
-    logger.warning("redis 库未安装，缓存功能将降级")
 
 from dotenv import load_dotenv
 from api.services.logger import logger
+
+if not REDIS_AVAILABLE:
+    logger.warning("redis 库未安装，缓存功能将降级")
 
 load_dotenv()
 
