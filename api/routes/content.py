@@ -166,7 +166,13 @@ async def search_all(
     q: str = Query(..., min_length=1, description="搜索关键词"),
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=50, description="每页数量"),
+    source: Optional[str] = Query(None, description="来源筛选"),
+    tag: Optional[str] = Query(None, description="标签筛选"),
+    importance: Optional[str] = Query(None, description="重要性筛选"),
 ):
-    """全站搜索：文章标题与摘要"""
-    articles = db.get_articles(page=page, page_size=page_size, keyword=q)
+    """全站搜索：支持来源/标签/重要性筛选"""
+    articles = db.get_articles(
+        page=page, page_size=page_size, keyword=q,
+        source=source, tag=tag, importance=importance,
+    )
     return {"articles": articles}

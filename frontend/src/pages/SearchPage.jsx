@@ -6,10 +6,16 @@ import Pagination from '../components/Pagination';
 import AIRecommendPanel from '../components/AIRecommendPanel';
 import SkeletonCard from '../components/SkeletonCard';
 
-
 const SUGGESTIONS = [
   'OpenAI', '大模型', '融资', 'AI 医疗', '自动驾驶', '量子计算',
   'GPT', 'Claude', 'Google', 'Meta', '腾讯', '百度',
+];
+
+const IMP_OPTIONS = [
+  { value: '', label: '全部' },
+  { value: 'high', label: '高' },
+  { value: 'medium', label: '中' },
+  { value: 'low', label: '低' },
 ];
 
 export default function SearchPage() {
@@ -21,30 +27,48 @@ export default function SearchPage() {
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
+  // 筛选状态
+  const [filterSource, setFilterSource] = useState('');
+  const [filterTag, setFilterTag] = useState('');
+  const [filterImportance, setFilterImportance] = useState('');
+  const [sources, setSources] = useState([]);
+  const [tags, setTags] = useState([]);
 
+  // 加载来源/标签列表
   useEffect(() => {
-    setPage(1);
-  }, [query]);
+    api.getSources().then(setSources).catch(() => {});
+    api.getTags().then(setTags).catch(() => {});
+  }, []);
 
+  // 重置页码当筛选条件变化
+  useEffect(() => { setPage(1); }, [query, filterSource, filterTag, filterImportance]);
+
+  // 搜索
   useEffect(() => {
     if (!query) return;
     setLoading(true);
-    api.searchAll(query, page, 50)
+    const filters = {};
+    if (filterSource) filters.source = filterSource;
+    if (filterTag) filters.tag = filterTag;
+    if (filterImportance) filters.importance = filterImportance;
+
+    api.searchAll(query, page, 50, filters)
       .then((data) => {
         const items = (data.articles?.items || []).map((a) => ({ ...a, _imp: a.importance }));
         setResults({ ...data.articles, items });
       })
-      .catch(() => {
-        setResults({ items: [], total: 0, pages: 0 });
-      })
+      .catch(() => setResults({ items: [], total: 0, pages: 0 }))
       .finally(() => setLoading(false));
-  }, [query, page]);
+  }, [query, page, filterSource, filterTag, filterImportance]);
 
   const handlePageChange = (pg) => {
     setPage(pg);
     setLoading(true);
-    // 与首页搜索保持一致：统一走 /search 接口，避免 /articles 与 /search 结果不一致
-    api.searchAll(query, pg, 50)
+    const filters = {};
+    if (filterSource) filters.source = filterSource;
+    if (filterTag) filters.tag = filterTag;
+    if (filterImportance) filters.importance = filterImportance;
+    api.searchAll(query, pg, 50, filters)
       .then((data) => {
         const items = (data.articles?.items || []).map((a) => ({ ...a, _imp: a.importance }));
         setResults({ ...data.articles, items });
@@ -53,6 +77,8 @@ export default function SearchPage() {
       .finally(() => setLoading(false));
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  const activeFilters = [filterSource, filterTag, filterImportance].filter(Boolean).length;
 
   return (
     <div className="flex-1 flex flex-col min-h-0" style={{ background: 'var(--color-bg-white)' }}>
@@ -64,7 +90,7 @@ export default function SearchPage() {
             </button>
           </div>
 
-          <div className="mb-6" style={{ paddingBottom: '16px' }}>
+          <div className="mb-4" style={{ paddingBottom: '12px' }}>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
               <h1 style={{ fontFamily: "var(--font-display)", fontSize: '20px', fontWeight: 700, color: 'var(--color-text-title)' }}>
                 搜索结果
@@ -72,21 +98,46 @@ export default function SearchPage() {
               <span style={{ flex: 1, height: '1px', background: 'linear-gradient(90deg, var(--color-brass) 0%, var(--color-border-light) 100%)', minWidth: 40 }} />
             </div>
             {query && !loading && results && (
-              <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
-                关键词 "<span style={{ color: 'var(--color-text-title)', fontWeight: 500 }}>{query}</span>" · {results.total}
+              <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginTop: 2 }}>
+                关键词 "<span style={{ color: 'var(--color-text-title)', fontWeight: 500 }}>{query}</span>" · {results.total}{activeFilters > 0 ? ` · ${activeFilters} 个筛选` : ''}
               </div>
             )}
           </div>
+
+          {/* 筛选栏 */}
+          {query && (
+            <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+              <select value={filterSource} onChange={(e) => setFilterSource(e.target.value)}
+                style={{ fontSize: '12px', padding: '6px 10px', borderRadius: 6, border: '1px solid var(--color-border)', background: 'var(--color-bg-white)', color: 'var(--color-text-body)', outline: 'none', maxWidth: 140 }}>
+                <option value="">来源</option>
+                {sources.slice(0, 20).map((s) => (<option key={s} value={s}>{s}</option>))}
+              </select>
+
+              <select value={filterTag} onChange={(e) => setFilterTag(e.target.value)}
+                style={{ fontSize: '12px', padding: '6px 10px', borderRadius: 6, border: '1px solid var(--color-border)', background: 'var(--color-bg-white)', color: 'var(--color-text-body)', outline: 'none', maxWidth: 140 }}>
+                <option value="">标签</option>
+                {tags.slice(0, 20).map((t) => (<option key={t} value={t}>{t}</option>))}
+              </select>
+
+              <select value={filterImportance} onChange={(e) => setFilterImportance(e.target.value)}
+                style={{ fontSize: '12px', padding: '6px 10px', borderRadius: 6, border: '1px solid var(--color-border)', background: 'var(--color-bg-white)', color: 'var(--color-text-body)', outline: 'none' }}>
+                {IMP_OPTIONS.map((o) => (<option key={o.value} value={o.value}>{o.label}</option>))}
+              </select>
+
+              {activeFilters > 0 && (
+                <button onClick={() => { setFilterSource(''); setFilterTag(''); setFilterImportance(''); }}
+                  style={{ fontSize: '11px', color: 'var(--color-brass)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px' }}>
+                  清除筛选
+                </button>
+              )}
+            </div>
+          )}
 
           <div className="flex gap-6" style={{ position: 'relative' }}>
             <div className="flex-1 min-w-0">
               {loading && (
                 <div className="space-y-0">
-                  <SkeletonCard />
-                  <SkeletonCard />
-                  <SkeletonCard />
-                  <SkeletonCard />
-                  <SkeletonCard />
+                  <SkeletonCard /><SkeletonCard /><SkeletonCard /><SkeletonCard /><SkeletonCard />
                 </div>
               )}
 
@@ -106,31 +157,9 @@ export default function SearchPage() {
                     </svg>
                   </div>
                   <p style={{ fontSize: '14px', color: 'var(--color-text-title)', marginBottom: '4px' }}>未找到相关文章</p>
-                  <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--color-text-muted)', marginBottom: '16px' }}>试试其他关键词，或浏览热门话题</p>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '6px', maxWidth: '400px', margin: '0 auto' }}>
-                    {SUGGESTIONS.map((tag) => (
-                      <button
-                        key={tag}
-                        onClick={() => navigate(`/search?q=${encodeURIComponent(tag)}`)}
-                        style={{
-                          fontSize: 12, padding: '4px 12px',
-                          borderRadius: 999, border: '1px solid var(--color-border-light)',
-                          background: 'var(--color-bg-off)',
-                          color: 'var(--color-text-body)',
-                          cursor: 'pointer',
-                          transition: 'all 0.15s',
-                        }}
-                        onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--color-brand-ink)'; e.currentTarget.style.color = 'var(--color-brand-ink)'; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--color-border-light)'; e.currentTarget.style.color = 'var(--color-text-body)'; }}
-                      >
-                        {tag}
-                      </button>
-                    ))}
-                  </div>
-                  <div style={{ marginTop: 16 }}>
-                    <a href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: 'var(--color-blue-link)', textDecoration: 'none' }}>
-                      去看看今日日报 →
-                    </a>
+                  <p style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginBottom: '16px' }}>试试其他关键词，或调整筛选条件</p>
+                  <div style={{ marginTop: 4 }}>
+                    <a href="/" style={{ fontSize: '12px', color: 'var(--color-brass)', textDecoration: 'none' }}>去看看今日日报 →</a>
                   </div>
                 </div>
               )}
@@ -143,7 +172,7 @@ export default function SearchPage() {
                     </svg>
                   </div>
                   <p style={{ fontSize: '14px', color: 'var(--color-text-title)', marginBottom: '4px' }}>搜索 AI 行业文章</p>
-                  <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--color-text-muted)' }}>点击右上角搜索图标，输入关键词</p>
+                  <p style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>输入关键词搜索</p>
                 </div>
               )}
 

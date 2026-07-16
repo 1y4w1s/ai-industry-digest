@@ -197,8 +197,13 @@ export const api = {
   getRecommend: (limit = 5) => request(`/recommend?limit=${limit}`),
 
   // 全站搜索（仅文章）
-  searchAll: (q, page = 1, page_size = 50) =>
-    request(`/search?q=${encodeURIComponent(q)}&page=${page}&page_size=${page_size}`),
+  searchAll: (q, page = 1, page_size = 50, filters = {}) => {
+    const params = new URLSearchParams({ q, page, page_size });
+    if (filters.source) params.set('source', filters.source);
+    if (filters.tag) params.set('tag', filters.tag);
+    if (filters.importance) params.set('importance', filters.importance);
+    return request(`/search?${params.toString()}`);
+  },
 
   // 邮件简报自助订阅（网站优化）
   // 注意：newsletter 路由注册在根路径（无 /api 前缀，与 /unsubscribe、/track/ 一致），
