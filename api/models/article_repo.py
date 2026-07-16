@@ -8,6 +8,7 @@ from datetime import date
 from .base_repo import BaseRepository
 from ..services.cache import cache, cache_key, invalidate_cache
 from ..services.logger import logger
+from ..services.tokenizer import build_search_text
 
 
 class ArticleRepository(BaseRepository):
@@ -45,6 +46,10 @@ class ArticleRepository(BaseRepository):
             data_list = []
             for a in batch:
                 data_list.append({
+                    "search_text": build_search_text(
+                        title=a.title, summary=a.summary or "",
+                        source_name=a.source_name, tags=a.tags or []
+                    ),
                     "title": a.title, "url": a.url, "source_name": a.source_name,
                     "raw_content": a.raw_content[:50000], "summary": a.summary or "",
                     "tags": a.tags or [], "importance": a.importance or "low",
@@ -74,6 +79,10 @@ class ArticleRepository(BaseRepository):
                     result["skipped"] += 1
                     continue
                 data = {
+                    "search_text": build_search_text(
+                        title=article.title, summary=article.summary or "",
+                        source_name=article.source_name, tags=article.tags or []
+                    ),
                     "title": article.title, "url": article.url, "source_name": article.source_name,
                     "raw_content": article.raw_content[:50000], "summary": article.summary or "",
                     "tags": article.tags or [], "importance": article.importance or "low",
