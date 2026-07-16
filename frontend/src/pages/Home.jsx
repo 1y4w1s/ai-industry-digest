@@ -144,6 +144,9 @@ export default function Home() {
             {/* 今日速览：首页首屏 hero（每日速览首屏改造 P0），置于文章列表之前 */}
             <DailyBriefing date={selectedDate} />
 
+            {/* 今日主线（从侧栏移入内容区） */}
+            {selectedDate && <MainThreadPanel date={selectedDate} />}
+
             {/* 今日 GitHub 推荐（P3-home）：首页编辑部主干的 GitHub 卡片 */}
             <GitHubAgentsCard range="week" minStars={100} sort="stars" limit={8} />
 
@@ -231,7 +234,6 @@ export default function Home() {
 
         <div className={`hidden lg:block flex-shrink-0 overflow-y-auto transition-all duration-300 ${sidePanelOpen ? 'w-[280px] opacity-100' : 'w-0 opacity-0 overflow-hidden'}`}
           style={{ borderLeft: '1px solid var(--color-border-light)', padding: '20px 16px', background: 'var(--color-bg-sidebar)' }}>
-          <MainThreadPanel date={selectedDate} />
           <SidePanel
             keywords={report?.trending_keywords || []}
             insight={report?.summary_insight || ''}

@@ -7,6 +7,7 @@ import RecentItems from './RecentItems';
 import ScrollProgress from './ScrollProgress';
 import Onboarding from './Onboarding';
 import KeyboardShortcuts from './KeyboardShortcuts';
+import MobileNav from './MobileNav';
 import LaoQianLogo from './LaoQianLogo';
 
 const ADMIN_USER = '1y4w1s';
@@ -289,7 +290,7 @@ export default function Layout() {
           </div>
         </header>
 
-        <main id="main-content" className="flex-1 flex flex-col min-h-0 overflow-auto">
+        <main id="main-content" className="flex-1 flex flex-col min-h-0 overflow-auto" style={{ paddingBottom: 0 }}>
           <ErrorBoundary>
             <Outlet />
           </ErrorBoundary>
@@ -313,6 +314,7 @@ export default function Layout() {
       </div>
 
       <KeyboardShortcuts />
+      <MobileNav />
       {location.pathname === '/' && <Onboarding />}
     </div>
   );
