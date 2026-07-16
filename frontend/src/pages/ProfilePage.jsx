@@ -108,30 +108,30 @@ export default function ProfilePage() {
   return (
     <div className="flex-1 flex flex-col min-h-0" style={{ background: 'var(--color-bg-white)' }}>
       <div className="flex-1 overflow-y-auto">
-        <div className="px-5 lg:px-6" style={{ paddingTop: '28px', paddingBottom: '32px', maxWidth: '520px', margin: '0 auto' }}>
+        <div className="px-5 lg:px-6" style={{ paddingTop: '28px', paddingBottom: '32px', maxWidth: '800px', margin: '0 auto' }}>
           {/* Avatar + Name */}
-          <div className="text-center mb-6">
-            <div className="w-16 h-16 rounded-full flex items-center justify-center text-lg font-semibold mx-auto mb-3" style={{ background: 'var(--color-border-light)', color: 'var(--color-text-muted)' }}>
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 rounded-full flex items-center justify-center text-lg font-semibold mx-auto mb-3" style={{ background: 'var(--color-brass-bg)', color: 'var(--color-brass)' }}>
               {initial}
             </div>
             <div className="flex items-center justify-center gap-2">
               {editing ? (
                 <div className="flex items-center gap-2">
                   <input value={nickInput} onChange={(e) => setNickInput(e.target.value)}
-                    style={{ padding: '6px 10px', fontSize: 'var(--fs-base)', borderRadius: '4px', border: '1px solid var(--color-border)', color: 'var(--color-text-body)', background: 'var(--color-bg-white)', outline: 'none', width: '160px' }}
+                    style={{ padding: '6px 10px', fontSize: '14px', borderRadius: '6px', border: '1px solid var(--color-border)', color: 'var(--color-text-body)', background: 'var(--color-bg-white)', outline: 'none', width: '160px' }}
                     autoFocus onKeyDown={(e) => { if (e.key === 'Enter') handleSaveNickname(); if (e.key === 'Escape') setEditing(false); }} />
                   <button onClick={handleSaveNickname} disabled={saving}
-                    style={{ padding: '6px 8px', background: 'var(--color-text-title)', border: 'none', borderRadius: '4px', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                    style={{ padding: '6px 8px', background: 'var(--color-brass)', border: 'none', borderRadius: '6px', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
                     {saving ? '...' : <IconCheck />}
                   </button>
                   <button onClick={() => setEditing(false)}
-                    style={{ padding: '6px 8px', background: 'none', border: '1px solid var(--color-border)', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', color: 'var(--color-text-muted)' }}>
+                    style={{ padding: '6px 8px', background: 'none', border: '1px solid var(--color-border)', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', color: 'var(--color-text-muted)' }}>
                     <IconClose />
                   </button>
                 </div>
               ) : (
                 <>
-                  <h1 style={{ fontFamily: "var(--font-display)", fontSize: 'var(--fs-xl)', fontWeight: 700, color: 'var(--color-text-title)' }}>
+                  <h1 style={{ fontFamily: "var(--font-display)", fontSize: '22px', fontWeight: 700, color: 'var(--color-text-title)' }}>
                     {nickname}
                   </h1>
                   <button onClick={handleStartEdit} style={{ padding: '4px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-label)', display: 'flex', alignItems: 'center' }}>
@@ -140,7 +140,7 @@ export default function ProfilePage() {
                 </>
               )}
             </div>
-            <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--color-text-muted)', marginTop: '4px' }}>{user?.email}</p>
+            <p style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginTop: '4px' }}>{user?.email}</p>
           </div>
 
           {/* Stats cards */}
@@ -155,19 +155,19 @@ export default function ProfilePage() {
             </div>
           ) : stats ? (
             <div className="flex gap-2 sm:gap-3 mb-6">
-              <div className="flex-1 rounded p-3 sm:p-4 text-center" style={{ background: 'var(--color-bg-off)' }}>
-                <div className="flex justify-center mb-2" style={{ color: 'var(--color-text-muted)' }}><IconRead /></div>
-                <div style={{ fontSize: 'var(--fs-xl)', fontWeight: 700, color: 'var(--color-text-title)' }}>{stats.total_read}</div>
+              <div className="flex-1 rounded-lg p-3 sm:p-4 text-center" style={{ background: 'var(--color-bg-off)' }}>
+                <div className="flex justify-center mb-2" style={{ color: 'var(--color-brass)' }}><IconRead /></div>
+                <div style={{ fontSize: '22px', fontWeight: 700, color: 'var(--color-text-title)' }}>{stats.total_read}</div>
                 <div style={{ fontSize: '10px', color: 'var(--color-text-label)', marginTop: '2px' }}>已读文章</div>
               </div>
-              <div className="flex-1 rounded p-3 sm:p-4 text-center" style={{ background: 'var(--color-bg-off)' }}>
-                <div className="flex justify-center mb-2" style={{ color: 'var(--color-text-muted)' }}><IconStar /></div>
-                <div style={{ fontSize: 'var(--fs-xl)', fontWeight: 700, color: 'var(--color-text-title)' }}>{stats.total_bookmarks}</div>
+              <div className="flex-1 rounded-lg p-3 sm:p-4 text-center" style={{ background: 'var(--color-bg-off)' }}>
+                <div className="flex justify-center mb-2" style={{ color: 'var(--color-brass)' }}><IconStar /></div>
+                <div style={{ fontSize: '22px', fontWeight: 700, color: 'var(--color-text-title)' }}>{stats.total_bookmarks}</div>
                  <div style={{ fontSize: '10px', color: 'var(--color-text-label)', marginTop: '2px' }}>收藏</div>
                </div>
-               <div className="flex-1 rounded p-3 sm:p-4 text-center" style={{ background: 'var(--color-bg-off)' }}>
-                 <div className="flex justify-center mb-2" style={{ color: 'var(--color-text-muted)' }}><IconStreak /></div>
-                 <div style={{ fontSize: 'var(--fs-xl)', fontWeight: 700, color: 'var(--color-text-title)' }}>{stats.streak_days}</div>
+               <div className="flex-1 rounded-lg p-3 sm:p-4 text-center" style={{ background: 'var(--color-bg-off)' }}>
+                 <div className="flex justify-center mb-2" style={{ color: 'var(--color-brass)' }}><IconStreak /></div>
+                 <div style={{ fontSize: '22px', fontWeight: 700, color: 'var(--color-text-title)' }}>{stats.streak_days}</div>
                 <div style={{ fontSize: '10px', color: 'var(--color-text-label)', marginTop: '2px' }}>连续天数</div>
               </div>
             </div>
@@ -182,15 +182,18 @@ export default function ProfilePage() {
           {/* Source distribution */}
           {sourceEntries.length > 0 && (
             <div className="mb-6">
-              <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--color-text-muted)', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 10 }}>
+              <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--color-text-title)' }}>
                 常读来源
-              </div>
+              </span>
+              <span style={{ flex: 1, height: '1px', background: 'linear-gradient(90deg, var(--color-brass) 0%, var(--color-border-light) 100%)' }} />
+            </div>
               <div className="space-y-2">
                 {sourceEntries.map(([src, count]) => (
                   <div key={src} className="flex items-center gap-3">
                     <span style={{ fontSize: 'var(--fs-sm)', color: 'var(--color-text-body)', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{src}</span>
                     <div style={{ flex: 2, height: '6px', borderRadius: '3px', background: 'var(--color-border-light)', overflow: 'hidden' }}>
-                      <div style={{ height: '100%', width: `${(count / sourceTotal) * 100}%`, borderRadius: '3px', background: 'var(--color-blue-link)', transition: 'width 0.3s' }} />
+                      <div style={{ height: '100%', width: `${(count / sourceTotal) * 100}%`, borderRadius: '3px', background: 'var(--color-brass)', transition: 'width 0.3s' }} />
                     </div>
                     <span style={{ fontSize: '11px', color: 'var(--color-text-label)', flexShrink: 0, width: '24px', textAlign: 'right' }}>{count}</span>
                   </div>
