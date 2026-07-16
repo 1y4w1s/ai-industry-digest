@@ -27,7 +27,7 @@ def _get_supabase_client() -> Client:
     """获取缓存的 Supabase 客户端"""
     global _supabase_client
     if _supabase_client is None:
-        url = os.getenv("SUPABASE_URL", "https://vobpkdrujixghvttgkuq.supabase.co")
+        url = os.getenv("SUPABASE_URL", "")
         key = os.getenv("SUPABASE_KEY", "")
         if not url or not key:
             raise ValueError("请设置环境变量 SUPABASE_URL 和 SUPABASE_KEY")

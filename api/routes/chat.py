@@ -7,7 +7,6 @@ import os
 import re
 import time
 import httpx
-import hashlib
 from typing import Optional, List, Dict, Any
 from pydantic import BaseModel
 from datetime import datetime
@@ -363,8 +362,8 @@ async def chat(
 
         # 调用 AI
         try:
-            with httpx.Client(timeout=60) as client:
-                resp = client.post(
+            async with httpx.AsyncClient(timeout=60) as client:
+                resp = await client.post(
                     "https://api.deepseek.com/v1/chat/completions",
                     headers={
                         "Authorization": f"Bearer {api_key}",

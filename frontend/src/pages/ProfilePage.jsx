@@ -69,14 +69,16 @@ export default function ProfilePage() {
   const initial = nickname[0].toUpperCase();
 
   useEffect(() => {
+    let cancelled = false;
     const cached = localStorage.getItem('signal_stats');
     if (cached) { try { setStats(JSON.parse(cached)); setStatsLoading(false); } catch {} }
     api.getStats()
-      .then((data) => { setStats(data); setStatsLoading(false); localStorage.setItem('signal_stats', JSON.stringify(data)); })
-      .catch(() => { if (!cached) setStats(null); setStatsLoading(false); });
+      .then((data) => { if (!cancelled) { setStats(data); setStatsLoading(false); localStorage.setItem('signal_stats', JSON.stringify(data)); } })
+      .catch(() => { if (!cancelled) { if (!cached) setStats(null); setStatsLoading(false); } });
     api.getReadingTrends()
-      .then((data) => setTrends(data))
+      .then((data) => { if (!cancelled) setTrends(data); })
       .catch(() => {});
+    return () => { cancelled = true; };
   }, []);
 
   const sourceEntries = stats?.source_distribution

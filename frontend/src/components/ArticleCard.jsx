@@ -1,4 +1,5 @@
 import { memo, useMemo } from 'react';
+import DOMPurify from 'dompurify';
 
 function highlightText(text, keyword) {
   if (!keyword || !text) return text;
@@ -79,7 +80,7 @@ function ArticleCard({ article, onSelect, variant = 'compact', keyword }) {
             fontWeight: imp === 'high' ? 500 : 400,
             lineHeight: 1.5,
             display: 'block',
-          }} dangerouslySetInnerHTML={{ __html: titleHtml }} />
+          }} dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(titleHtml) }} />
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2, fontSize: '12px', color: 'var(--color-text-label)' }}>
             <span>{article.source_name}</span>
             {article.published_at && <span>· {article.published_at.slice(0, 10)}</span>}

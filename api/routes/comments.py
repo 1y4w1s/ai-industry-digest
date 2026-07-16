@@ -12,8 +12,6 @@ Signal - 文章评论区（改造计划 §3.2）
   - 匿名评论不要求用户登录，仅需可选展示名。
 """
 
-import os
-import re
 from typing import Optional, List
 from datetime import datetime, timezone
 
