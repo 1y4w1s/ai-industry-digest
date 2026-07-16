@@ -9,6 +9,8 @@ import CommentSection from './CommentSection';
 import AiSummaryCard from './AiSummaryCard';
 import { IconPlay, IconPause, IconStop, IconBookmark, IconBookmarkFilled, IconPDF, IconShare } from './icons';
 import useTTS from '../hooks/useTTS';
+import PDFExportButton from './PDFExportButton';
+import ScrollToTopButton from './ScrollToTopButton';
 
 // html2canvas / jspdf 仅在用户点击「导出 PDF」时才需要，改为动态导入，避免首屏加载 ~300KB
 
@@ -265,13 +267,7 @@ export default function ArticleReader({ articleId, onBack }) {
               </div>
 
               {/* PDF export */}
-              <div className="mt-8 pt-6 text-center no-print" style={{ borderTop: '1px solid var(--color-border-light)' }}>
-                <button onClick={downloadPDF} disabled={loading}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 16px', fontSize: '12px', color: 'var(--color-text-muted)', background: 'transparent', border: '1px solid var(--color-border)', borderRadius: '4px', cursor: 'pointer', transition: 'all 0.15s' }}>
-                  <IconPDF />
-                  导出 PDF
-                </button>
-              </div>
+              <PDFExportButton onExport={downloadPDF} disabled={loading} />
 
               {/* 评论区（§3.2） */}
               <CommentSection articleId={articleId} />
@@ -376,25 +372,8 @@ export default function ArticleReader({ articleId, onBack }) {
         </div>
       )}
 
-      {/* 回到顶部（阅读时 AIChatBubble 隐藏，右下角空闲） */}
-      {showTop && (
-        <button onClick={() => contentScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
-          className="no-print"
-          title="回到顶部"
-          aria-label="回到顶部"
-          style={{ position: 'fixed', bottom: '24px', right: '24px', zIndex: 40, width: '42px', height: '42px', borderRadius: '50%', background: 'var(--color-text-title)', color: 'var(--color-bg-white)', border: 'none', cursor: 'pointer', boxShadow: '0 2px 10px rgba(0,0,0,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>
-          ↑
-        </button>
-      )}
-
-      {/* Hidden PDF source */}
-      {article && (
-        <div ref={pdfContentRef} style={{ position: 'fixed', top: '-9999px', left: '-9999px', width: '794px', padding: '60px 50px', fontFamily: "var(--font-display), 'Noto Serif CJK SC', 'STSong', Georgia, serif", lineHeight: 1.9, color: '#1a1a1a', background: '#ffffff', fontSize: '14px' }}>
-          <h1 style={{ fontFamily: "var(--font-display)", fontSize: '24px', fontWeight: 700, marginBottom: '10px', lineHeight: 1.35 }}>{article.title}</h1>
-          <p style={{ fontSize: '11px', color: '#666', marginBottom: '24px' }}>{article.source_name}{article.published_at ? ` · ${article.published_at.slice(0, 10)}` : ''}</p>
-          <div style={{ fontSize: '12px', lineHeight: 1.9, whiteSpace: 'pre-wrap' }} dangerouslySetInnerHTML={{ __html: renderArticleContent(articleText) }} />
-        </div>
-      )}
+            {/* 回到顶部 */}
+      <ScrollToTopButton visible={showTop} onClick={() => contentScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })} />
     </div>
   );
 }
