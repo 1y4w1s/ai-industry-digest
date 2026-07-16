@@ -27,7 +27,7 @@ class TestCacheService:
         key3 = cache_key("articles", long_value)
         assert len(key3) < 110  # 应该被 hash 缩短（允许少量误差）
 
-    @patch('api.services.cache.redis')
+    @patch('api.services.cache.redis', create=True)
     def test_cache_get_hit(self, mock_redis):
         """测试缓存命中"""
         from api.services.cache import CacheService
@@ -40,13 +40,15 @@ class TestCacheService:
 
         cache = CacheService()
         cache._initialized = False
+        import api.services.cache as cache_mod
+        cache_mod.REDIS_AVAILABLE = True
         cache.__init__()
 
         result = cache.get("test_key")
         assert result == {"test": "data"}
         assert cache._stats["hits"] == 1
 
-    @patch('api.services.cache.redis')
+    @patch('api.services.cache.redis', create=True)
     def test_cache_get_miss(self, mock_redis):
         """测试缓存未命中"""
         from api.services.cache import CacheService
@@ -58,13 +60,15 @@ class TestCacheService:
 
         cache = CacheService()
         cache._initialized = False
+        import api.services.cache as cache_mod
+        cache_mod.REDIS_AVAILABLE = True
         cache.__init__()
 
         result = cache.get("missing_key")
         assert result is None
         assert cache._stats["misses"] == 1
 
-    @patch('api.services.cache.redis')
+    @patch('api.services.cache.redis', create=True)
     def test_cache_set(self, mock_redis):
         """测试缓存设置"""
         from api.services.cache import CacheService
@@ -75,31 +79,35 @@ class TestCacheService:
 
         cache = CacheService()
         cache._initialized = False
+        import api.services.cache as cache_mod
+        cache_mod.REDIS_AVAILABLE = True
         cache.__init__()
 
         success = cache.set("test_key", {"data": "value"}, ttl=300)
         assert success is True
         mock_client.setex.assert_called_once()
 
-    @patch('api.services.cache.redis')
+    @patch('api.services.cache.redis', create=True)
     def test_cache_delete_pattern(self, mock_redis):
         """测试批量删除缓存"""
-        from api.services.cache import CacheService
+        from api.services.cache import CacheService, REDIS_AVAILABLE
 
         mock_client = MagicMock()
         mock_client.ping.return_value = True
-        mock_client.keys.return_value = ["articles:1", "articles:2"]
+        mock_client.scan.side_effect = [(0, ["articles:1", "articles:2"])]
         mock_client.delete.return_value = 2
         mock_redis.from_url.return_value = mock_client
 
         cache = CacheService()
         cache._initialized = False
+        import api.services.cache as cache_mod
+        cache_mod.REDIS_AVAILABLE = True
         cache.__init__()
 
         deleted = cache.delete_pattern("articles:*")
         assert deleted == 2
 
-    @patch('api.services.cache.redis')
+    @patch('api.services.cache.redis', create=True)
     def test_cache_stats(self, mock_redis):
         """测试缓存统计"""
         from api.services.cache import CacheService
@@ -112,6 +120,8 @@ class TestCacheService:
 
         cache = CacheService()
         cache._initialized = False
+        import api.services.cache as cache_mod
+        cache_mod.REDIS_AVAILABLE = True
         cache.__init__()
         cache._stats = {"hits": 80, "misses": 20, "errors": 0}
 
@@ -140,7 +150,7 @@ class TestCacheService:
 class TestCacheIntegration:
     """缓存集成测试（与 DatabaseManager）"""
 
-    @patch('api.services.cache.redis')
+    @patch('api.services.cache.redis', create=True)
     def test_get_articles_with_cache(self, mock_redis):
         """测试文章查询使用缓存"""
         mock_client = MagicMock()
@@ -157,6 +167,8 @@ class TestCacheIntegration:
         from api.services.cache import CacheService
         cache = CacheService()
         cache._initialized = False
+        import api.services.cache as cache_mod
+        cache_mod.REDIS_AVAILABLE = True
         cache.__init__()
 
         # 缓存命中时应该直接返回
