@@ -6,85 +6,13 @@ import { Cache, CACHE_TTL } from '../utils/cache';
 import { useToast } from './Toast';
 import ErrorBoundary from './ErrorBoundary';
 import CommentSection from './CommentSection';
+import AiSummaryCard from './AiSummaryCard';
+import { IconPlay, IconPause, IconStop, IconBookmark, IconBookmarkFilled, IconPDF, IconShare } from './icons';
+import useTTS from '../hooks/useTTS';
 
 // html2canvas / jspdf 仅在用户点击「导出 PDF」时才需要，改为动态导入，避免首屏加载 ~300KB
 
-/* ── TTS hook (guarded for mobile browsers without SpeechSynthesis) ───── */
-function getSS() {
-  return typeof window !== 'undefined' && window.speechSynthesis ? window.speechSynthesis : null;
-}
-
-function useTTS() {
-  const [state, setState] = useState('idle');
-  const utteranceRef = useRef(null);
-  const textChunksRef = useRef([]);
-  const chunkIdxRef = useRef(0);
-
-  const stop = useCallback(() => {
-    const ss = getSS();
-    if (ss) ss.cancel();
-    utteranceRef.current = null;
-    textChunksRef.current = [];
-    chunkIdxRef.current = 0;
-    setState('idle');
-  }, []);
-
-  useEffect(() => {
-    return () => { const ss = getSS(); if (ss) ss.cancel(); };
-  }, []);
-
-  const speak = useCallback((text) => {
-    const ss = getSS();
-    if (!ss || !text) return;
-    ss.cancel();
-    const chunks = [];
-    let current = '';
-    for (const char of text) {
-      current += char;
-      if (current.length > 150 && /[。！？\n.!?]/.test(char)) {
-        chunks.push(current.trim());
-        current = '';
-      }
-    }
-    if (current.trim()) chunks.push(current.trim());
-    textChunksRef.current = chunks;
-    chunkIdxRef.current = 0;
-
-    const speakChunk = (idx) => {
-      if (idx >= chunks.length) { setState('idle'); return; }
-      const utt = new SpeechSynthesisUtterance(chunks[idx]);
-      utt.lang = 'zh-CN';
-      utt.rate = 1.0;
-      utt.pitch = 1.0;
-      const voices = ss.getVoices();
-      const zhVoice = voices.find((v) => v.lang.startsWith('zh'));
-      if (zhVoice) utt.voice = zhVoice;
-      utt.onend = () => { chunkIdxRef.current = idx + 1; speakChunk(idx + 1); };
-      utt.onerror = () => setState('idle');
-      utteranceRef.current = utt;
-      ss.speak(utt);
-      setState('playing');
-    };
-
-    if (ss.getVoices().length === 0) {
-      ss.onvoiceschanged = () => speakChunk(0);
-    } else {
-      speakChunk(0);
-    }
-  }, []);
-
-  const pause = useCallback(() => { const ss = getSS(); if (ss) ss.pause(); setState('paused'); }, []);
-  const resume = useCallback(() => { const ss = getSS(); if (ss) ss.resume(); setState('playing'); }, []);
-
-  const toggle = useCallback((text) => {
-    if (state === 'idle') { speak(text); }
-    else if (state === 'playing') { pause(); }
-    else if (state === 'paused') { resume(); }
-  }, [state, speak, pause, resume]);
-
-  return { state, toggle, stop };
-}
-
+/* ── stripHtml for TTS ───────────────────────── */
 function stripHtml(html) {
   if (!html) return '';
   // Used for TTS only — get plain text without formatting
@@ -99,16 +27,6 @@ function stripHtml(html) {
   text = text.replace(/\n{3,}/g, '\n\n').trim();
   return text;
 }
-
-/* ── SVG icons ───────────── */
-const IconPlay = () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3" /></svg>);
-const IconPause = () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2"><rect x="6" y="4" width="4" height="16" /><rect x="14" y="4" width="4" height="16" /></svg>);
-const IconStop = () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2"><rect x="4" y="4" width="16" height="16" rx="2" /></svg>);
-const IconBookmark = () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2v16z" /></svg>);
-const IconBookmarkFilled = () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2v16z" /></svg>);
-const IconPDF = () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9V2h12v7" /><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2" /><path d="M6 14h12v8H6z" /><circle cx="18" cy="11.5" r="1" /></svg>);
-const IconShare = () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4" /></svg>);
-
 export default function ArticleReader({ articleId, onBack }) {
   const [article, setArticle] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -302,18 +220,7 @@ export default function ArticleReader({ articleId, onBack }) {
         <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
           <div ref={contentScrollRef} className="flex-1 min-w-0 overflow-y-auto" style={{ borderRight: '1px solid var(--color-border-light)', background: 'var(--color-bg-white)' }}>
             <div className="p-5 lg:p-8 max-w-3xl mx-auto">
-              {article.summary && (
-                <div className="no-print" style={{ background: 'var(--color-bg-off)', borderRadius: '4px', padding: '16px', marginBottom: '24px' }}>
-                  <h3 className="font-semibold text-xs uppercase tracking-wider mb-3" style={{ color: 'var(--color-text-muted)' }}>AI 精读</h3>
-                  <div className="text-sm leading-relaxed" style={{ color: 'var(--color-text-body)' }}>{article.summary}</div>
-                  {article.importance_reason && <div className="mt-2 text-xs italic" style={{ color: 'var(--color-text-label)' }}>{article.importance_reason}</div>}
-                  {article.tags?.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 mt-3">
-                      {article.tags.map((t) => (<span key={t} className="px-2 py-0.5 text-xs rounded" style={{ background: 'var(--color-border-light)', color: 'var(--color-text-muted)' }}>{t}</span>))}
-                    </div>
-                  )}
-                </div>
-              )}
+              {article.summary && <AiSummaryCard summary={article.summary} importanceReason={article.importance_reason} tags={article.tags} />}
 
               <h2 style={{ fontFamily: "var(--font-display)", fontSize: '22px', fontWeight: 700, color: 'var(--color-text-title)', lineHeight: 1.35, marginBottom: '12px' }}>{article.title}</h2>
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-6" style={{ color: 'var(--color-text-muted)', fontSize: '13px' }}>

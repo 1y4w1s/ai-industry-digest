@@ -129,7 +129,14 @@ class CacheService:
             return 0
 
         try:
-            keys = self._redis.keys(pattern)
+            # 使用 SCAN 替代 KEYS（KEYS 在大数据集上会阻塞）
+            cursor = 0
+            keys = []
+            while True:
+                cursor, batch = self._redis.scan(cursor, match=pattern, count=500)
+                keys.extend(batch)
+                if cursor == 0:
+                    break
             if keys:
                 return self._redis.delete(*keys)
             return 0

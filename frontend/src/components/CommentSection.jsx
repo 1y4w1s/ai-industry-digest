@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { api } from '../api/client';
 import { useToast } from './Toast';
 import { isLoggedIn, getToken } from '../lib/token';
@@ -46,7 +46,7 @@ export default function CommentSection({ articleId }) {
   const toast = useToast();
 
   // 点击"回复"时聚焦回复输入框
-  const replyInputRef = useState(null);
+  const replyInputRef = useRef(null);
 
   const fetchComments = useCallback(async () => {
     if (!articleId) return;

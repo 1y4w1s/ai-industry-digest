@@ -63,20 +63,84 @@ class DatabaseManager:
     # ── 写入 ─────────────────────────────────────
 
     def save_articles(self, articles: List[Article]) -> dict:
-        """批量写入文章到 Supabase（自动去重）"""
+        """批量写入文章到 Supabase（批量查重 + 批量 upsert）"""
         result = {"inserted": 0, "skipped": 0, "errors": 0}
+        if not articles:
+            return result
 
+        # 收集所有 URL
+        all_urls = [a.url for a in articles]
+        existing_urls = set()
+
+        # 分批查重（Supabase in_() 上限约 1000）
+        BATCH_SIZE = 500
+        for i in range(0, len(all_urls), BATCH_SIZE):
+            batch = all_urls[i:i + BATCH_SIZE]
+            try:
+                resp = self.client.table("articles") \
+                    .select("url") \
+                    .in_("url", batch) \
+                    .execute()
+                if resp.data:
+                    existing_urls.update(item["url"] for item in resp.data)
+            except Exception as e:
+                print(f"    [DB ERROR] 批量查重失败: {e}")
+                result["errors"] += 1
+                # 降级：逐条处理
+                return self._save_articles_fallback(articles)
+
+        # 过滤出新文章
+        new_articles = [a for a in articles if a.url not in existing_urls]
+        result["skipped"] = len(articles) - len(new_articles)
+
+        if not new_articles:
+            return result
+
+        # 分批批量插入（使用 upsert 防并发竞争）
+        for i in range(0, len(new_articles), BATCH_SIZE):
+            batch = new_articles[i:i + BATCH_SIZE]
+            data_list = []
+            for a in batch:
+                data_list.append({
+                    "title": a.title,
+                    "url": a.url,
+                    "source_name": a.source_name,
+                    "raw_content": a.raw_content[:50000],
+                    "summary": a.summary or "",
+                    "tags": a.tags or [],
+                    "importance": a.importance or "low",
+                    "importance_reason": a.importance_reason or "",
+                    "so_what": getattr(a, "so_what", None),
+                    "source_refs": a.source_refs or [],
+                    "published_at": a.published_at.isoformat() if a.published_at else None,
+                })
+            try:
+                self.client.table("articles") \
+                    .upsert(data_list, on_conflict="url", ignore_duplicates=True) \
+                    .execute()
+                result["inserted"] += len(data_list)
+            except Exception as e:
+                print(f"    [DB ERROR] 批量写入失败: {e}")
+                result["errors"] += len(data_list)
+
+        # 清除文章列表缓存
+        if result["inserted"] > 0:
+            invalidate_cache("articles:*")
+
+        return result
+
+    def _save_articles_fallback(self, articles: List[Article]) -> dict:
+        """逐条插入（降级路径）"""
+        result = {"inserted": 0, "skipped": 0, "errors": 0}
         for article in articles:
             try:
                 existing = self.client.table("articles") \
                     .select("id") \
                     .eq("url", article.url) \
                     .execute()
-
                 if existing.data and len(existing.data) > 0:
                     result["skipped"] += 1
                     continue
-
                 data = {
                     "title": article.title,
                     "url": article.url,
@@ -86,21 +150,17 @@ class DatabaseManager:
                     "tags": article.tags or [],
                     "importance": article.importance or "low",
                     "importance_reason": article.importance_reason or "",
-                    "so_what": getattr(article, "so_what", None),  # 观点层，可空，旧文兼容
+                    "so_what": getattr(article, "so_what", None),
                     "source_refs": article.source_refs or [],
                     "published_at": article.published_at.isoformat() if article.published_at else None,
                 }
                 self.client.table("articles").insert(data).execute()
                 result["inserted"] += 1
-
             except Exception as e:
                 print(f"    [DB ERROR] 写入失败 [{article.url[:50]}...]: {e}")
                 result["errors"] += 1
-
-        # 如果有新文章写入，清除文章列表缓存
         if result["inserted"] > 0:
             invalidate_cache("articles:*")
-
         return result
 
     # ── 文章查询（分页 + 搜索 + 过滤） ─────────────
@@ -584,7 +644,7 @@ class DatabaseManager:
     def get_reading_trends(self, user_id: str) -> dict:
         """获取阅读趋势统计"""
         history = self.client.table("reading_history") \
-            .select("read_at, articles(raw_content)") \
+            .select("read_at") \
             .eq("user_id", user_id) \
             .order("read_at", desc=True) \
             .execute()
@@ -595,26 +655,17 @@ class DatabaseManager:
         monthly = {}
         # Hour distribution
         hourly = {h: 0 for h in range(24)}
-        total_chars = 0
-        total_read_with_content = 0
 
         for row in records:
             read_at = row.get("read_at", "")
             if read_at:
                 month_key = read_at[:7]
                 monthly[month_key] = monthly.get(month_key, 0) + 1
-
                 try:
                     hour = int(read_at[11:13])
                     hourly[hour] = hourly.get(hour, 0) + 1
                 except (ValueError, IndexError):
                     pass
-
-                article = row.get("articles") or {}
-                raw = article.get("raw_content") or ""
-                if raw:
-                    total_chars += len(raw)
-                    total_read_with_content += 1
 
         # Build monthly trend array (last 6 months, sorted)
         today = date.today()
@@ -638,7 +689,6 @@ class DatabaseManager:
             "monthly_trend": monthly_trend,
             "hourly_distribution": hourly,
             "peak_hour": peak_hour,
-            "avg_read_length": avg_read_length,
         }
 
 

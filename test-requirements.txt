@@ -1,0 +1,14 @@
+# Signal · 测试依赖（pip install -r test-requirements.txt）
+# 用于本地运行 pytest（生产依赖见 requirements.txt）
+pytest>=8.0.0
+pytest-asyncio>=0.23.0
+pytest-cov>=4.0.0
+pytest-mock>=3.0.0
+httpx>=0.27.0
+supabase==2.5.3
+python-dotenv==1.0.1
+pyjwt==2.8.0
+redis>=5.0.0
+cryptography==48.0.0
+fastapi[standard]==0.115.0
+uvicorn[standard]==0.30.0
