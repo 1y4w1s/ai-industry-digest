@@ -25,49 +25,33 @@ export default function MainThreadPanel({ date }) {
 
   return (
     <div style={{
-      borderLeft: '3px solid var(--color-brass)',
-      padding: '0 0 0 14px',
-      marginBottom: 24,
+      display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap',
+      marginBottom: 16, paddingBottom: 12,
+      borderBottom: '1px solid var(--color-border-light)',
     }}>
-      <h3 style={{
-        fontFamily: 'var(--font-display)',
-        fontSize: '13px', fontWeight: 600,
-        color: 'var(--color-text-title)',
-        marginBottom: 12,
-      }}>
+      <span style={{ width: 3, height: 14, borderRadius: 2, background: 'var(--color-brass)', flexShrink: 0 }} />
+      <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--color-text-title)', flexShrink: 0 }}>
         今日主线
-      </h3>
+      </span>
       {loading ? (
-        <div style={{ height: 60, background: 'var(--color-bg-hover)', borderRadius: 6, opacity: 0.5 }} />
+        <span style={{ fontSize: '11px', color: 'var(--color-text-label)' }}>加载中...</span>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          {stories.map((s, i) => (
-            <div key={i}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                {s.entity && (
-                  <span style={{
-                    fontSize: '10px', fontWeight: 600, padding: '1px 7px',
-                    borderRadius: 999, background: 'var(--color-brass-bg)',
-                    color: 'var(--color-brass)',
-                  }}>{s.entity}</span>
-                )}
-                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-text-title)', lineHeight: 1.4 }}>
-                  {s.title}
-                </span>
-              </div>
-              {(s.articles || []).slice(0, 4).map((a, j) => (
-                <div key={j} style={{ fontSize: '12px', color: 'var(--color-text-muted)', lineHeight: 1.5, paddingLeft: 2 }}>
-                  <a href={a.url} target="_blank" rel="noreferrer"
-                    style={{ color: 'var(--color-text-body)', textDecoration: 'none', transition: 'color 0.15s' }}
-                    onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-brass)'}
-                    onMouseLeave={(e) => e.currentTarget.style.color = 'var(--color-text-body)'}
-                  >{a.title}</a>
-                  {a.source_name && <span style={{ color: 'var(--color-text-label)' }}> · {a.source_name}</span>}
-                </div>
-              ))}
-            </div>
-          ))}
-        </div>
+        stories.map((s, i) => (
+          <span key={i} style={{
+            fontSize: '12px', color: 'var(--color-text-body)',
+            display: 'inline-flex', alignItems: 'center', gap: 4,
+          }}>
+            {s.entity && (
+              <span style={{
+                fontSize: '9px', fontWeight: 600, padding: '1px 6px',
+                borderRadius: 999, background: 'var(--color-brass-bg)',
+                color: 'var(--color-brass)',
+              }}>{s.entity}</span>
+            )}
+            <span>{s.title}</span>
+            {i < stories.length - 1 && <span style={{ color: 'var(--color-border)', marginLeft: 2 }}>/</span>}
+          </span>
+        ))
       )}
     </div>
   );
