@@ -6,7 +6,7 @@
 const STORAGE_KEY = 'signal_auth_token';
 
 /** 临时用户 token（未登录时的演示模式） */
-// export const DEMO_TOKEN = 'demo-user';
+export const DEMO_TOKEN = 'demo-user';
 
 /** 获取当前 token */
 export function getToken() {
