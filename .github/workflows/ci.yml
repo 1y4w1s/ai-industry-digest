@@ -56,7 +56,6 @@ jobs:
       - name: 代码检查
         working-directory: frontend
         run: npm run lint
-        continue-on-error: true
 
       - name: 构建生产版本
         working-directory: frontend

@@ -32,7 +32,7 @@ from api.routes.public_digest import (
 def test_public_digest_html_has_seo_meta():
     report = _demo_report(8)
     rd = date(2026, 7, 10)
-    html = PublicDigestRenderer(base_url="https://1y4w1s.icu:8080").render(report, rd)
+    html = PublicDigestRenderer(base_url="http://localhost:8000").render(report, rd)
 
     # 关键 meta 标签齐全
     assert "<title>" in html
@@ -58,22 +58,22 @@ def test_public_digest_html_has_seo_meta():
 def test_public_digest_canonical_and_og_url_absolute():
     report = _demo_report(8)
     rd = date(2026, 7, 10)
-    base = "https://1y4w1s.icu:8080"
+    base = "http://localhost:8000"
     html = PublicDigestRenderer(base_url=base).render(report, rd)
     canonical = f"{base}/digest/2026-07-10"
 
     assert f'<link rel="canonical" href="{canonical}">' in html
     assert f'<meta property="og:url" content="{canonical}">' in html
-    # 必须是绝对 URL，且带 8080 端口
-    assert "http://" not in canonical and canonical.startswith("https://1y4w1s.icu:8080")
+    # 必须是绝对 URL（http://localhost:8000）
+    assert canonical.startswith("http://localhost:8000")
     # JSON-LD 内的 url 也是绝对
     assert canonical in html
 
 
 def test_public_digest_default_base_url_is_8080_domain():
-    # 不传 base_url 时应取缺省 https://1y4w1s.icu:8080（带端口）
+    # 不传 base_url 时应取缺省 http://localhost:8000（带端口）
     r = PublicDigestRenderer()
-    assert r.base_url == DEFAULT_PUBLIC_BASE_URL == "https://1y4w1s.icu:8080"
+    assert r.base_url == DEFAULT_PUBLIC_BASE_URL == "http://localhost:8000"
 
 
 def test_public_digest_base_url_override_via_env(monkeypatch):
@@ -149,7 +149,7 @@ def test_route_digest_db_unreachable_degrades_200():
     body = resp.text
     assert "<title>" in body
     assert 'rel="canonical"' in body
-    assert "https://1y4w1s.icu:8080/digest/2026-07-10" in body
+    assert "http://localhost:8000/digest/2026-07-10" in body
     # 不得泄露异常堆栈
     assert "Traceback" not in body and "RuntimeError" not in body
 
@@ -187,7 +187,7 @@ def test_route_digest_with_content_renders_canonical():
     # 内容 + canonical + 同源 so_what
     assert "OpenAI 发布" in body
     assert "So What / 对你意味着什么" in body
-    assert f"https://1y4w1s.icu:8080/digest/{today}" in body
+    assert f"http://localhost:8000/digest/{today}" in body
     assert "/unsubscribe" not in body and "/track/open" not in body
 
 
@@ -202,10 +202,10 @@ def test_route_sitemap_absolute_links():
     assert resp.headers["content-type"].startswith("application/xml")
     body = resp.text
     assert "<urlset" in body
-    assert "https://1y4w1s.icu:8080/digest/2026-07-10" in body
-    assert "https://1y4w1s.icu:8080/digest/2026-07-09" in body
+    assert "http://localhost:8000/digest/2026-07-10" in body
+    assert "http://localhost:8000/digest/2026-07-09" in body
     # 每个 <loc> 都是绝对 URL
-    assert body.count("<loc>https://") == 3
+    assert body.count("<loc>http://") == 3
 
 
 def test_route_sitemap_db_unreachable_empty():
@@ -225,7 +225,7 @@ def test_route_robots_points_to_sitemap():
     body = resp.text
     assert "User-agent: *" in body
     assert "Allow: /" in body
-    assert "Sitemap: https://1y4w1s.icu:8080/sitemap.xml" in body
+    assert "Sitemap: http://localhost:8000/sitemap.xml" in body
 
 
 # ── P1a-2 · OG SVG 分享卡片 ──────────────────────────────

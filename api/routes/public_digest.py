@@ -40,7 +40,7 @@ from scripts.newsletter import build_report, NewsletterRenderer
 from api.services.html_renderers import render_main_thread, fmt_github_card
 
 # 公开页常量
-DEFAULT_PUBLIC_BASE_URL = "https://1y4w1s.icu:8080"   # 线上域名（8080 端口 + HTTPS 待收敛）
+DEFAULT_PUBLIC_BASE_URL = "http://localhost:8000"   # 生产环境应设置 PUBLIC_BASE_URL 环境变量
 SITEMAP_DAYS = 30                                       # sitemap 收录最近 N 天
 TOP_N = 8                                               # 公开页 Top N 文章
 PRODUCT_NAME = "Signal"

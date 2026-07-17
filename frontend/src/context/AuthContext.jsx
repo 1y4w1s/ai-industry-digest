@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { setToken, clearToken } from '../lib/token';
 
 const AuthContext = createContext(null);
@@ -81,8 +81,13 @@ export function AuthProvider({ children }) {
     if (error) throw error;
   }, [supabase]);
 
+  const value = useMemo(() => ({
+    user, login, signup, logout, resetPassword,
+    isLoggedIn: !!user, loading,
+  }), [user, login, signup, logout, resetPassword, loading]);
+
   return (
-    <AuthContext.Provider value={{ user, login, signup, logout, resetPassword, isLoggedIn: !!user, loading }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

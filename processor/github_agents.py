@@ -12,7 +12,7 @@ Signal - GitHub AI Agent 高星项目采集（每日日报「今日 GitHub 推�
 from __future__ import annotations
 
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional
 
 import requests
@@ -33,14 +33,14 @@ def _parse_gh_time(s: Optional[str]) -> Optional[datetime]:
     if not s:
         return None
     try:
-        return datetime.strptime(s, "%Y-%m-%dT%H:%M:%SZ")
+        return datetime.strptime(s, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
     except Exception:
         return None
 
 
 def _range_to_since(range_key: str) -> str:
     days = _RANGE_DAYS.get(range_key, _RANGE_DAYS["week"])
-    return (datetime.utcnow() - timedelta(days=days)).strftime("%Y-%m-%d")
+    return (datetime.now(timezone.utc) - timedelta(days=days)).strftime("%Y-%m-%d")
 
 
 def _stars_per_day(stars: int, created_at: Optional[str], now: datetime) -> float:
@@ -67,7 +67,7 @@ def fetch_github_agents(
     range = range if range in _RANGE_DAYS else "week"
     sort = sort if sort in ("stars", "trending") else "stars"
     cache_key = f"{range}:{min_stars}:{sort}:{limit}"
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
 
     if use_cache and cache_key in _cache:
         ts, data = _cache[cache_key]

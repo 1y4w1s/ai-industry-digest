@@ -9,7 +9,6 @@ Signal - JWT 验证工具
 """
 
 import os
-import jwt
 from typing import Optional
 
 from supabase import create_client, Client

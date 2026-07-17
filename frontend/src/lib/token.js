@@ -12,7 +12,7 @@ export const DEMO_TOKEN = 'demo-user';
 export function getToken() {
   try {
     return localStorage.getItem(STORAGE_KEY);
-  } catch {
+  } catch (e) { console.warn("[token]", e);
     return null;
   }
 }
@@ -21,19 +21,19 @@ export function getToken() {
 export function setToken(token) {
   try {
     localStorage.setItem(STORAGE_KEY, token);
-  } catch { /* ignore */ }
+  } catch (e) { console.warn("[token]", e); /* ignore */ }
 }
 
 /** 清除 token（登出时调用） */
 export function clearToken() {
   try {
     localStorage.removeItem(STORAGE_KEY);
-  } catch { /* ignore */ }
+  } catch (e) { console.warn("[token]", e); /* ignore */ }
 }
 
 /** 获取带 Bearer 前缀的 Authorization header 值 */
 export function getAuthHeader() {
-  const token = getToken() || DEMO_TOKEN;
+  const token = getToken();
   return token ? `Bearer ${token}` : null;
 }
 
@@ -57,7 +57,7 @@ export function isTokenExpiringSoon() {
     const exp = payload.exp * 1000;
     const fiveMinutes = 5 * 60 * 1000;
     return (exp - Date.now()) < fiveMinutes;
-  } catch {
+  } catch (e) { console.warn("[token]", e);
     return false;
   }
 }

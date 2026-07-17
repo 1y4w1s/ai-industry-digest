@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Outlet, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { api } from '../api/client';
 import AIChatBubble from './AIChatBubble';
 import ErrorBoundary from './ErrorBoundary';
 import RecentItems from './RecentItems';
@@ -10,9 +11,7 @@ import KeyboardShortcuts from './KeyboardShortcuts';
 import MobileNav from './MobileNav';
 import LaoQianLogo from './LaoQianLogo';
 
-const ADMIN_USER = import.meta.env.VITE_ADMIN_USER || '1y4w1s';
-
-function useNavItems(user) {
+function useNavItems(isAdminFromServer) {
   const base = [
     { path: '/', label: '今日日报', icon: 'home' },
     { path: '/archive', label: '日报归档', icon: 'archive' },
@@ -20,8 +19,7 @@ function useNavItems(user) {
     { path: '/history', label: '浏览历史', icon: 'history' },
     { path: '/settings', label: '设置', icon: 'settings' },
   ];
-  const isAdmin = user?.user_metadata?.nickname === ADMIN_USER || user?.email?.startsWith(ADMIN_USER);
-  if (isAdmin) {
+  if (isAdminFromServer) {
     base.splice(4, 0, { path: '/admin', label: '管理后台', icon: 'shield' });
   }
   return base;
@@ -55,12 +53,30 @@ export default function Layout() {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isAdmin, setIsAdmin] = useState(false);
   const searchRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const isReading = !!searchParams.get('article');
-  const NAV_ITEMS = useNavItems(user);
+  const NAV_ITEMS = useNavItems(isAdmin);
+
+  // 管理员权限由后端验证，不信任前端 user_metadata
+  useEffect(() => {
+    if (!isLoggedIn) {
+      setIsAdmin(false);
+      return;
+    }
+    let cancelled = false;
+    api.getMe()
+      .then((profile) => {
+        if (!cancelled) setIsAdmin(profile?.role === 'admin');
+      })
+      .catch(() => {
+        if (!cancelled) setIsAdmin(false);
+      });
+    return () => { cancelled = true; };
+  }, [isLoggedIn]);
 
   useEffect(() => {
     if (searchOpen) {

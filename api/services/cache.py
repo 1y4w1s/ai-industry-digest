@@ -175,6 +175,34 @@ class CacheService:
         """重置统计信息"""
         self._stats = {"hits": 0, "misses": 0, "errors": 0}
 
+    def check_rate_limit(self, key: str, max_requests: int, window: int) -> bool:
+        """检查速率限制（Redis 滑动窗口）
+
+        Args:
+            key: 限流键，如 "ratelimit:ip:1.2.3.4"
+            max_requests: 时间窗口内允许的最大请求数
+            window: 时间窗口（秒）
+
+        Returns:
+            True = 允许请求，False = 超过限制
+        """
+        if self.available:
+            # Redis 版本：原子 INCR + EXPIRE
+            try:
+                pipe = self._redis.pipeline()
+                pipe.incr(key)
+                pipe.expire(key, window)
+                result = pipe.execute()
+                count = result[0]
+                return count <= max_requests
+            except Exception as e:
+                self._stats["errors"] += 1
+                print(f"[Cache] 速率限制检查失败: {e}")
+                return True  # Redis 失败时放行
+        else:
+            # 降级：不做限流（单 worker 下不限流，比误拦好）
+            return True
+
 
 # 全局缓存实例
 cache = CacheService()

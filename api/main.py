@@ -2,7 +2,6 @@
 Signal - FastAPI 入口
 """
 
-import time
 import os
 from pathlib import Path
 
@@ -27,6 +26,7 @@ from api.routes.public_digest import router as public_digest_router
 from api.routes.podcast import router as podcast_router
 from api.routes.comments import router as comments_router
 from api.routes.github_agents import router as github_agents_router
+from api.services.cache import cache
 
 app = FastAPI(
     title="Signal API",
@@ -45,39 +45,14 @@ app.add_middleware(
 )
 
 # ── 速率限制 ──────────────────────────────
-# 双层限流策略：
-#   公共 API（/api/* 非 auth）→ 120 req/min/IP（防止爬虫）
-#   用户操作（/api/auth/*）   → 30 req/min/IP（收藏/历史写操作）
-#   登录（POST /api/auth/login）→ 不在本后端，由 Supabase Auth 直接处理
+# 双层限流策略（Redis 分布式实现，多 worker 共享）：
+#   公共 API（/api/* 非 auth）→ 120 req/min/IP
+#   用户操作（/api/auth/*）   → 30 req/min/IP
+# Redis 不可用时自动放行（比误拦好）
 
-rate_limit_store: dict = {}   # 普通 API
-auth_limit_store: dict = {}   # auth 路径（更严格）
-
-# 公共 API 限流参数
-RATE_LIMIT_MAX_IPS = 1000
 RATE_LIMIT_WINDOW = 60
 RATE_LIMIT_MAX_REQS = 120
-
-# Auth 路径限流参数
-AUTH_LIMIT_MAX_REQS = 30   # 每分钟最多 30 次
-
-
-def _cleanup_rate_limit():
-    """清理所有限流存储，防止内存泄漏"""
-    global rate_limit_store, auth_limit_store
-    now = time.time()
-    cutoff = now - RATE_LIMIT_WINDOW
-    
-    rate_limit_store = {
-        ip: [t for t in ts if t > cutoff]
-        for ip, ts in rate_limit_store.items()
-        if any(t > cutoff for t in ts)
-    }
-    auth_limit_store = {
-        ip: [t for t in ts if t > cutoff]
-        for ip, ts in auth_limit_store.items()
-        if any(t > cutoff for t in ts)
-    }
+AUTH_LIMIT_MAX_REQS = 30
 
 
 @app.middleware("http")
@@ -89,39 +64,27 @@ async def rate_limit_middleware(request: Request, call_next):
     if path.startswith("/test/") or path.startswith("/docs") or path.startswith("/openapi") or path.startswith("/api/proxy"):
         return await call_next(request)
 
-    now = time.time()
-
-    # 定期清理
-    if int(now) % RATE_LIMIT_WINDOW == 0:
-        _cleanup_rate_limit()
-    if len(rate_limit_store) > RATE_LIMIT_MAX_IPS or len(auth_limit_store) > RATE_LIMIT_MAX_IPS:
-        _cleanup_rate_limit()
-
     # 选择限流策略
     if path.startswith("/api/auth/"):
         # Auth 路径 — 更严格
-        store = auth_limit_store
         max_reqs = AUTH_LIMIT_MAX_REQS
         err_msg = "操作过于频繁，请稍后再试"
     elif path.startswith("/api/"):
         # 普通 API
-        store = rate_limit_store
         max_reqs = RATE_LIMIT_MAX_REQS
         err_msg = "请求过于频繁，请稍后再试"
     else:
         # 非 API 路径不限流
         return await call_next(request)
 
-    # 清理当前 IP 过期记录
-    store[client_ip] = [t for t in store.get(client_ip, []) if now - t < RATE_LIMIT_WINDOW]
+    key = f"ratelimit:{client_ip}:{path.split('/')[2] if path.startswith('/api/') else 'other'}"
 
-    if len(store[client_ip]) >= max_reqs:
+    if not cache.check_rate_limit(key, max_reqs, RATE_LIMIT_WINDOW):
         return JSONResponse(
             status_code=429,
             content={"detail": err_msg, "retry_after": 60}
         )
 
-    store[client_ip].append(now)
     return await call_next(request)
 
 
@@ -143,7 +106,7 @@ async def health():
         "status": "ok" if db_ok else "degraded",
         "version": "2.0.0",
         "db": "ok" if db_ok else "error",
-        "timestamp": __import__('datetime').datetime.now().isoformat(),
+        "timestamp": __import__('datetime').datetime.now(timezone.utc).isoformat(),
     }
 
 

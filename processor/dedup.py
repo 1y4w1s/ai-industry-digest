@@ -3,10 +3,11 @@ Signal - 去重管道
 三层去重：URL 精确去重 → 标题相似度去重 → AI 辅助去重
 """
 
-from typing import List, Dict, Tuple
-from difflib import SequenceMatcher
+import re
+from typing import List, Dict, Tuple, Set
 
 from collector.base import Article
+from api.services.logger import logger
 
 
 class Deduplicator:
@@ -29,22 +30,22 @@ class Deduplicator:
         if not articles:
             return []
 
-        print(f"\n🔍 去重管道: 输入 {len(articles)} 篇文章")
+        logger.info(f"去重管道: 输入 {len(articles)} 篇文章")
 
         # 第一层：URL 精确去重
         articles = self._dedup_by_url(articles)
-        print(f"  第一层(URL精确): {len(articles)} 篇")
+        logger.info(f"  第一层(URL精确): {len(articles)} 篇")
 
         # 第二层：标题相似度去重
         articles, fuzzy_duplicates = self._dedup_by_title(articles)
-        print(f"  第二层(标题相似度): {len(articles)} 篇 (合并 {len(fuzzy_duplicates)} 组)")
+        logger.info(f"  第二层(标题相似度): {len(articles)} 篇 (合并 {len(fuzzy_duplicates)} 组)")
 
         # 第三层：AI 辅助去重（仅对模糊区间内的文章）
         if self.ai and fuzzy_duplicates:
             articles = self._dedup_by_ai(articles, fuzzy_duplicates)
-            print(f"  第三层(AI辅助): {len(articles)} 篇")
+            logger.info(f"  第三层(AI辅助): {len(articles)} 篇")
 
-        print(f"  去重完成: {len(articles)} 篇")
+        logger.info(f"  去重完成: {len(articles)} 篇")
         return articles
 
     # ── 第一层：URL 精确去重 ──────────────────────
@@ -96,10 +97,34 @@ class Deduplicator:
 
         return unique, fuzzy_pairs
 
+    def _char_ngrams(self, text: str, n: int = 2) -> Set[str]:
+        """生成字符 n-gram，用于相似度计算
+
+        对中文和英文混排文本均有效。
+        n=2 (bigram) 在速度和精度间取得良好平衡。
+        """
+        # 保留字母、数字、中文，去除标点空格
+        cleaned = re.sub(r'[^\w\u4e00-\u9fff]', '', text.lower())
+        if len(cleaned) < n:
+            return {cleaned}
+        return {cleaned[i:i + n] for i in range(len(cleaned) - n + 1)}
+
     def _title_similarity(self, title_a: str, title_b: str) -> float:
-        """计算两个标题的相似度 (0.0 - 1.0)"""
-        # 使用 SequenceMatcher（简单有效）
-        return SequenceMatcher(None, title_a.lower(), title_b.lower()).ratio()
+        """计算两个标题的相似度 (0.0 - 1.0)
+
+        使用字符 bigram Jaccard 相似度替代 SequenceMatcher：
+        - O(n) 而非 O(n²)，对 100+ 文章提升明显
+        - 中英文均有效
+        """
+        grams_a = self._char_ngrams(title_a)
+        grams_b = self._char_ngrams(title_b)
+
+        if not grams_a or not grams_b:
+            return 0.0
+
+        intersection = len(grams_a & grams_b)
+        union = len(grams_a | grams_b)
+        return intersection / union if union > 0 else 0.0
 
     def _merge_articles(self, target: Article, source: Article):
         """合并两篇同一事件的文章，保留更完整的信息"""
@@ -134,11 +159,11 @@ class Deduplicator:
                         merged_indices.add(articles.index(new_article))
                 # else: AI认为不重复 → 都保留（默认行为，无需处理）
             except Exception as e:
-                print(f"  [WARN] AI 去重判断失败: {e}")
+                logger.warning(f"AI 去重判断失败", extra={"error": str(e)})
                 # 保守策略：AI无法判断时都保留，但标记为"疑似重复"
                 existing.suspected_duplicate = True
                 new_article.suspected_duplicate = True
-                print(f"  [INFO] 已标记疑似重复: [{existing.title}] <-> [{new_article.title}]")
+                logger.info(f"已标记疑似重复: [{existing.title}] <-> [{new_article.title}]")
 
         # 过滤掉已被合并的文章
         result = [

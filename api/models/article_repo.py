@@ -18,6 +18,7 @@ class ArticleRepository(BaseRepository):
         from ..models.article import Article
         
         result = {"inserted": 0, "skipped": 0, "errors": 0}
+        invalidate_cache("home")
         if not articles:
             return result
 
@@ -72,6 +73,7 @@ class ArticleRepository(BaseRepository):
     def _save_articles_fallback(self, articles: List) -> dict:
         """逐条插入（降级路径）"""
         result = {"inserted": 0, "skipped": 0, "errors": 0}
+        invalidate_cache("home")
         for article in articles:
             try:
                 existing = self.client.table("articles").select("id").eq("url", article.url).execute()

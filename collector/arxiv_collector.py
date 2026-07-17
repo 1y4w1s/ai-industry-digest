@@ -4,6 +4,7 @@ Signal - arXiv API 采集器
 """
 
 import time
+import threading
 from datetime import datetime, timedelta
 from typing import List, Optional
 import xml.etree.ElementTree as ET
@@ -20,15 +21,17 @@ class ArxivCollector(BaseCollector):
     # arXiv API 限流：每 3 秒最多 1 次请求
     REQUEST_INTERVAL = 3.0
     _last_request_time = 0.0
+    _rate_limit_lock = threading.Lock()
 
     @classmethod
     def _rate_limit(cls):
-        """类级别限流：所有实例共享"""
-        elapsed = time.time() - cls._last_request_time
-        if elapsed < cls.REQUEST_INTERVAL:
-            wait = cls.REQUEST_INTERVAL - elapsed
-            time.sleep(wait)
-        cls._last_request_time = time.time()
+        """类级别限流：所有实例共享（threading.Lock 保证线程安全）"""
+        with cls._rate_limit_lock:
+            elapsed = time.time() - cls._last_request_time
+            if elapsed < cls.REQUEST_INTERVAL:
+                wait = cls.REQUEST_INTERVAL - elapsed
+                time.sleep(wait)
+            cls._last_request_time = time.time()
 
     def collect(self) -> List[Article]:
         """查询 arXiv API 并返回论文列表"""

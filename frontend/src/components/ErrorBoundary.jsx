@@ -1,11 +1,28 @@
 import { Component } from 'react';
 
 export default class ErrorBoundary extends Component {
-  state = { hasError: false, error: null };
+  state = { hasError: false, error: null, retryCount: 0 };
 
   static getDerivedStateFromError(error) {
     return { hasError: true, error };
   }
+
+  componentDidCatch(error, errorInfo) {
+    // 上报错误到控制台（生产环境可接入 Sentry 等日志服务）
+    console.error('[ErrorBoundary]', error, errorInfo);
+    if (typeof this.props.onError === 'function') {
+      this.props.onError(error, errorInfo);
+    }
+  }
+
+  handleRetry = () => {
+    const { retryCount } = this.state;
+    if (retryCount >= 3) {
+      console.warn('[ErrorBoundary] 重试次数超过限制，不再重试');
+      return;
+    }
+    this.setState({ hasError: false, error: null, retryCount: retryCount + 1 });
+  };
 
   render() {
     if (this.state.hasError) {
@@ -18,12 +35,17 @@ export default class ErrorBoundary extends Component {
               </svg>
             </div>
             <p style={{ fontSize: '12px', color: 'var(--color-text-label)', marginBottom: '6px' }}>该区域加载失败</p>
-            <button
-              onClick={() => this.setState({ hasError: false, error: null })}
-              style={{ fontSize: '11px', color: 'var(--color-brass)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-            >
-              重试
-            </button>
+            {this.state.retryCount < 3 && (
+              <button
+                onClick={this.handleRetry}
+                style={{ fontSize: '11px', color: 'var(--color-brass)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+              >
+                重试
+              </button>
+            )}
+            {this.state.retryCount >= 3 && (
+              <p style={{ fontSize: '10px', color: 'var(--color-text-label)', marginTop: '4px' }}>请刷新页面后重试</p>
+            )}
           </div>
         </div>
       );

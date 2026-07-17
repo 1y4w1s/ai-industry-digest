@@ -9,12 +9,16 @@ from supabase import create_client, Client
 def main():
     print("=== 执行数据库迁移 ===")
     print()
-    
-    url = "https://vobpkdrujixghvttgkuq.supabase.co"
-    key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZvYnBrZHJ1aml4Z2h2dHRna3VxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDQ4Mjg3MiwiZXhwIjoyMDk2MDU4ODcyfQ.fHqbH-1qytRby_hF_YfNqhIEvWQxkLXCNKVmB2U5F5A"
-    
+
+    # 凭据从环境变量读取（不要在脚本中硬编码）
+    url = os.getenv("SUPABASE_URL", "")
+    key = os.getenv("SUPABASE_KEY", "")
+    if not url or not key:
+        print("❌ 请设置 SUPABASE_URL 和 SUPABASE_KEY 环境变量")
+        return
+
     supabase: Client = create_client(url, key)
-    
+
     # 查看当前列
     print("当前 reading_history 表列:")
     try:
@@ -27,22 +31,20 @@ def main():
             print("  (表为空)")
     except Exception as e:
         print(f"  ❌ 获取列失败: {e}")
-    
+
     print()
-    
+
     # 检查是否需要添加列
     columns = ['read_percent', 'duration_sec']
     for col in columns:
         if col not in result.data[0].keys():
             print(f"需要添加 {col} 列")
-            
-            # 使用 REST API 尝试更新（这种方式不支持 ALTER TABLE）
-            # 我们需要使用其他方式
+
             print(f"  ⚠️ 需要手动在 Supabase 控制台执行 ALTER TABLE")
             print(f"    ALTER TABLE reading_history ADD COLUMN IF NOT EXISTS {col} double precision;")
         else:
             print(f"{col} 列已存在")
-    
+
     print()
     print("=== 迁移说明 ===")
     print("由于 Supabase Python SDK 的同步客户端不支持直接执行 SQL，")
@@ -52,7 +54,7 @@ def main():
     print("ALTER TABLE reading_history ADD COLUMN IF NOT EXISTS duration_sec integer;")
     print()
     print("操作步骤：")
-    print("1. 登录 https://supabase.com/dashboard/project/vobpkdrujixghvttgkuq")
+    print("1. 登录 Supabase 控制台")
     print("2. 进入 SQL Editor")
     print("3. 执行上述 SQL")
     print("4. 验证：SELECT * FROM reading_history LIMIT 1;")

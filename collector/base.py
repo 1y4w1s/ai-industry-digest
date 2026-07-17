@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Optional, List
 from abc import ABC, abstractmethod
+from api.services.logger import logger
 
 
 @dataclass
@@ -43,6 +44,11 @@ class BaseCollector(ABC):
         self.priority = source_config.get("priority", 3)
         self.enabled = source_config.get("enabled", True)
         self.config = source_config
+
+    def log(self, level: str, msg: str, **extra):
+        """结构化日志，替代 print()"""
+        log_fn = getattr(logger, level, logger.info)
+        log_fn(f"[{self.name}] {msg}", extra=extra)
 
     @abstractmethod
     def collect(self) -> List[Article]:

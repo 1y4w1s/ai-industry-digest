@@ -4,44 +4,42 @@ Signal - 内容接口路由
 """
 
 import httpx
-import time
 from typing import Optional
 from urllib.parse import urlparse
 
 from fastapi import APIRouter, Query, HTTPException
 from fastapi.responses import Response, JSONResponse
-from api.models.database import get_db
+from api.models.database import lazy_db as db
+from api.services.cache import cache
 
 router = APIRouter()
-db = get_db()
 
-# ── 首页缓存（数据每天仅更新 3 次，缓存 10 分钟足够）───
-_home_cache = None
-_home_cache_time = 0
+# ── 首页缓存（Redis 实现多 worker 共享，10 分钟 TTL）───
 _HOME_CACHE_TTL = 600  # 10 秒
 
 def _get_home_cached():
-    """获取缓存的首页数据（10 分钟 TTL）"""
-    global _home_cache, _home_cache_time
-    now = time.time()
-    if _home_cache is None or now - _home_cache_time > _HOME_CACHE_TTL:
-        # 返回最多31条日报（约一个月），支持归档浏览
-        reports = db.get_reports(page=1, page_size=31)
-        sources = db.get_sources()
-        tags = db.get_tags()
-        # 预取首日报详情，消除前端瀑布请求
-        report_detail = None
-        if reports.get("items"):
-            latest = reports["items"][0]
-            report_detail = db.get_report_by_date(latest["report_date"])
-        _home_cache = {
-            "reports": reports,
-            "sources": sources,
-            "tags": tags,
-            "report_detail": report_detail,
-        }
-        _home_cache_time = now
-    return _home_cache
+    """获取缓存的首页数据（10 分钟 TTL），通过 Redis 实现多 worker 共享"""
+    cached = cache.get("home")
+    if cached is not None:
+        return cached
+    
+    # 返回最多31条日报（约一个月），支持归档浏览
+    reports = db.get_reports(page=1, page_size=31)
+    sources = db.get_sources()
+    tags = db.get_tags()
+    # 预取首日报详情，消除前端瀑布请求
+    report_detail = None
+    if reports.get("items"):
+        latest = reports["items"][0]
+        report_detail = db.get_report_by_date(latest["report_date"])
+    result = {
+        "reports": reports,
+        "sources": sources,
+        "tags": tags,
+        "report_detail": report_detail,
+    }
+    cache.set("home", result, _HOME_CACHE_TTL)
+    return result
 
 
 @router.get("/reports", tags=["日报"])
@@ -111,36 +109,52 @@ async def proxy_article(url: str = Query(..., description="目标 URL")):
     if not url.startswith("http://") and not url.startswith("https://"):
         raise HTTPException(status_code=400, detail="无效的 URL")
 
-    # SSRF 防护：仅允许代理文章表中的已收录域名
+    # ── SSRF 防护：按域名匹配白名单 ──
+    parsed = urlparse(url)
+    domain = parsed.netloc.lower()
+
     try:
-        # 从数据库中提取所有文章域名作为白名单
-        result = db.get_sources()
-        # 对于每个 source_name，可能对应一个或多个域名
-        # 简单方案：只允许 articles 表中已存在的完整 URL
+        # 从 articles 表提取已收录 URL 的域名作为动态白名单
         articles_result = db.client.table("articles").select("url").limit(1000).execute()
-        valid_urls = set(r["url"] for r in (articles_result.data or []))
-        if url not in valid_urls:
-            # 兼容：检查域名是否在 sources 中（松散匹配）
-            from urllib.parse import urlparse
-            parsed = urlparse(url)
-            domain = parsed.netloc.lower()
-            # 基础域名白名单
-            ALLOWED_DOMAINS = {
-                "www.qbitai.com", "qbitai.com",
-                "36kr.com", "www.36kr.com",
-                "github.com", "www.github.com",
-                "techcrunch.com", "www.techcrunch.com",
-                "theverge.com", "www.theverge.com",
-                "arstechnica.com", "www.arstechnica.com",
-                "theguardian.com", "www.theguardian.com",
-                "nytimes.com", "www.nytimes.com",
-            }
-            if domain not in ALLOWED_DOMAINS:
-                raise HTTPException(status_code=403, detail="域名不在白名单中")
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"白名单检查失败: {e}")
+        dynamic_domains = set()
+        for r in (articles_result.data or []):
+            article_url = r.get("url", "")
+            if article_url:
+                try:
+                    ad = urlparse(article_url).netloc.lower()
+                    if ad:
+                        dynamic_domains.add(ad)
+                except Exception:
+                    pass
+    except Exception:
+        dynamic_domains = set()
+
+    # 兜底：常见 AI 行业来源的域名
+    STATIC_DOMAINS = {
+        "www.qbitai.com", "qbitai.com",
+        "36kr.com", "www.36kr.com",
+        "github.com", "www.github.com",
+        "techcrunch.com", "www.techcrunch.com",
+        "theverge.com", "www.theverge.com",
+        "arstechnica.com", "www.arstechnica.com",
+        "theguardian.com", "www.theguardian.com",
+        "nytimes.com", "www.nytimes.com",
+        "mp.weixin.qq.com",
+        "huggingface.co",
+        "arxiv.org",
+        "openai.com",
+        "blog.google",
+        "ai.googleblog.com",
+        "research.google",
+        "deepmind.google",
+        "anthropic.com",
+        "android.com", "developer.android.com",
+        "developers.googleblog.com",
+        "news.ycombinator.com",
+    }
+
+    if domain not in dynamic_domains and domain not in STATIC_DOMAINS:
+        raise HTTPException(status_code=403, detail="域名不在白名单中")
 
     try:
         async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
@@ -162,7 +176,7 @@ async def proxy_article(url: str = Query(..., description="目标 URL")):
     except httpx.TimeoutException:
         raise HTTPException(status_code=504, detail="代理请求超时")
     except Exception as e:
-        raise HTTPException(status_code=502, detail=f"代理请求失败: {e}")
+        raise HTTPException(status_code=502, detail="代理请求失败，目标网站可能暂时不可达")
 
 
 @router.get("/sources", tags=["元数据"])
@@ -203,8 +217,7 @@ async def search_all(
     importance: Optional[str] = Query(None, description="重要性筛选"),
 ):
     """全站搜索：支持来源/标签/重要性筛选"""
-    articles = db.get_articles(
+    return db.get_articles(
         page=page, page_size=page_size, keyword=q,
         source=source, tag=tag, importance=importance,
     )
-    return {"articles": articles}

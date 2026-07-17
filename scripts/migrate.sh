@@ -1,15 +1,23 @@
 #!/bin/bash
+# 数据库迁移脚本
+# 用法: SUPABASE_URL=your_url SUPABASE_KEY=your_key ./scripts/migrate.sh
 
-curl -X POST "https://vobpkdrujixghvttgkuq.supabase.co/rest/v1/rpc/execute_sql" \
-  -H "apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZvYnBrZHJ1aml4Z2h2dHRna3VxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDQ4Mjg3MiwiZXhwIjoyMDk2MDU4ODcyfQ.fHqbH-1qytRby_hF_YfNqhIEvWQxkLXCNKVmB2U5F5A" \
+if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_KEY" ]; then
+  echo "❌ 请设置 SUPABASE_URL 和 SUPABASE_KEY 环境变量"
+  echo "用法: SUPABASE_URL=... SUPABASE_KEY=... $0"
+  exit 1
+fi
+
+curl -X POST "$SUPABASE_URL/rest/v1/rpc/execute_sql" \
+  -H "apikey: $SUPABASE_KEY" \
   -H "Content-Type: application/json" \
   -d '{"sql": "ALTER TABLE reading_history ADD COLUMN IF NOT EXISTS read_percent double precision"}'
 
 echo ""
 echo "---"
 
-curl -X POST "https://vobpkdrujixghvttgkuq.supabase.co/rest/v1/rpc/execute_sql" \
-  -H "apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZvYnBrZHJ1aml4Z2h2dHRna3VxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDQ4Mjg3MiwiZXhwIjoyMDk2MDU4ODcyfQ.fHqbH-1qytRby_hF_YfNqhIEvWQxkLXCNKVmB2U5F5A" \
+curl -X POST "$SUPABASE_URL/rest/v1/rpc/execute_sql" \
+  -H "apikey: $SUPABASE_KEY" \
   -H "Content-Type: application/json" \
   -d '{"sql": "ALTER TABLE reading_history ADD COLUMN IF NOT EXISTS duration_sec integer"}'
 

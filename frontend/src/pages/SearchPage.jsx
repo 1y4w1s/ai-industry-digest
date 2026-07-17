@@ -36,8 +36,8 @@ export default function SearchPage() {
 
   // 加载来源/标签列表
   useEffect(() => {
-    api.getSources().then(setSources).catch(() => {});
-    api.getTags().then(setTags).catch(() => {});
+    api.getSources().then(data => setSources(Array.isArray(data) ? data : (data.sources || []))).catch(e => console.error(e));
+    api.getTags().then(data => setTags(Array.isArray(data) ? data : (data.tags || []))).catch(e => console.error(e));
   }, []);
 
   // 重置页码当筛选条件变化
@@ -54,8 +54,8 @@ export default function SearchPage() {
 
     api.searchAll(query, page, 50, filters)
       .then((data) => {
-        const items = (data.articles?.items || []).map((a) => ({ ...a, _imp: a.importance }));
-        setResults({ ...data.articles, items });
+        const items = (data.items || []).map((a) => ({ ...a, _imp: a.importance }));
+        setResults({ ...data, items });
       })
       .catch(() => setResults({ items: [], total: 0, pages: 0 }))
       .finally(() => setLoading(false));

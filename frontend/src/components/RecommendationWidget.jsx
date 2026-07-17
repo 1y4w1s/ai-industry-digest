@@ -21,7 +21,7 @@ export default function RecommendationWidget({ onNavigate }) {
       api.getRecommend(5).then((data) => {
         setItems(data.items || []);
         setReason(data.reason || '');
-      }).catch(() => {}).finally(() => setLoading(false));
+      }).catch(e => console.error(e)).finally(() => setLoading(false));
     }, 3000);
     return () => clearTimeout(timer);
   }, [isLoggedIn, closed]);
@@ -63,8 +63,9 @@ export default function RecommendationWidget({ onNavigate }) {
         {/* Items */}
         <div className="space-y-1.5">
           {items.map((article) => (
-            <div key={article.id}
+            <div key={article.id} role="button" tabIndex={0}
               onClick={() => onNavigate?.(article.id)}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onNavigate?.(article.id); }}}
               style={{
                 display: 'flex', alignItems: 'flex-start', gap: '8px',
                 padding: '6px 8px', borderRadius: '3px', cursor: 'pointer',

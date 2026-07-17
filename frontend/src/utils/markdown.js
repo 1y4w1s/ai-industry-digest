@@ -2,6 +2,8 @@
  * Lightweight inline markdown → HTML renderer
  * Handles: **bold**, *italic*, `code`, newlines
  */
+import DOMPurify from 'dompurify';
+
 export function renderMd(text) {
   if (!text) return '';
   return text
@@ -44,54 +46,21 @@ export function renderArticleContent(text) {
 }
 
 /**
- * Strip unsafe tags, only allow formatting/structural HTML
+ * Strip unsafe tags via DOMPurify, keep only formatting/structural HTML
  */
 function sanitizeHtml(html) {
-  const allowed = new Set([
+  const ALLOWED = [
     'p', 'br', 'h1', 'h2', 'h3', 'h4',
     'ul', 'ol', 'li',
     'strong', 'b', 'em', 'i', 'u',
     'blockquote', 'pre', 'code', 'span', 'div',
-    'hr',
-  ]);
-
-  // Escape & < > first to prevent XSS
-  let safe = html
-    .replace(/&(?!(?:amp|lt|gt|quot|#\d+);)/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-
-  // Restore actual < > for allowed tags
-  const tagPattern = /&lt;(\/?)(\w+)([^&]*)&gt;/g;
-  safe = safe.replace(tagPattern, (match, slash, tagName, attrs) => {
-    const tag = tagName.toLowerCase();
-    if (allowed.has(tag)) {
-      // Remove all attributes except class, keep it clean
-      return `<${slash}${tag}>`;
-    }
-    // Return escaped text for disallowed tags (strip tag, keep content)
-    return '';
+    'hr', 'a',
+  ];
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: ALLOWED,
+    ALLOWED_ATTR: ['href', 'target', 'rel', 'class'],
+    ALLOW_DATA_ATTR: false,
   });
-
-  // Decode HTML entities back for readable display
-  safe = safe
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&#8211;/g, '—')
-    .replace(/&#8212;/g, '—')
-    .replace(/&#8216;/g, "'")
-    .replace(/&#8217;/g, "'")
-    .replace(/&#8220;/g, '"')
-    .replace(/&#8221;/g, '"')
-    .replace(/&#8230;/g, '…');
-
-  // Normalize excess blank lines
-  safe = safe.replace(/\n{3,}/g, '\n\n');
-
-  return safe;
 }
 
 /**

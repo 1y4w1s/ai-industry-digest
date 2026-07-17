@@ -59,8 +59,11 @@ class AIProcessor:
             )
 
         self.batch_size = batch_size
-        self.base_url = "https://api.deepseek.com/v1/chat/completions"
-        self.model = "deepseek-chat"  # DeepSeek-V4 模型
+        self.base_url = os.getenv(
+            "AI_API_BASE_URL",
+            "https://api.deepseek.com/v1/chat/completions"
+        )
+        self.model = os.getenv("AI_MODEL", "deepseek-chat")
 
     # ── 公开调用方法 ──────────────────────────────────
 

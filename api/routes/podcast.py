@@ -15,7 +15,7 @@ Signal - 播客 RSS（改造计划 §2.2：对标 Rundown audio）
 from __future__ import annotations
 
 import os
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import List, Optional, Tuple
 
@@ -76,7 +76,7 @@ def _build_rss(items: List[Tuple[date, int]], base_url: Optional[str] = None) ->
             "    </item>"
         )
 
-    now = datetime.now().strftime("%a, %d %b %Y %H:%M:%S +0800")
+    now = datetime.now(timezone.utc).strftime("%a, %d %b %Y %H:%M:%S +0000")
     xml = (
         '<?xml version="1.0" encoding="UTF-8"?>\n'
         '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">\n'

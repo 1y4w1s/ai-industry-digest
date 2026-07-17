@@ -91,12 +91,19 @@ class RSSCollector(BaseCollector):
             'pre': True, 'code': True,
         }
 
-        # 移除所有不在允许列表中的标签（保留内容）
+        # 移除所有不在允许列表中的标签（保留内容），并清除已允许标签的所有属性
         def strip_tag(m):
             full = m.group(0)  # 完整匹配 <tagname ...>
+            # 提取标签名
             tag = full.lower().split()[0].lstrip('<').rstrip('>').rstrip('/')
             if tag in allowed:
-                return full
+                # 只保留标签名，移除所有属性（防止 onclick/javascript: 等注入）
+                if full.startswith('</'):
+                    return f'</{tag}>'
+                elif full.endswith('/>') or full.endswith(' />'):
+                    return f'<{tag} />'
+                else:
+                    return f'<{tag}>'
             return ''
 
         html = re.sub(r'<[^>]+>', strip_tag, html)

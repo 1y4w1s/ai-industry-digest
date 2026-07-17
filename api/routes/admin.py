@@ -9,10 +9,9 @@ from datetime import datetime, timedelta
 
 from api.services.cache import cache
 from api.services.admin_auth import get_current_admin
-from api.models.database import get_db
+from api.models.database import lazy_db as db
 
 router = APIRouter(prefix="/admin", tags=["admin"])
-db = get_db()
 
 
 # ── 系统统计 ─────────────────────────────────
@@ -39,7 +38,7 @@ async def get_stats_overview(
     total_reads = history_result.count or 0
     
     # 今日活跃用户（今天有阅读记录的用户）
-    today = datetime.now().date().isoformat()
+    today = datetime.now(timezone.utc).date().isoformat()
     active_result = db.client.table("reading_history") \
         .select("user_id", count="exact") \
         .gte("read_at", today) \

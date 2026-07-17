@@ -57,5 +57,5 @@ async def main_thread(date: str = Query(..., description="简报日期 YYYY-MM-D
             "report_date": date,
             "stories": [],
             "total_stories": 0,
-            "error": str(e),
+            "error": "stories_generation_failed",
         }

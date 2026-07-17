@@ -28,7 +28,7 @@
 | **httpx** | - | 异步 HTTP | 信息源采集 + API 代理请求 |
 | **feedparser** | - | RSS 解析 | 多源标准化采集 |
 | **BeautifulSoup** | - | HTML 清洗 | 提取正文内容 |
-| **PyJWT + cryptography** | - | JWT 验证 | JWKS 公钥 RS256 签名验证 |
+| **Supabase SDK** | supabase | 数据库/认证 | 直接通过 Supabase auth.get_user() 验证 JWT |
 
 ## AI
 

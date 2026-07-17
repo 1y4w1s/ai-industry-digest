@@ -565,7 +565,7 @@ class NewsletterService:
 # ──────────────────────────────────────────────────────────────
 
 def _demo_report(top_n: int) -> dict:
-    now = datetime.now()
+    now = datetime.now(timezone.utc)
     sample = [
         {
             "title": "<script>alert(1)</script>OpenAI 发布 GPT-6，推理成本下降 70%",

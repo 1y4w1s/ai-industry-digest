@@ -122,17 +122,19 @@ export function useReport(initialDate = null) {
     if (report?.report_date === selectedDate) return;
 
     setDetailLoading(true);
-    api.getReport(selectedDate).then((data) => setReport(data)).catch(() => {}).finally(() => setDetailLoading(false));
+    api.getReport(selectedDate).then((data) => setReport(data)).catch(e => console.error(e)).finally(() => setDetailLoading(false));
   }, [selectedDate]);
 
   // Flatten articles from report
-  const articles = [];
-  if (report) {
+  const articles = useMemo(() => {
+    if (!report) return [];
+    const result = [];
     for (const level of ['high', 'medium', 'low'])
-      for (const a of (report.articles?.[level] || [])) articles.push({ ...a, _imp: level });
-  }
+      for (const a of (report.articles?.[level] || [])) result.push({ ...a, _imp: level });
+    return result;
+  }, [report]);
 
-  const highArticles = articles.filter((a) => a._imp === 'high');
+  const highArticles = useMemo(() => articles.filter((a) => a._imp === 'high'), [articles]);
 
   return {
     reports, selectedDate, setSelectedDate,

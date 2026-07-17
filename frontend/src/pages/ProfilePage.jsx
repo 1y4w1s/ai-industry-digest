@@ -77,7 +77,7 @@ export default function ProfilePage() {
       .catch(() => { if (!cancelled) { if (!cached) setStats(null); setStatsLoading(false); } });
     api.getReadingTrends()
       .then((data) => { if (!cancelled) setTrends(data); })
-      .catch(() => {});
+      .catch(e => console.error(e));
     return () => { cancelled = true; };
   }, []);
 

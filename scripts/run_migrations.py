@@ -38,9 +38,20 @@ from supabase import create_client
 def get_migration_files() -> list:
     """获取所有 migration 文件，按文件名排序"""
     files = []
+    files = []
+    # Main dir: scripts/migration_*.sql
     for f in sorted(os.listdir(MIGRATIONS_DIR)):
         if f.startswith("migration_") and f.endswith(".sql"):
             path = os.path.join(MIGRATIONS_DIR, f)
+            files.append(path)
+    # Subdir: scripts/migrations/*.sql
+    sub_dir = os.path.join(MIGRATIONS_DIR, "migrations")
+    if os.path.isdir(sub_dir):
+        for f in sorted(os.listdir(sub_dir)):
+            if f.endswith(".sql"):
+                path = os.path.join(sub_dir, f)
+                files.append(path)
+    for path in files:
             with open(path, "r", encoding="utf-8") as fh:
                 content = fh.read()
             files.append({

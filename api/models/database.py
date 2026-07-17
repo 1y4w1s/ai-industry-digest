@@ -19,6 +19,7 @@ from .article_repo import ArticleRepository
 from .user_repo import UserRepository
 from .bookmark_repo import BookmarkRepository
 from .chat_repo import ChatRepository
+from .constants import Tables
 
 load_dotenv()
 
@@ -56,25 +57,6 @@ class DatabaseManager:
     def _create_client(self) -> Client:
         """创建 Supabase 客户端"""
         return create_client(self._url, self._key)
-
-    def _execute_with_retry(self, operation, *args, **kwargs):
-        """带重试机制的数据库操作"""
-        last_error = None
-        for attempt in range(self.MAX_RETRIES + 1):
-            try:
-                return operation(*args, **kwargs)
-            except Exception as e:
-                last_error = e
-                if attempt < self.MAX_RETRIES:
-                    wait = self.RETRY_DELAY * (2 ** attempt)
-                    print(f"  [DB RETRY] 操作失败，{wait}秒后重试 ({attempt + 1}/{self.MAX_RETRIES}): {e}")
-                    time.sleep(wait)
-                    # 重新创建客户端（处理连接断开）
-                    self.client = self._create_client()
-                else:
-                    print(f"  [DB ERROR] 操作最终失败: {e}")
-                    raise
-        raise last_error
 
     # ── 写入 ─────────────────────────────────────
 
@@ -502,7 +484,7 @@ class DatabaseManager:
     def _update_reading_history(self, record_id: str, read_percent: Optional[float] = None,
                                 duration_sec: Optional[int] = None) -> None:
         """更新浏览历史记录"""
-        update_data = {"read_at": datetime.now().isoformat()}
+        update_data = {"read_at": datetime.now(timezone.utc).isoformat()}
         
         # 尝试使用完整字段更新
         if read_percent is not None:
@@ -519,7 +501,7 @@ class DatabaseManager:
             # 降级：列不存在时只更新 read_at
             print("[DB] 降级更新浏览历史（缺少 read_percent/duration_sec 列）")
             self.client.table("reading_history") \
-                .update({"read_at": datetime.now().isoformat()}) \
+                .update({"read_at": datetime.now(timezone.utc).isoformat()}) \
                 .eq("id", record_id) \
                 .execute()
 
@@ -555,7 +537,7 @@ class DatabaseManager:
 
     def upsert_user_tag(self, user_id: str, tag: str, source: str = 'chat') -> None:
         """更新用户标签权重（存在则 +1，不存在则插入）"""
-        now = datetime.now().isoformat()
+        now = datetime.now(timezone.utc).isoformat()
         # 检查是否已存在
         existing = self.client.table("user_tags") \
             .select("weight") \
@@ -752,22 +734,28 @@ class DatabaseManager:
             return False
 
     # ── 表名常量 ────────────────────────────
+    # 定义在 api/models/constants.py
 
-class Tables:
-    """数据库表名常量（集中管理，避免硬编码）"""
-    ARTICLES = "articles"
-    DAILY_REPORTS = "daily_reports"
-    BOOKMARKS = "bookmarks"
-    READING_HISTORY = "reading_history"
-    ARTICLE_FEEDBACK = "article_feedback"
-    USER_PROFILES = "user_profiles"
-    USER_TAGS = "user_tags"
-    ARTICLE_COMMENTS = "article_comments"
-    COMMENT_REPORTS = "comment_reports"
+
+# ── 延迟初始化数据库代理 ──────────────────
+# 解决路由模块在 import 时建立数据库连接的问题
+class _LazyDB:
+    """延迟初始化的数据库代理
+
+    仅在首次调用方法时才真正创建 DatabaseManager 实例，
+    避免路由模块 import 时创建 Supabase 连接。
+    """
+    _instance = None
+
+    def __getattr__(self, name):
+        instance = self.__class__._instance
+        if instance is None:
+            instance = DatabaseManager()
+            self.__class__._instance = instance
+        return getattr(instance, name)
 
 
 # ── 单例导出 ────────────────────────────
-# 所有路由文件应使用 get_db() 而非直接实例化 DatabaseManager()
 _db_instance = None
 
 def get_db() -> DatabaseManager:
@@ -776,3 +764,7 @@ def get_db() -> DatabaseManager:
     if _db_instance is None:
         _db_instance = DatabaseManager()
     return _db_instance
+
+
+# 惰性代理实例：路由模块用 lazy_db 替换 db = get_db()
+lazy_db = _LazyDB()

@@ -16,17 +16,15 @@ from api.models.database import get_db
 from api.services.tag_extractor import TagExtractor
 from api.services.cache import cache, cache_key
 from api.services.intent_classifier import classify_intent, get_classifier
-from cachetools import TTLCache
 from api.services.logger import logger
 
 router = APIRouter()
 db = get_db()
 
-# 对话上下文存储（生产环境建议用 Redis，这里用内存简化）
-chat_contexts: dict = {}
-# TTLCache 自动过期，无需手动清理
+# 对话上下文由 Redis 存储（api/services/cache.py），多 worker 共享
+# Redis 不可用时降级为空字典（单 worker 仍可用）
 
-# 统计信息（内存存储，生产环境建议用 Redis）
+# 统计信息（内存存储，重启后重置）
 chat_stats = {
     "total_requests": 0,
     "cache_hits": 0,
@@ -47,7 +45,7 @@ CHAT_LOG_FILE = os.path.join(os.path.dirname(os.path.dirname(__file__)), "chat.l
 
 def chat_log(msg: str):
     """写入聊天日志到文件"""
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
     try:
         with open(CHAT_LOG_FILE, "a", encoding="utf-8") as f:
             f.write(f"[{timestamp}] {msg}\n")
@@ -64,7 +62,7 @@ def log_chat_request(
     message_len: int = 0,
 ):
     """记录聊天请求日志到文件"""
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
     status = "HIT" if cache_hit else "MISS"
     
     log_line = (
@@ -326,8 +324,8 @@ async def chat(
                 chat_log(f"[CHAT] 问题类型={question_type}，跳过日报上下文注入")
 
         # 添加历史上下文（保留最近 2 轮，减少 tokens 消耗）
-        _touch_context(session_id)
-        history = chat_contexts.get(session_id, [])
+        ctx_key = f"chat:session:{session_id}"
+        history = cache.get(ctx_key) or []
         history_count = min(len(history), 2)
         for h in history[-2:]:  # 从6轮减少到2轮
             messages.append(h)
@@ -368,7 +366,7 @@ async def chat(
                     output_tokens = count_tokens(reply)
                 chat_log(f"[CHAT] API 返回 tokens - 输入: {input_tokens}, 输出: {output_tokens}")
         except Exception as e:
-            raise HTTPException(status_code=502, detail=f"AI 服务调用失败: {e}")
+            raise HTTPException(status_code=502, detail="AI 服务暂时不可用，请稍后重试")
 
         # 保存到缓存（根据问题类型设置不同 TTL）
         ttl_map = {
@@ -381,14 +379,13 @@ async def chat(
         cache.set(cache_key_str, reply, ttl)
         chat_log(f"[CHAT] 缓存已保存，TTL: {ttl}秒")
 
-        # 保存上下文
-        chat_contexts[session_id] = history + [
+        # 保存上下文到 Redis（1 小时 TTL，自动过期）
+        updated_history = history + [
             {"role": "user", "content": req.message},
             {"role": "assistant", "content": reply},
         ]
-        _touch_context(session_id)
-
-        # 限制上下文大小（TTLCache 自动管理）
+        cache.set(ctx_key, updated_history, 3600)
+        chat_log(f"[CHAT] 上下文已保存，共 {len(updated_history)} 轮")
 
         # 异步提取标签（不阻塞响应）
         _schedule_tag_extraction(background_tasks, authorization, req.message, db)

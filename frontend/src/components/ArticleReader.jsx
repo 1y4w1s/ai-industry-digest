@@ -72,7 +72,7 @@ export default function ArticleReader({ articleId, onBack }) {
         localStorage.setItem('signal.recent.v1', JSON.stringify(dedup));
       } catch {}
       // 延迟 2 秒写入历史，不阻塞渲染
-      setTimeout(() => api.addHistory(articleId).catch(() => {}), 2000);
+      setTimeout(() => api.addHistory(articleId).catch(e => console.error(e)), 2000);
       // 从缓存获取 bookmarks，避免额外请求
       const cachedBks = Cache.get('bookmarks');
       if (cachedBks) {
@@ -84,9 +84,9 @@ export default function ArticleReader({ articleId, onBack }) {
           Cache.set('bookmarks', items, CACHE_TTL.BOOKMARKS);
           const found = items.find((b) => b.article_id === articleId);
           if (found) setBookmarkId(found.id);
-        }).catch(() => {});
+        }).catch(e => console.error(e));
       }
-    }).catch(() => {}).finally(() => setLoading(false));
+    }).catch(e => console.error(e)).finally(() => setLoading(false));
   }, [articleId, ttsStop]);
 
   // ── 阅读深度追踪 ──
@@ -120,7 +120,7 @@ export default function ArticleReader({ articleId, onBack }) {
       const finalPct = readPercentRef.current;
       const duration = Math.round((Date.now() - startTimeRef.current) / 1000);
       if (finalPct >= 15) {
-        api.addHistoryWithDepth(articleId, finalPct, duration).catch(() => {});
+        api.addHistoryWithDepth(articleId, finalPct, duration).catch(e => console.error(e));
       }
     };
   }, [articleId]);

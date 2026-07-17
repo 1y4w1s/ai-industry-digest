@@ -8,12 +8,11 @@ from fastapi import APIRouter, Depends, HTTPException, Header
 from pydantic import BaseModel
 from typing import Optional
 
-from api.models.database import get_db
+from api.models.database import lazy_db as db
 from api.services.jwt_verify import verify_token
 from api.services.websocket_manager import ws_manager, MessageType
 
 router = APIRouter()
-db = get_db()
 
 
 def get_user_id(authorization: str = Header(None)) -> str:

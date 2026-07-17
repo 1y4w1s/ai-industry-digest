@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -30,8 +30,10 @@ function SuspenseFallback() {
   );
 }
 
-function PrivateRoute({ children }) {
-  const { isLoggedIn, loading } = useAuth();
+function PrivateRoute({ children, requireAdmin = false }) {
+  const { isLoggedIn, loading, user } = useAuth();
+  const location = useLocation();
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -43,7 +45,22 @@ function PrivateRoute({ children }) {
       </div>
     );
   }
-  return isLoggedIn ? children : <LoginPage />;
+
+  if (!isLoggedIn) {
+    // 重定向到登录页，记录来源路径以便登录后回跳
+    return <Navigate to="/login" state={{ from: location.pathname }} replace />;
+  }
+
+  if (requireAdmin) {
+    // admin 路由由后端验证（Layout.jsx 通过 api.getMe 获取角色），
+    // 前端仅做快速过滤，后端仍有完整校验
+    const isAdmin = user?.role === 'admin';
+    if (!isAdmin) {
+      return <Navigate to="/" replace />;
+    }
+  }
+
+  return children;
 }
 
 function AppContent() {
@@ -59,7 +76,7 @@ function AppContent() {
         <Route path="settings" element={<Suspense fallback={<SuspenseFallback />}><SettingsPage /></Suspense>} />
          <Route path="archive" element={<Suspense fallback={<SuspenseFallback />}><ArchivePage /></Suspense>} />
          <Route path="digest/:date" element={<Suspense fallback={<SuspenseFallback />}><DigestPage /></Suspense>} />
-         <Route path="admin" element={<Suspense fallback={<SuspenseFallback />}><PrivateRoute><AdminDashboard /></PrivateRoute></Suspense>} />
+         <Route path="admin" element={<Suspense fallback={<SuspenseFallback />}><PrivateRoute requireAdmin><AdminDashboard /></PrivateRoute></Suspense>} />
       </Route>
     </Routes>
   );

@@ -58,7 +58,7 @@ async def unsubscribe(token: str = Query(..., description="退订令牌")):
         )
     except Exception as e:  # 网络/DB 异常，给用户明确反馈而非 500 白页
         return HTMLResponse(
-            _page("退订失败", f"处理退订时出错，请稍后重试。({e})", ok=False),
+            _page("退订失败", "处理退订时出错，请稍后重试。", ok=False),
             status_code=500,
         )
 
@@ -138,4 +138,4 @@ async def subscribe(req: SubscribeRequest):
         }).execute()
         return {"ok": True, "status": "subscribed", "message": "订阅成功，每天将收到 Signal 每日简报"}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"订阅失败：{e}")
+        raise HTTPException(status_code=500, detail="订阅失败，请检查邮箱地址是否正确")

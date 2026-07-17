@@ -20,6 +20,8 @@ class ConnectionManager:
         self._connections: Dict[str, Set[WebSocket]] = {}
         # 心跳记录
         self._last_heartbeat: Dict[WebSocket, float] = {}
+        # 异步锁：保护 _connections 和 _last_heartbeat 的并发访问
+        self._lock = asyncio.Lock()
         # 统计
         self._stats = {
             "total_connections": 0,
@@ -30,37 +32,38 @@ class ConnectionManager:
         """接受新连接"""
         await websocket.accept()
         
-        if user_id not in self._connections:
-            self._connections[user_id] = set()
-        self._connections[user_id].add(websocket)
-        
-        self._last_heartbeat[websocket] = time.time()
-        self._stats["total_connections"] += 1
+        async with self._lock:
+            if user_id not in self._connections:
+                self._connections[user_id] = set()
+            self._connections[user_id].add(websocket)
+            self._last_heartbeat[websocket] = time.time()
+            self._stats["total_connections"] += 1
         
         print(f"[WS] 用户 {user_id} 连接，当前在线: {self.get_online_count()}")
 
     def disconnect(self, websocket: WebSocket, user_id: str) -> None:
-        """断开连接"""
+        """断开连接（同步方法，只应由事件循环线程调用）"""
         if user_id in self._connections:
             self._connections[user_id].discard(websocket)
             if not self._connections[user_id]:
                 del self._connections[user_id]
         
-        if websocket in self._last_heartbeat:
-            del self._last_heartbeat[websocket]
+        self._last_heartbeat.pop(websocket, None)
         
         print(f"[WS] 用户 {user_id} 断开，当前在线: {self.get_online_count()}")
 
     async def send_to_user(self, user_id: str, message: Dict[str, Any]) -> bool:
         """发送消息给指定用户的所有连接"""
-        if user_id not in self._connections:
-            return False
+        async with self._lock:
+            if user_id not in self._connections:
+                return False
+            connections = list(self._connections.get(user_id, []))
         
-        message["timestamp"] = datetime.now().isoformat()
+        message["timestamp"] = datetime.now(timezone.utc).isoformat()
         message_json = json.dumps(message, ensure_ascii=False)
         
         disconnected = set()
-        for websocket in self._connections[user_id]:
+        for websocket in connections:
             try:
                 await websocket.send_text(message_json)
                 self._stats["messages_sent"] += 1
@@ -76,11 +79,14 @@ class ConnectionManager:
 
     async def broadcast(self, message: Dict[str, Any]) -> int:
         """广播消息给所有在线用户"""
-        message["timestamp"] = datetime.now().isoformat()
+        message["timestamp"] = datetime.now(timezone.utc).isoformat()
         message_json = json.dumps(message, ensure_ascii=False)
         
+        async with self._lock:
+            snapshot = list(self._connections.items())
+        
         sent_count = 0
-        for user_id, connections in list(self._connections.items()):
+        for user_id, connections in snapshot:
             disconnected = set()
             for websocket in connections:
                 try:

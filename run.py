@@ -195,9 +195,8 @@ def main():
     else:
         print("\n⚠️  跳过 AI 处理（未配置 API Key）")
 
-    # 5. 日报生成（按采集日期，每篇标注原始 published_at）
+    # 5. 日报生成
     reporter = DailyReportGenerator(db_manager=db, ai_processor=ai)
-    report = reporter.generate(articles)
 
     # 6. 写入数据库
     if articles:
@@ -209,17 +208,15 @@ def main():
             print(f"   ⏭ 跳过: {result['skipped']} 篇")
             print(f"   ❌ 失败: {result['errors']} 篇")
 
-            # 重新生成日报并写入 DB（带有 db 实例）
+            # 传入 db 实例生成日报（含 article_id 关联）
             reporter.db = db
-            report = reporter.generate(articles)
-
-            count = db.get_article_count()
-            print(f"\n📦 数据库文章总数: {count}")
-
         except ValueError as e:
             print(f"\n❌ {e}")
         except Exception as e:
             print(f"\n❌ 数据库操作失败: {e}")
+
+    # 生成日报（有 db 则写入，无 db 只生成摘要输出）
+    report = reporter.generate(articles)
 
     # 7. 日报摘要输出
     print("\n" + "=" * 60)

@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.get("/github-agents")
+@router.get("/github-agents", tags=["GitHub 推荐"])
 async def github_agents(
     range: str = Query("week", description="时间范围：week|month|quarter"),
     min_stars: int = Query(100, ge=0, description="最低 star 数"),

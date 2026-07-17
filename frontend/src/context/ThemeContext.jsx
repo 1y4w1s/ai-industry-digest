@@ -78,11 +78,11 @@ export function ThemeProvider({ children }) {
   }, [persist]);
 
   return (
-    <ThemeContext.Provider value={{
+    <ThemeContext.Provider value={useMemo(() => ({{
       themeMode, resolvedTheme, updateThemeMode,
       fontSize, updateFontSize,
       langPref, updateLangPref,
-    }}>
+    }}), [themeMode, resolvedTheme, updateThemeMode, fontSize, updateFontSize, langPref, updateLangPref])}>
       {children}
     </ThemeContext.Provider>
   );

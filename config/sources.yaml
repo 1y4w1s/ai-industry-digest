@@ -14,7 +14,7 @@ sources:
       - type: api
         api_type: arxiv
         params:
-          category: "cs.AI+OR+cat:cs.LG+OR+cat:cs.CL"
+          category: "cat:cs.AI+OR+cat:cs.LG+OR+cat:cs.CL"
           max_results: 50
         timeout: 60
 
@@ -139,7 +139,7 @@ sources:
   - name: "Reddit r/MachineLearning"
     id: "reddit_ml_social"
     priority: 2
-    enabled: true
+    enabled: false  # disabled: duplicates RSS source (reddit_ml)
     tier: 1
     collectors:
       - type: social

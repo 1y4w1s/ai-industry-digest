@@ -1,24 +1,24 @@
 /**
- * æä¹¾ - WebSocket 客户端
- * 实时推送通知
+ * Signal - WebSocket 客户端
+ * 通过 WebSocket subprotocol (Sec-WebSocket-Protocol) 传递 JWT token，
+ * 避免 token 出现在 URL query string 中被日志记录。
  */
-
-const WS_RECONNECT_DELAY = 5000; // 重连延迟
-const WS_MAX_RECONNECT = 3; // 最大重连次数
 
 class WebSocketClient {
   constructor() {
     this.ws = null;
-    this.url = null;
-    this.token = null;
+    this.url = '';
+    this.token = '';
     this.reconnectCount = 0;
+    this.maxRetries = 5;
+    this.baseDelay = 1000;
     this.listeners = new Map();
     this.isConnecting = false;
   }
 
   /**
    * 连接 WebSocket
-   * @param {string} url - WebSocket URL
+   * @param {string} url - WebSocket URL (不含 token)
    * @param {string} token - JWT token
    */
   connect(url, token) {
@@ -32,8 +32,8 @@ class WebSocketClient {
     this.isConnecting = true;
 
     try {
-      const wsUrl = `${url}?token=${token}`;
-      this.ws = new WebSocket(wsUrl);
+      // 通过 WebSocket subprotocol 传递 token，避免出现在 URL 中
+      this.ws = new WebSocket(url, [token]);
 
       this.ws.onopen = () => {
         console.log('[WS] 连接成功');
@@ -52,89 +52,72 @@ class WebSocketClient {
       };
 
       this.ws.onclose = (event) => {
-        console.log('[WS] 连接关闭:', event.code, event.reason);
         this.isConnecting = false;
-        this.emit('disconnected', { code: event.code, reason: event.reason });
+        console.log(`[WS] 连接关闭 (code: ${event.code})`);
 
-        // 非正常关闭且未超过重连次数，尝试重连
-        if (event.code !== 1000 && this.reconnectCount < WS_MAX_RECONNECT) {
-          this.reconnect();
+        // 非正常关闭 && 未超最大重试次数 → 自动重连
+        if (event.code !== 1000 && this.reconnectCount < this.maxRetries) {
+          this.scheduleReconnect();
         }
+        this.emit('disconnected', { code: event.code });
       };
 
       this.ws.onerror = (error) => {
-        console.error('[WS] 错误:', error);
+        console.error('[WS] 连接错误:', error);
         this.isConnecting = false;
-        this.emit('error', error);
+        this.emit('error', { error });
       };
-
     } catch (error) {
-      console.error('[WS] 连接失败:', error);
+      console.error('[WS] 创建连接失败:', error);
       this.isConnecting = false;
+      this.emit('error', { error });
     }
   }
 
-  /**
-   * 断开连接
-   */
   disconnect() {
     if (this.ws) {
-      this.ws.close(1000, 'User disconnect');
+      this.ws.close(1000, '用户主动断开');
       this.ws = null;
     }
+    this.reconnectCount = this.maxRetries; // 阻止自动重连
+    console.log('[WS] 已断开');
   }
 
-  /**
-   * 重连
-   */
-  reconnect() {
-    if (this.isConnecting) return;
-
+  scheduleReconnect() {
+    const delay = this.baseDelay * Math.pow(2, this.reconnectCount);
+    console.log(`[WS] ${delay}ms 后重连 (第 ${this.reconnectCount + 1} 次)`);
     this.reconnectCount++;
-    console.log(`[WS] 尝试重连 (${this.reconnectCount}/${WS_MAX_RECONNECT})...`);
 
     setTimeout(() => {
-      if (this.url && this.token) {
+      if (this.token) {
         this.connect(this.url, this.token);
       }
-    }, WS_RECONNECT_DELAY);
+    }, delay);
   }
 
-  /**
-   * 处理消息
-   */
   handleMessage(message) {
-    const { type, data, timestamp } = message;
+    const { type, ...data } = message;
 
-    // 心跳响应
-    if (type === 'ping') {
-      this.send({ type: 'pong' });
-      return;
+    switch (type) {
+      case 'connected':
+        console.log('[WS] 连接确认:', data.message);
+        break;
+      case 'ping':
+        this.send({ type: 'pong' });
+        break;
+      case 'pong':
+        break;
+      default:
+        this.emit(type, data);
     }
-
-    if (type === 'pong') {
-      return;
-    }
-
-    // 触发对应类型的监听器
-    this.emit(type, data || message);
-
-    // 触发通用消息监听
-    this.emit('message', message);
   }
 
-  /**
-   * 发送消息
-   */
   send(data) {
     if (this.ws?.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(data));
     }
   }
 
-  /**
-   * 添加事件监听
-   */
   on(event, callback) {
     if (!this.listeners.has(event)) {
       this.listeners.set(event, []);
@@ -142,52 +125,29 @@ class WebSocketClient {
     this.listeners.get(event).push(callback);
   }
 
-  /**
-   * 移除事件监听
-   */
   off(event, callback) {
-    if (!this.listeners.has(event)) return;
-    
-    if (callback) {
-      const callbacks = this.listeners.get(event).filter(cb => cb !== callback);
-      this.listeners.set(event, callbacks);
-    } else {
-      this.listeners.delete(event);
+    const callbacks = this.listeners.get(event);
+    if (callbacks) {
+      this.listeners.set(event, callbacks.filter(cb => cb !== callback));
     }
   }
 
-  /**
-   * 触发事件
-   */
   emit(event, data) {
-    if (!this.listeners.has(event)) return;
-    this.listeners.get(event).forEach(callback => {
-      try {
-        callback(data);
-      } catch (e) {
-        console.error(`[WS] 监听器错误 (${event}):`, e);
-      }
-    });
+    const callbacks = this.listeners.get(event);
+    if (callbacks) {
+      callbacks.forEach(cb => cb(data));
+    }
   }
 
-  /**
-   * 获取连接状态
-   */
-  get isConnected() {
+  isConnected() {
     return this.ws?.readyState === WebSocket.OPEN;
   }
 }
 
-// 单例
 export const wsClient = new WebSocketClient();
-
-// 消息类型常量
 export const MessageType = {
   BOOKMARK_ADDED: 'bookmark_added',
   BOOKMARK_REMOVED: 'bookmark_removed',
   HISTORY_UPDATED: 'history_updated',
-  TASK_COMPLETED: 'task_completed',
-  ANNOUNCEMENT: 'announcement',
+  COMMENT_ADDED: 'comment_added',
 };
-
-export default wsClient;

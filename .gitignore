@@ -33,9 +33,12 @@ frontend/node_modules/
 # Temp files
 screenshot_*.png
 _fix_*.py
+_vision_*.py
 vision_*.*
 archive_*.txt
 =8.0.0
+last_run_*.json
+*.pt
 # Project artifacts
 .reasonix/
 media/
