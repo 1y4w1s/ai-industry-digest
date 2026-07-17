@@ -32,7 +32,7 @@ jobs:
         env:
           # 测试时不需要真实的 Supabase 连接
           SUPABASE_URL: https://test.supabase.co
-          SUPABASE_KEY: test-key
+          SUPABASE_KEY: eyJh******************************************************************************************ture
 
   test-frontend:
     name: 前端构建

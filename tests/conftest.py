@@ -11,7 +11,7 @@ import pytest
 def setup_test_env():
     """设置测试环境变量"""
     os.environ["SUPABASE_URL"] = "https://test.supabase.co"
-    os.environ["SUPABASE_KEY"] = "test-key"
+    os.environ["SUPABASE_KEY"] = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IlRlc3QifQ.test-signature"
     os.environ["DEEPSEEK_API_KEY"] = "test-api-key"
     os.environ["REDIS_HOST"] = "localhost"
     os.environ["REDIS_PORT"] = "6379"
