@@ -72,7 +72,7 @@ export default function ProfilePage() {
     let cancelled = false;
     const cached = localStorage.getItem('signal_stats');
     if (cached) { try { setStats(JSON.parse(cached)); setStatsLoading(false); } catch {} }
-    api.getStats()
+    api.getUserStats()
       .then((data) => { if (!cancelled) { setStats(data); setStatsLoading(false); localStorage.setItem('signal_stats', JSON.stringify(data)); } })
       .catch(() => { if (!cancelled) { if (!cached) setStats(null); setStatsLoading(false); } });
     api.getReadingTrends()

@@ -49,7 +49,7 @@ function NavIcon({ name }) {
 }
 
 export default function Layout() {
-  const { isLoggedIn, user, login, logout } = useAuth();
+  const { isLoggedIn, user, logout } = useAuth();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');

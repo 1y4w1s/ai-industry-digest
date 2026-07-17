@@ -126,7 +126,7 @@ export function useReport(initialDate = null) {
   }, [selectedDate]);
 
   // Flatten articles from report
-  const articles = useMemo(() => {
+  const articles = (() => {
     if (!report) return [];
     const result = [];
     for (const level of ['high', 'medium', 'low'])

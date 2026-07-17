@@ -1,4 +1,4 @@
-export default function SidePanel({ keywords = [], insight = '', topArticles = [], onArticleClick, onAskAI, onTagFilter, activeTags = [] }) {
+export default function SidePanel({ keywords = [], insight = '', topArticles = [], onArticleClick, onTagFilter, activeTags = [] }) {
   const handleTagClick = (k) => {
     if (onTagFilter) onTagFilter(k);
   };

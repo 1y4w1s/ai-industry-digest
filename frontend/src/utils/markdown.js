@@ -126,9 +126,9 @@ function formatPlainText(text) {
     }
 
     // numbered list
-    if (/^\d+[\.\u3002]\s/.test(trimmed)) {
+    if (/^\d+[.\u3002]\s/.test(trimmed)) {
       if (!inList || listType !== 'ol') { closeList(); result.push('<ol style="margin:0.5em 0;padding-left:1.5em">'); inList = true; listType = 'ol'; }
-      result.push(`<li style="margin:0.3em 0;color:var(--color-text-body);font-size:14px;line-height:1.7">${formatInline(trimmed.replace(/^\d+[\.\u3002]\s*/, ''))}</li>`);
+      result.push(`<li style="margin:0.3em 0;color:var(--color-text-body);font-size:14px;line-height:1.7">${formatInline(trimmed.replace(/^\d+[.\u3002]\s*/, ''))}</li>`);
       continue;
     }
 

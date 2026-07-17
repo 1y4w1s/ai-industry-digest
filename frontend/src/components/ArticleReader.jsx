@@ -1,13 +1,13 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { api } from '../api/client';
-import { renderMd, renderArticleContent } from '../utils/markdown';
-import DOMPurify from 'dompurify';
+// import { renderMd, renderArticleContent } from '../utils/markdown';
+// import DOMPurify from 'dompurify';
 import { Cache, CACHE_TTL } from '../utils/cache';
 import { useToast } from './Toast';
 import ErrorBoundary from './ErrorBoundary';
 import CommentSection from './CommentSection';
 import AiSummaryCard from './AiSummaryCard';
-import { IconPlay, IconPause, IconStop, IconBookmark, IconBookmarkFilled, IconPDF, IconShare } from './icons';
+import { IconShare } from './icons';
 import useTTS from '../hooks/useTTS';
 import ArticleMetaActions from './ArticleMetaActions';
 import ChatPanel from './ChatPanel';

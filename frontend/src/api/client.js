@@ -146,8 +146,9 @@ export const api = {
 
   // 用户
   getMe: () => request('/auth/me'),
-  getStats: () => request('/auth/stats'),
+  getUserStats: () => request('/auth/stats'),
   getReadingTrends: () => request('/auth/reading-trends'),
+
 
   // 收藏
   getBookmarks: (page = 1) => request(`/auth/bookmarks?page=${page}&page_size=20`),

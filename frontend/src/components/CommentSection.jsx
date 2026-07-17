@@ -46,7 +46,7 @@ export default function CommentSection({ articleId }) {
   const toast = useToast();
 
   // 点击"回复"时聚焦回复输入框
-  const replyInputRef = useRef(null);
+//   const replyInputRef = useRef(null);
 
   const fetchComments = useCallback(async () => {
     if (!articleId) return;

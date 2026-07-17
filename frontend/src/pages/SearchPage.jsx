@@ -6,10 +6,10 @@ import Pagination from '../components/Pagination';
 import AIRecommendPanel from '../components/AIRecommendPanel';
 import SkeletonCard from '../components/SkeletonCard';
 
-const SUGGESTIONS = [
-  'OpenAI', '大模型', '融资', 'AI 医疗', '自动驾驶', '量子计算',
-  'GPT', 'Claude', 'Google', 'Meta', '腾讯', '百度',
-];
+// const SUGGESTIONS = [
+//   'OpenAI', '大模型', '融资', 'AI 医疗', '自动驾驶', '量子计算',
+//   'GPT', 'Claude', 'Google', 'Meta', '腾讯', '百度',
+// ];
 
 const IMP_OPTIONS = [
   { value: '', label: '全部' },

@@ -4,7 +4,7 @@ import { renderMd } from '../utils/markdown';
 import DOMPurify from 'dompurify';
 
 export default function AIRecommendPanel({ keyword }) {
-  const [recommendations, setRecommendations] = useState([]);
+//   const [recommendations, setRecommendations] = useState([]);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
