@@ -43,3 +43,5 @@ last_run_*.json
 .reasonix/
 media/
 output/
+
+screenshot_*.png
